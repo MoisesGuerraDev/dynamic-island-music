@@ -53,7 +53,7 @@ porque sus términos no lo permiten en apps de terceros.
 
 ```bash
 git clone https://github.com/MoisesGuerraDev/dynamic-island-music.git
-cd REPO
+cd dynamic-island-music
 xcodebuild -project boringNotch.xcodeproj -scheme boringNotch -configuration Release \
   -derivedDataPath build -destination 'platform=macOS' \
   CODE_SIGN_IDENTITY="-" ENABLE_HARDENED_RUNTIME=NO DEVELOPMENT_TEAM="" CODE_SIGN_STYLE=Manual \

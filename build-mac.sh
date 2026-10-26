@@ -1,7 +1,7 @@
 #!/bin/bash
 # Compila Dynamic Island Music desde el código y la deja en tu escritorio, lista para usar. Necesita Xcode.
 #
-#   git clone https://github.com/MoisesGuerraDev/dynamic-island-music.git && cd REPO && ./build-mac.sh
+#   git clone https://github.com/MoisesGuerraDev/dynamic-island-music.git && cd dynamic-island-music && ./build-mac.sh
 #
 # Opciones:
 #   --applications   dejarla en /Applications en vez del escritorio

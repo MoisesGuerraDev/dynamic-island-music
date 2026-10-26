@@ -11,7 +11,7 @@ curl -fsSL https://raw.githubusercontent.com/MoisesGuerraDev/dynamic-island-musi
 Descarga la app, comprueba que no esté alterada, la deja en tu **escritorio** y la abre. No pide administrador y no sale ningún aviso de macOS.
 Para dejarla en Aplicaciones, agrega `--applications` al final.
 
-¿Prefieres compilarla tú? Con Xcode: `git clone https://github.com/MoisesGuerraDev/dynamic-island-music.git && cd REPO && ./build-mac.sh`
+¿Prefieres compilarla tú? Con Xcode: `git clone https://github.com/MoisesGuerraDev/dynamic-island-music.git && cd dynamic-island-music && ./build-mac.sh`
 
 ¿Bajaste el `.dmg` desde el navegador y macOS no la abre? Clic derecho sobre la app › **Abrir**, o *Ajustes del Sistema › Privacidad y seguridad › Abrir de todos modos*.
 (Apple solo quita ese aviso a apps firmadas con cuenta de pago; esta es gratuita y de código abierto.)

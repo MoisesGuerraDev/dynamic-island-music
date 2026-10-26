@@ -251,9 +251,9 @@ struct IntensityRow: View {
     var body: some View {
         HStack {
             Text(title)
-            Slider(value: $value, in: 0.4...3, step: 0.05)
+            Slider(value: $value, in: 0.4...5, step: 0.05)
             Text("\(Int(value * 100)) %").font(.system(.body, design: .monospaced)).frame(width: 60)
-            Button("Normal") { value = 1.8 }
+            Button("Normal") { value = 2.6 }
         }
     }
 }

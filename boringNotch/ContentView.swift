@@ -222,7 +222,7 @@ struct ContentView: View {
                         if glowOn {
                             NotchGlow(shape: currentNotchShape, color: Color(nsColor: musicManager.glowColor),
                                       opacity: glowOpacity, radius: glowRadius, dances: glowMotion && musicManager.isPlaying,
-                                      amount: danceSize.danceFactor)
+                                      amount: danceSize.danceFactor, intensity: glowIntensity)
                         }
                     }
                     .padding(

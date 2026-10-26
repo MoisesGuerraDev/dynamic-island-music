@@ -167,7 +167,7 @@ extension Defaults.Keys {
     /// Look up the official HD cover when the player only gives a tiny picture (browser videos).
     static let artworkHD = Key<Bool>("artworkHD", default: true)
     /// How strong the cover color is around the notch (1 = normal).
-    static let glowIntensity = Key<Double>("glowIntensity", default: 1.8)
+    static let glowIntensity = Key<Double>("glowIntensity", default: 2.6)
     /// Where the glow color comes from: the cover of the song, or a color the person picks.
     static let glowColorMode = Key<GlowColorMode>("glowColorMode", default: .cover)
     static let glowCustomHex = Key<String>("glowCustomHex", default: "#FF3B5C")
@@ -180,7 +180,7 @@ extension Defaults.Keys {
     /// The color glow breathes and drifts slowly while music plays.
     static let glowMotion = Key<Bool>("glowMotion", default: true)
     // The light inside the open notch has its own controls (the ones above are for the light around the closed island).
-    static let innerIntensity = Key<Double>("innerIntensity", default: 1.8)
+    static let innerIntensity = Key<Double>("innerIntensity", default: 2.6)
     static let innerSpread = Key<GlowSize>("innerSpread", default: .medium)
     static let innerDance = Key<GlowSize>("innerDance", default: .medium)
     static let innerMotion = Key<Bool>("innerMotion", default: true)

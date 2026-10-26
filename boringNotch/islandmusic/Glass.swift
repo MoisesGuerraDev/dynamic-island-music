@@ -212,12 +212,28 @@ struct AmbientLight: View {
             // Slow drift, so the light moves a little behind the glass.
             let dx = dancing ? sin(t * 0.42) * g.size.width * 0.045 * amp : 0
             let dy = dancing ? cos(t * 0.31) * g.size.height * 0.07 * amp : 0
+            // Past the point where the light is already at full strength, more intensity keeps adding light on top.
+            let extra = min(1, max(0, intensity - 1.5) / 2.5)
             ZStack {
                 Ellipse()
                     .fill(RadialGradient(colors: [c.opacity(strength), c.opacity(strength * 0.35), .clear], center: .center, startRadius: 0, endRadius: g.size.width * 0.34))
                     .frame(width: g.size.width * (0.8 + 0.1 * beat) * spread, height: g.size.height * (1.7 + 0.3 * beat))
                     .blur(radius: 30)
                     .position(x: g.size.width * 0.14 + px + dx, y: g.size.height * 0.62 + py + dy)
+                if extra > 0 {
+                    Ellipse()
+                        .fill(RadialGradient(colors: [c.opacity(0.9 * extra), c.opacity(0.3 * extra), .clear], center: .center, startRadius: 0, endRadius: g.size.width * 0.3))
+                        .frame(width: g.size.width * (0.7 + 0.1 * beat) * spread, height: g.size.height * (1.6 + 0.25 * beat))
+                        .blur(radius: 26)
+                        .blendMode(.plusLighter)
+                        .position(x: g.size.width * 0.14 + px + dx, y: g.size.height * 0.62 + py + dy)
+                    Ellipse()
+                        .fill(RadialGradient(colors: [c2.opacity(0.7 * extra), .clear], center: .center, startRadius: 0, endRadius: g.size.width * 0.24))
+                        .frame(width: g.size.width * (0.5 + 0.08 * beat) * spread, height: g.size.height * (1.3 + 0.2 * beat))
+                        .blur(radius: 34)
+                        .blendMode(.plusLighter)
+                        .position(x: g.size.width * 0.5 + px * 1.6 - dx * 1.4, y: g.size.height * 0.7 + py * 1.6 - dy * 1.2)
+                }
                 Ellipse()
                     .fill(RadialGradient(colors: [c2.opacity(strength * 0.75), .clear], center: .center, startRadius: 0, endRadius: g.size.width * 0.25))
                     .frame(width: g.size.width * (0.5 + 0.08 * beat) * spread, height: g.size.height * (1.3 + 0.2 * beat))
@@ -233,7 +249,7 @@ struct AmbientLight: View {
                         .transition(.opacity)
                 }
             }
-            .saturation(1 + 0.45 * max(0, intensity - 1))
+            .saturation(min(2.2, 1 + 0.4 * max(0, intensity - 1)))
             .animation(.interactiveSpring(response: 0.28, dampingFraction: 0.85), value: p)
             .animation(.smooth(duration: 0.6), value: music.glowColor)
         }
@@ -248,6 +264,7 @@ struct NotchGlow: View {
     let radius: CGFloat
     let dances: Bool
     var amount: Double = 1
+    var intensity: Double = 1
 
     var body: some View {
         TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: !dances)) { tl in
@@ -261,6 +278,15 @@ struct NotchGlow: View {
                     .blur(radius: radius * (0.9 + 0.5 * beat))
                     .scaleEffect(1 + 0.04 * beat)
                     .offset(y: 7)
+                // More intensity than the base glow can show adds a hot bloom under the notch.
+                if intensity > 1.5 {
+                    shape
+                        .fill(color)
+                        .opacity(min(1, (intensity - 1.5) * 0.45 * swell))
+                        .blur(radius: radius * 1.5)
+                        .blendMode(.plusLighter)
+                        .offset(y: 8)
+                }
                 // Tight bright edge right under the notch.
                 shape
                     .fill(color)

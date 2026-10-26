@@ -1,6 +1,6 @@
 # Instala Dynamic Island Music en Windows con una línea (sin permisos de administrador).
 #
-#   $env:DIM_REPO = 'OWNER/REPO'; irm https://raw.githubusercontent.com/OWNER/REPO/main/windows/install.ps1 | iex
+#   $env:DIM_REPO = 'MoisesGuerraDev/dynamic-island-music'; irm https://raw.githubusercontent.com/MoisesGuerraDev/dynamic-island-music/main/windows/install.ps1 | iex
 #
 # Descarga el instalador y su suma de verificación desde GitHub Releases, comprueba que coinciden y lo ejecuta
 # en silencio (se instala solo para tu usuario). Descargar con PowerShell no marca el archivo como "de internet",
@@ -9,7 +9,7 @@ param([string]$Repo = $env:DIM_REPO)
 
 $ErrorActionPreference = 'Stop'
 if (-not $Repo) {
-    Write-Host 'Uso: $env:DIM_REPO = "OWNER/REPO"; irm https://raw.githubusercontent.com/OWNER/REPO/main/windows/install.ps1 | iex' -ForegroundColor Yellow
+    Write-Host 'Uso: $env:DIM_REPO = "MoisesGuerraDev/dynamic-island-music"; irm https://raw.githubusercontent.com/MoisesGuerraDev/dynamic-island-music/main/windows/install.ps1 | iex' -ForegroundColor Yellow
     return
 }
 if ([Environment]::OSVersion.Version.Major -lt 10) { throw 'Necesitas Windows 10 u 11.' }

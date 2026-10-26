@@ -5,7 +5,7 @@
   "description": "Isla flotante para Windows 11 con música, Pomodoro, notas, chat de IA y más. Gratis, de código abierto y sin telemetría.",
   "license": "GPL-3.0-only",
   "author": "Dynamic Island Music contributors",
-  "homepage": "https://github.com/OWNER/REPO",
+  "homepage": "https://github.com/MoisesGuerraDev/dynamic-island-music",
   "type": "module",
   "main": "src/main/index.js",
   "private": true,

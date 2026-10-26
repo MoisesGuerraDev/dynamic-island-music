@@ -90,7 +90,7 @@ struct ContentView: View {
 
     private var glowRadius: CGFloat {
         let base: CGFloat = glowStyle == .strong ? 24 : 15
-        return base * min(1.6, max(0.8, glowIntensity)) * (vm.notchState == .closed ? 1.25 : 1)
+        return base * min(2.2, max(0.8, glowIntensity)) * (vm.notchState == .closed ? 1.25 : 1)
     }
 
     private var topCornerRadius: CGFloat {

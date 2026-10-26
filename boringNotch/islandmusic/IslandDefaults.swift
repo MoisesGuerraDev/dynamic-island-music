@@ -167,7 +167,10 @@ extension Defaults.Keys {
     /// Look up the official HD cover when the player only gives a tiny picture (browser videos).
     static let artworkHD = Key<Bool>("artworkHD", default: true)
     /// How strong the cover color is around the notch (1 = normal).
-    static let glowIntensity = Key<Double>("glowIntensity", default: 1.4)
+    static let glowIntensity = Key<Double>("glowIntensity", default: 1.8)
+    /// Where the glow color comes from: the cover of the song, or a color the person picks.
+    static let glowColorMode = Key<GlowColorMode>("glowColorMode", default: .cover)
+    static let glowCustomHex = Key<String>("glowCustomHex", default: "#FF3B5C")
     /// 0 = solid black notch, 1 = full glass.
     static let glassAmount = Key<Double>("glassAmount", default: 0)
     /// Shrink the closed notch's sides to the free room in the menu bar.
@@ -258,4 +261,10 @@ enum NotchBorder: String, CaseIterable, Identifiable, Defaults.Serializable {
         case .always: "Siempre"
         }
     }
+}
+
+enum GlowColorMode: String, CaseIterable, Identifiable, Defaults.Serializable {
+    case cover, custom
+    var id: String { rawValue }
+    var title: String { self == .cover ? "De la carátula" : "Elegir un color" }
 }

@@ -118,9 +118,12 @@ struct GlassCircleButton: View {
 extension NSImage {
     /// Most vivid color of the picture. A plain average of a dark cover with a red logo looks brown;
     /// this weights each pixel by how saturated and bright it is.
-    func vibrantColor() -> NSColor? {
+    func vibrantColor() -> NSColor? { vibrantPalette()?.primary }
+
+    /// The two main colors of the cover: the most prominent hue, and a clearly different one when the cover has it.
+    func vibrantPalette() -> (primary: NSColor, secondary: NSColor?)? {
         guard let cg = cgImage(forProposedRect: nil, context: nil, hints: nil) else { return nil }
-        let side = 24
+        let side = 28
         let bytesPerRow = side * 4
         var data = [UInt8](repeating: 0, count: side * bytesPerRow)
         guard let ctx = CGContext(
@@ -131,23 +134,36 @@ extension NSImage {
         ctx.interpolationQuality = .medium
         ctx.draw(cg, in: CGRect(x: 0, y: 0, width: side, height: side))
 
-        var rSum = 0.0, gSum = 0.0, bSum = 0.0, wSum = 0.0
+        // 12 hue bins of 30 degrees: weight and weighted color of each.
+        var weight = [Double](repeating: 0, count: 12)
+        var red = [Double](repeating: 0, count: 12), green = red, blue = red
         var rAvg = 0.0, gAvg = 0.0, bAvg = 0.0
         for i in 0..<(side * side) {
             let r = Double(data[i * 4]) / 255, g = Double(data[i * 4 + 1]) / 255, b = Double(data[i * 4 + 2]) / 255
             rAvg += r; gAvg += g; bAvg += b
             let mx = max(r, g, b), mn = min(r, g, b)
             let sat = mx == 0 ? 0 : (mx - mn) / mx
+            guard sat > 0.28 && mx > 0.3 else { continue }
+            let c = NSColor(red: r, green: g, blue: b, alpha: 1)
+            let bin = min(11, Int(c.hueComponent * 12))
             let w = sat * sat * mx
-            if sat > 0.28 && mx > 0.3 {
-                rSum += r * w; gSum += g * w; bSum += b * w; wSum += w
-            }
+            weight[bin] += w; red[bin] += r * w; green[bin] += g * w; blue[bin] += b * w
         }
         let n = Double(side * side)
-        if wSum > 0.0001 {
-            return NSColor(red: rSum / wSum, green: gSum / wSum, blue: bSum / wSum, alpha: 1)
+        guard let top = weight.indices.max(by: { weight[$0] < weight[$1] }), weight[top] > 0.0001 else {
+            return (NSColor(red: rAvg / n, green: gAvg / n, blue: bAvg / n, alpha: 1), nil)
         }
-        return NSColor(red: rAvg / n, green: gAvg / n, blue: bAvg / n, alpha: 1)
+        func color(_ bin: Int) -> NSColor {
+            NSColor(red: red[bin] / weight[bin], green: green[bin] / weight[bin], blue: blue[bin] / weight[bin], alpha: 1)
+        }
+        // A second hue at least 60 degrees away (2 bins around the circle) with a real share of the cover.
+        var second: Int?
+        for bin in weight.indices where bin != top {
+            let distance = min(abs(bin - top), 12 - abs(bin - top))
+            guard distance >= 2, weight[bin] >= weight[top] * 0.22 else { continue }
+            if second == nil || weight[bin] > weight[second!] { second = bin }
+        }
+        return (color(top), second.map(color))
     }
 }
 
@@ -182,6 +198,8 @@ struct AmbientLight: View {
         let beat = (motion && music.isPlaying) ? BeatPulse.shared.sample(at: date) : 0
         return GeometryReader { g in
             let c = Color(nsColor: music.glowColor)
+            let c2 = Color(nsColor: music.glowColor2)
+            let spread = 0.85 + 0.15 * min(intensity, 3)
             // Slow drift, so the red light moves behind the glass.
             let drift = (motion && music.isPlaying)
             let dx = drift ? sin(t * 0.42) * g.size.width * 0.045 : 0
@@ -193,14 +211,13 @@ struct AmbientLight: View {
             ZStack {
                 Ellipse()
                     .fill(RadialGradient(colors: [c.opacity(strength), c.opacity(strength * 0.35), .clear], center: .center, startRadius: 0, endRadius: g.size.width * 0.34))
-                    .frame(width: g.size.width * (0.8 + 0.1 * beat), height: g.size.height * (1.7 + 0.3 * beat))
+                    .frame(width: g.size.width * (0.8 + 0.1 * beat) * spread, height: g.size.height * (1.7 + 0.3 * beat))
                     .blur(radius: 30)
                     .position(x: g.size.width * 0.14 + px + dx, y: g.size.height * 0.62 + py + dy)
                 Ellipse()
-                    .fill(RadialGradient(colors: [c.opacity(strength * 0.7), .clear], center: .center, startRadius: 0, endRadius: g.size.width * 0.25))
-                    .frame(width: g.size.width * (0.5 + 0.08 * beat), height: g.size.height * (1.3 + 0.2 * beat))
+                    .fill(RadialGradient(colors: [c2.opacity(strength * 0.75), .clear], center: .center, startRadius: 0, endRadius: g.size.width * 0.25))
+                    .frame(width: g.size.width * (0.5 + 0.08 * beat) * spread, height: g.size.height * (1.3 + 0.2 * beat))
                     .blur(radius: 40)
-                    .hueRotation(.degrees(38))
                     .position(x: g.size.width * 0.5 + px * 1.6 - dx * 1.4, y: g.size.height * 0.7 + py * 1.6 - dy * 1.2)
                 if let p {
                     Circle()
@@ -238,5 +255,29 @@ struct NotchGlow: View {
                 .offset(y: 6)
         }
         .allowsHitTesting(false)
+    }
+}
+
+extension NSColor {
+    /// The same color with its hue turned by this fraction of the color wheel.
+    func shiftedHue(by delta: CGFloat) -> NSColor {
+        let c = usingColorSpace(.sRGB) ?? self
+        var h: CGFloat = 0, s: CGFloat = 0, b: CGFloat = 0, a: CGFloat = 0
+        c.getHue(&h, saturation: &s, brightness: &b, alpha: &a)
+        return NSColor(hue: (h + delta).truncatingRemainder(dividingBy: 1), saturation: s, brightness: b, alpha: a)
+    }
+
+    convenience init?(hex: String) {
+        var text = hex.trimmingCharacters(in: .whitespaces)
+        if text.hasPrefix("#") { text.removeFirst() }
+        guard text.count == 6, let value = UInt32(text, radix: 16) else { return nil }
+        self.init(srgbRed: CGFloat((value >> 16) & 0xFF) / 255, green: CGFloat((value >> 8) & 0xFF) / 255,
+                  blue: CGFloat(value & 0xFF) / 255, alpha: 1)
+    }
+
+    var hexString: String {
+        let c = usingColorSpace(.sRGB) ?? self
+        return String(format: "#%02X%02X%02X", Int((c.redComponent * 255).rounded()), Int((c.greenComponent * 255).rounded()),
+                      Int((c.blueComponent * 255).rounded()))
     }
 }

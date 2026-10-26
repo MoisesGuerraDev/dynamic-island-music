@@ -211,6 +211,8 @@ struct ComponentsSettings: View {
 struct GlassSettings: View {
     @Default(.glowStyle) var glowStyle
     @Default(.glowIntensity) var glowIntensity
+    @Default(.glowColorMode) var glowColorMode
+    @Default(.glowCustomHex) var glowCustomHex
     @Default(.glassAmount) var glassAmount
     @Default(.notchBorder) var notchBorder
     @Default(.glowMotion) var glowMotion
@@ -244,15 +246,25 @@ struct GlassSettings: View {
                 Text("Sin borde, el notch es negro liso como en la maqueta y solo se ve el brillo de color a su alrededor. Los colores bailan al ritmo de la canción; con el sonido real siguen exactamente los golpes. Solo se mide el volumen: no se graba audio.")
             }
             Section {
+                Picker("Color del brillo", selection: $glowColorMode) {
+                    ForEach(GlowColorMode.allCases) { Text($0.title).tag($0) }
+                }
+                .pickerStyle(.segmented)
+                if glowColorMode == .custom {
+                    ColorPicker("Tu color", selection: Binding(
+                        get: { Color(nsColor: NSColor(hex: glowCustomHex) ?? .systemPink) },
+                        set: { glowCustomHex = NSColor($0).hexString }), supportsOpacity: false)
+                }
                 HStack {
                     Text("Intensidad del color")
-                    Slider(value: $glowIntensity, in: 0.4...2, step: 0.05)
+                    Slider(value: $glowIntensity, in: 0.4...3, step: 0.05)
                     Text("\(Int(glowIntensity * 100)) %").font(.system(.body, design: .monospaced)).frame(width: 60)
+                    Button("Normal") { glowIntensity = 1.8 }
                 }
             } header: {
                 Text("Color")
             } footer: {
-                Text("Qué tan fuerte brilla el color de la carátula alrededor del notch y detrás de los botones.")
+                Text("Por defecto el brillo toma los colores de la carátula (los dos principales). Súbelo para que se note más, hasta 300 %, o elige un color fijo.")
             }
             Section {
                 HStack {

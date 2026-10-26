@@ -39,6 +39,8 @@ class MusicManager: ObservableObject {
     @Published var avgColor: NSColor = .white
     /// Most vivid color of the cover. Used for the glow around the notch and the highlights.
     @Published var glowColor: NSColor = .systemPurple
+    /// Second color of the cover (or the first, turned a little, when the cover has only one).
+    @Published var glowColor2: NSColor = NSColor(calibratedRed: 0.55, green: 0.4, blue: 0.95, alpha: 1)
     @Published var bundleIdentifier: String? = nil
     @Published var songDuration: TimeInterval = 0
     @Published var elapsedTime: TimeInterval = 0
@@ -81,6 +83,9 @@ class MusicManager: ObservableObject {
 
         startAutoObservers()
         startAutoProbe()
+        Defaults.publisher(keys: .glowColorMode, .glowCustomHex, options: [])
+            .sink { [weak self] _ in self?.calculateAverageColor() }
+            .store(in: &cancellables)
 
         // Initialize deprecation check asynchronously
         Task { @MainActor in
@@ -191,11 +196,13 @@ class MusicManager: ObservableObject {
     private var hdCoverCache: [String: Data] = [:]
 
     /// Browser videos only give a tiny picture. Look up the official cover and swap it in when it matches the song.
-    private func enhanceArtwork(title: String, artist: String, original: Data) {
+    private func enhanceArtwork(title: String, artist: String, original: Data?) {
         guard Defaults[.artworkHD], !title.isEmpty else { return }
-        let rep = NSBitmapImageRep(data: original)
-        let side = max(rep?.pixelsWide ?? 0, rep?.pixelsHigh ?? 0)
-        guard side > 0, side < 500 else { return }
+        if let original {
+            let rep = NSBitmapImageRep(data: original)
+            let side = max(rep?.pixelsWide ?? 0, rep?.pixelsHigh ?? 0)
+            guard side > 0, side < 500 else { return }
+        }
 
         let key = "\(artist)|\(title)".lowercased()
         hdCoverTask?.cancel()
@@ -324,6 +331,8 @@ class MusicManager: ObservableObject {
                     self.usingAppIconForArtwork = true
                     self.updateAlbumArt(newAlbumArt: appIconImage)
                 }
+                // No cover from the player: look the song up so the notch shows the real album, not the app's icon.
+                self.enhanceArtwork(title: state.title, artist: state.artist, original: nil)
             }
             self.artworkData = state.artwork
 
@@ -676,7 +685,25 @@ class MusicManager: ObservableObject {
             DispatchQueue.main.async {
                 withAnimation(.smooth) {
                     self?.avgColor = color ?? .white
-                    self?.glowColor = self?.albumArt.vibrantColor() ?? color ?? .systemPurple
+                    guard let self else { return }
+                    if self.usingAppIconForArtwork {
+                        // The app's own icon says nothing about the song: soft neutral light instead of the icon's color.
+                        self.glowColor = NSColor(calibratedRed: 0.62, green: 0.6, blue: 0.92, alpha: 1)
+                        self.glowColor2 = NSColor(calibratedRed: 0.5, green: 0.62, blue: 0.95, alpha: 1)
+                        return
+                    }
+                    if let palette = self.albumArt.vibrantPalette() {
+                        self.glowColor = palette.primary
+                        self.glowColor2 = palette.secondary ?? palette.primary.shiftedHue(by: 0.11)
+                    } else {
+                        self.glowColor = color ?? .systemPurple
+                        self.glowColor2 = self.glowColor
+                    }
+                    if Defaults[.glowColorMode] == .custom {
+                        let chosen = NSColor(hex: Defaults[.glowCustomHex]) ?? .systemPink
+                        self.glowColor = chosen
+                        self.glowColor2 = chosen.shiftedHue(by: 0.09)
+                    }
                 }
             }
         }

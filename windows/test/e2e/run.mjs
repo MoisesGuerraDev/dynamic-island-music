@@ -189,6 +189,44 @@ try {
   await app.evaluate(() => { const c = globalThis.__DIM__; c.store.patch({ aiLock: 'none' }); const i = c.islands.first(); i.pins.add('toggle'); c.islands.setOpen(i, true); });
   await page.waitForTimeout(500);
 
+  // Saved sessions: encrypted copy of the AI sign-ins, saved and restored.
+  const sb = (expr, arg) => app.evaluate(async (_e, [code, a]) => { const c = globalThis.__DIM__; return await new Function('c', 'a', `return (async () => { ${code} })()`)(c, a); }, [expr, arg]);
+  await sb("await c.aiSession.cookies.set({ url: 'https://claude.ai/', name: 'dim_backup_test', value: 'VALOR-SECRETO-777', secure: true, httpOnly: true });");
+  await page.waitForTimeout(600);
+  const saved = await sb('return await c.sessionBackup.save();');
+  const copyFile = path.join(ud, 'Sesiones', 'Sesiones-IA.dimsession');
+  check('guarda la copia sin configurar nada (carpeta de la app)', saved.ok && /Copia guardada \(\d+ cookies de las IA\)/.test(saved.message) && fs.existsSync(copyFile), saved.message);
+  const raw = fs.readFileSync(copyFile);
+  check('la copia no contiene el valor de la cookie en claro', !raw.toString('utf8').includes('VALOR-SECRETO-777') && !raw.toString('latin1').includes('VALOR-SECRETO-777') && raw.subarray(0, 5).toString('ascii') === 'DIMS1');
+  const has = () => sb("return (await c.aiSession.cookies.get({ name: 'dim_backup_test' })).map((k) => k.value);");
+  await sb("await c.aiSession.cookies.remove('https://claude.ai/', 'dim_backup_test');");
+  check('la cookie de prueba se borró', (await has()).length === 0);
+  const rest = await sb('return await c.sessionBackup.restore();');
+  check('ida y vuelta: restaurar devuelve la cookie', rest.ok && JSON.stringify(await has()) === '["VALOR-SECRETO-777"]', rest.message);
+  // Own password: a wrong one restores nothing and says why.
+  await sb("c.sessionBackup.setOwnPassword('clave-propia'); await c.aiSession.cookies.remove('https://claude.ai/', 'dim_backup_test');");
+  const wrong = await sb('return await c.sessionBackup.restore();');
+  check('contraseña incorrecta: no restaura nada y avisa', wrong.ok === false && wrong.message.includes('No pude leer la copia') && (await has()).length === 0, wrong.message);
+  await sb("await c.aiSession.cookies.set({ url: 'https://claude.ai/', name: 'dim_backup_test', value: 'VALOR-SECRETO-777', secure: true, httpOnly: true }); return await c.sessionBackup.save();");
+  await sb("await c.aiSession.cookies.remove('https://claude.ai/', 'dim_backup_test');");
+  const own = await sb('return await c.sessionBackup.restore();');
+  check('con la contraseña propia correcta sí restaura', own.ok && (await has()).length === 1, own.message);
+  // A damaged file does not break anything.
+  fs.writeFileSync(copyFile, Buffer.concat([Buffer.from('DIMS1'), Buffer.alloc(80, 7)]));
+  const dmg = await sb('return await c.sessionBackup.restore();');
+  fs.writeFileSync(copyFile, 'basura');
+  const dmg2 = await sb('return await c.sessionBackup.restore();');
+  check('un archivo dañado no rompe la app', dmg.ok === false && dmg2.ok === false && (await page.evaluate(() => 1 + 1)) === 2, `${dmg.message} | ${dmg2.message}`);
+  // On start with no AI session at all, the copy comes back by itself.
+  await sb("c.sessionBackup.clearOwnPassword(); await c.aiSession.cookies.set({ url: 'https://claude.ai/', name: 'dim_backup_test', value: 'VALOR-SECRETO-777', secure: true, httpOnly: true }); return await c.sessionBackup.save();");
+  await sb("for (const k of await c.aiSession.cookies.get({})) { await c.aiSession.cookies.remove(`http${k.secure ? 's' : ''}://${k.domain.replace(/^\\./, '')}${k.path}`, k.name); }");
+  const none = await sb('return (await c.aiSession.cookies.get({})).length;');
+  const auto = await sb('return await c.sessionBackup.restoreIfEmpty();');
+  check('sin sesiones de las IA al arrancar, la copia se restaura sola', none === 0 && auto.ok && (await has()).length === 1, `${none} cookies antes · ${auto.message}`);
+  await sb("c.sessionBackup.deleteCopy(); await c.aiSession.cookies.set({ url: 'https://claude.ai/', name: 'dim_test_session', value: 'abc123', secure: true, httpOnly: true });");
+  check('al cerrar sesión en todas las IA se borra también la copia', !fs.existsSync(copyFile));
+  await page.waitForTimeout(700);
+
   // Closed island: cover on the left, timer on the right, both sides the same width.
   await app.evaluate(() => { const c = globalThis.__DIM__; const i = c.islands.first(); i.pins.clear(); c.islands.setOpen(i, false); });
   await page.waitForTimeout(1200);

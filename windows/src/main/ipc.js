@@ -12,7 +12,7 @@ const WEB_AI = {
 
 /** Wires every call a page can make. A call from anything that is not one of our own windows is ignored. */
 export function registerIpc(ctx) {
-  const { store, islands, media, pomodoro, notes, clip, ai, perf, system, calendar, shelf, shortcuts, secrets, aiSession, aiLock } = ctx;
+  const { store, islands, media, pomodoro, notes, clip, ai, perf, system, calendar, shelf, shortcuts, secrets, aiSession, aiLock, sessionBackup } = ctx;
 
   const trusted = (sender) => !!islands.find(sender) || (islands.settingsWin && !islands.settingsWin.isDestroyed() && islands.settingsWin.webContents === sender);
   const handle = (channel, fn) =>
@@ -155,13 +155,37 @@ export function registerIpc(ctx) {
       cancelId: 0,
       title: 'Cerrar sesión en todas las IA',
       message: '¿Cerrar la sesión de Claude, ChatGPT, Gemini y DeepSeek?',
-      detail: 'Tendrás que volver a iniciar sesión en cada una.',
+      detail: 'Tendrás que volver a iniciar sesión en cada una. También se borra la copia guardada de las sesiones.',
     });
     if (r.response !== 1) return false;
     await aiSession.signOutAll();
+    sessionBackup.deleteCopy(); // a signed-out session must not come back from the copy
     islands.send('ai:signedOut', true);
     return true;
   });
+  handle('session:info', () => sessionBackup.info());
+  handle('session:save', () => sessionBackup.save());
+  handle('session:restore', () => sessionBackup.restore());
+  handle('session:chooseFolder', async (e) => {
+    const r = await dialog.showOpenDialog(parentFor(e) ?? undefined, {
+      title: 'Elige la carpeta para las sesiones guardadas',
+      buttonLabel: 'Usar esta carpeta',
+      defaultPath: sessionBackup.folder(),
+      properties: ['openDirectory', 'createDirectory'],
+    });
+    if (r.canceled || !r.filePaths[0]) return false;
+    store.set('sessionBackupFolder', r.filePaths[0]);
+    return true;
+  });
+  handle('session:useAppFolder', () => store.set('sessionBackupFolder', ''));
+  handle('session:setPassword', (_e, pw) => {
+    try {
+      return sessionBackup.setOwnPassword(pw);
+    } catch (err) {
+      return { ok: false, message: err.message };
+    }
+  });
+  handle('session:clearPassword', () => sessionBackup.clearOwnPassword());
   handle('ailock:state', () => aiLock.state());
   handle('ailock:refresh', () => aiLock.refresh());
   handle('ailock:unlockHello', () => aiLock.unlockHello());

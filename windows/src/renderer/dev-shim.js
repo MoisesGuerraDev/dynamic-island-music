@@ -222,6 +222,15 @@ const dim = {
     onSignedOut: (cb) => on('ai:signedOut', cb),
     encryptionAvailable: async () => true,
   },
+  session: {
+    info: async () => ({ folder: 'C:\\Users\\tu\\AppData\\Roaming\\Dynamic Island Music\\Sesiones', isDefault: true, file: '', exists: false, savedAt: null, ownPassword: false, encryption: true }),
+    save: async () => ({ ok: true, message: 'Copia guardada (12 cookies de las IA).' }),
+    restore: async () => ({ ok: true, message: 'Sesiones restauradas (12 cookies de las IA).' }),
+    chooseFolder: async () => true,
+    useAppFolder: async () => true,
+    setPassword: async () => ({ ok: true, message: 'Contraseña propia guardada.' }),
+    clearPassword: async () => ({ ok: true, message: 'Se vuelve a usar la clave automática de este PC.' }),
+  },
   ailock: {
     state: async () => ({ mode: set.aiLock === 'none' || set.aiLock === 'auto' ? 'none' : 'pin', locked: false, hello: false, pinSet: false, needsPin: false, retryIn: 0 }),
     refresh: async () => ({ mode: 'none', locked: false, hello: false, pinSet: false, needsPin: false, retryIn: 0 }),

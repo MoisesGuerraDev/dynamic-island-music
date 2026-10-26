@@ -77,6 +77,15 @@ contextBridge.exposeInMainWorld('dim', {
     onSignedOut: (cb) => on('ai:signedOut', cb),
     encryptionAvailable: () => invoke('ai:encryptionAvailable'),
   },
+  session: {
+    info: () => invoke('session:info'),
+    save: () => invoke('session:save'),
+    restore: () => invoke('session:restore'),
+    chooseFolder: () => invoke('session:chooseFolder'),
+    useAppFolder: () => invoke('session:useAppFolder'),
+    setPassword: (pw) => invoke('session:setPassword', pw),
+    clearPassword: () => invoke('session:clearPassword'),
+  },
   ailock: {
     state: () => invoke('ailock:state'),
     refresh: () => invoke('ailock:refresh'),

@@ -21,6 +21,7 @@ import { registerIpc } from './ipc.js';
 import { AiSession } from './aisession.js';
 import { AiLock } from './ailock.js';
 import { PinVault } from './pin.js';
+import { SessionBackup } from './sessionbackup.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(here, '..', '..');
@@ -111,10 +112,12 @@ async function boot(ctx) {
   const aiSession = new AiSession();
   aiSession.start();
 
+  const sessionBackup = new SessionBackup({ aiSession, store, secrets, userData, onRestored: () => islands.send('ai:signedOut', true) });
+  sessionBackup.start();
   const aiLock = new AiLock({ store, vault: new PinVault(path.join(userData, 'aipin.json')), helper });
   islands.onClosed = () => aiLock.relock();
 
-  Object.assign(ctx, { aiLock, aiSession, store, secrets, helper, islands, system, media, pomodoro, notes, clip, ai, perf, calendar, shelf });
+  Object.assign(ctx, { sessionBackup, aiLock, aiSession, store, secrets, helper, islands, system, media, pomodoro, notes, clip, ai, perf, calendar, shelf });
 
   // --- Commands from shortcuts and the tray ---
   const send = (name, extra = {}) => islands.send('cmd', { name, ...extra });
@@ -289,6 +292,7 @@ function shutdown(ctx) {
     ctx.shortcuts?.stop();
     ctx.helper?.stop();
     ctx.pomodoro?.stop();
+    ctx.sessionBackup?.stop();
     ctx.islands?.stop();
     ctx.tray?.destroy();
   } catch {

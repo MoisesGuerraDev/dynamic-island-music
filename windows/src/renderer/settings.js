@@ -6,7 +6,7 @@ import { ic } from './icons.js';
 import { esc, $, $$ } from './util.js';
 
 let dim;
-const ctx = { lock: { mode: 'none', hello: false, pinSet: false, needsPin: false }, set: {}, info: null, notes: null, keys: {}, shortcuts: {}, enc: true, app: null, events: [], clip: { items: [] }, shelf: [] };
+const ctx = { session: { folder: '', isDefault: true, exists: false, savedAt: null, ownPassword: false }, lock: { mode: 'none', hello: false, pinSet: false, needsPin: false }, set: {}, info: null, notes: null, keys: {}, shortcuts: {}, enc: true, app: null, events: [], clip: { items: [] }, shelf: [] };
 let curTab = 'general';
 
 const SHORTCUT_NAMES = {
@@ -58,6 +58,12 @@ function screenInfoRows() {
   const d = (ctx.info && ctx.info.displays) || [];
   if (!d.length) return [INFO('Pantallas', 'Detectando…')];
   return d.map((x, i) => INFO(`${x.label}${x.primary ? ' (principal)' : ''}`, `${x.pixels.width} × ${x.pixels.height} px · se ve como ${x.size.width} × ${x.size.height} · ${Math.round(x.scaleFactor * 100)} % · ${x.hz} Hz`));
+}
+
+function sessionPasswordHTML() {
+  const own = ctx.session.ownPassword;
+  return `<div class="r"><span>Contraseña propia (para abrir la copia en otra computadora)<small>${own ? 'Puesta: se usa en lugar de la clave automática. Se guarda cifrada por Windows.' : 'Sin ella se usa una clave automática de este PC.'}</small></span>
+    <span class="keyrow"><input type="password" id="sess-pw" placeholder="${own ? '••••••••' : 'Contraseña propia'}" autocomplete="off" aria-label="Contraseña propia de las sesiones guardadas"><button class="btn primary" data-do="session-pw-save">Guardar</button>${own ? '<button class="btn danger" data-do="session-pw-clear">Quitar</button>' : ''}</span></div>`;
 }
 
 function pinHTML() {
@@ -254,6 +260,16 @@ const TABS = [
         { ...T('aiLockPreferPin', 'Usar el PIN de la app en vez de Windows Hello', null, { rr: true }), when: (s) => s.aiLock !== 'none' },
         { ...HTML(pinHTML), when: (s) => s.aiLock !== 'none' },
       ]),
+      sec('Sesiones guardadas', [
+        INFO('Carpeta de las copias', () => ctx.session.folder, () => (ctx.session.isDefault ? 'La carpeta de la app (no hay que configurar nada)' : 'Una carpeta que elegiste')),
+        BTN('Llevarlas a otra carpeta', 'Elegir otra carpeta…', 'session-choose', 'Cualquiera: Documentos, un USB, OneDrive, Dropbox…'),
+        { ...BTN('La carpeta de la app', 'Usar la carpeta de la app', 'session-appfolder'), when: () => !ctx.session.isDefault },
+        HTML(sessionPasswordHTML),
+        T('sessionBackupAuto', 'Guardar solas', 'Se guardan 20 segundos después del último cambio de tus sesiones de las IA'),
+        INFO('Última copia', () => (ctx.session.savedAt ? new Date(ctx.session.savedAt).toLocaleString('es') : 'Todavía no hay')),
+        BTN('Guardar ahora', 'Guardar ahora', 'session-save'),
+        BTN('Restaurar ahora', 'Restaurar ahora', 'session-restore', 'Si la app arranca sin ninguna sesión de las IA y hay copia, se restaura sola'),
+      ], 'No hay que configurar nada: tus inicios de sesión de las IA se guardan cifrados en una carpeta de la app y vuelven solos si reinstalas. Si quieres llevarlos a otra computadora, elige una carpeta cualquiera (Documentos, un USB, OneDrive, Dropbox…) y pon una contraseña propia; en la otra computadora elige la misma carpeta y escribe la misma contraseña. Solo se guardan las sesiones de las páginas de las IA; tus contraseñas nunca pasan por aquí.'),
       ...(ctx.set.aiOpenMode === 'web'
         ? [
             sec('Con tu cuenta', [
@@ -712,6 +728,33 @@ async function doAction(b) {
       say('Clave borrada.');
       render();
       break;
+    case 'session-save':
+    case 'session-restore': {
+      const r = a === 'session-save' ? await dim.session.save() : await dim.session.restore();
+      say(r.message);
+      await refreshSession();
+      break;
+    }
+    case 'session-choose':
+      if (await dim.session.chooseFolder()) say('Carpeta cambiada. Si ya hay una copia ahí, pulsa «Restaurar ahora».');
+      await refreshSession();
+      break;
+    case 'session-appfolder':
+      await dim.session.useAppFolder();
+      await refreshSession();
+      break;
+    case 'session-pw-save': {
+      const r = await dim.session.setPassword($('#sess-pw').value);
+      say(r.message);
+      await refreshSession();
+      break;
+    }
+    case 'session-pw-clear': {
+      const r = await dim.session.clearPassword();
+      say(r.message);
+      await refreshSession();
+      break;
+    }
     case 'pin-save': {
       const a = $('#pin-new').value;
       if (a !== $('#pin-new2').value) return say('Los dos PIN no coinciden.');
@@ -809,8 +852,13 @@ async function doAction(b) {
 
 // ---------- Boot ----------
 
+async function refreshSession() {
+  ctx.session = (await dim.session.info()) || ctx.session;
+  render();
+}
+
 async function loadAll() {
-  const [set, info, notes, app, shortcuts, enc, events, lock] = await Promise.all([
+  const [set, info, notes, app, shortcuts, enc, events, lock, session] = await Promise.all([
     dim.settings.getAll(),
     dim.system.info(),
     dim.notes.get(),
@@ -819,8 +867,10 @@ async function loadAll() {
     dim.ai.encryptionAvailable(),
     dim.calendar.list(),
     dim.ailock.refresh(),
+    dim.session.info(),
   ]);
   if (lock) ctx.lock = lock;
+  if (session) ctx.session = session;
   ctx.set = set;
   ctx.info = info;
   ctx.notes = notes.info;

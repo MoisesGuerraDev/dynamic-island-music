@@ -1,5 +1,5 @@
 // Settings window. Every row is a real setting: changing it saves it at once and the island updates.
-import { DEFAULTS, COMPONENT_META, AI_PROVIDERS, AI_META, POMO_SOUNDS, normalizeComponents } from '../shared/defaults.js';
+import { DEFAULTS, COMPONENT_META, AI_PROVIDERS, AI_META, WEB_AI, WEB_AI_META, POMO_SOUNDS, normalizeComponents } from '../shared/defaults.js';
 import { capWidth, moveOnto, usage } from '../shared/layout.js';
 import { formatDuration, parseDuration } from '../shared/time.js';
 import { ic } from './icons.js';
@@ -233,29 +233,39 @@ const TABS = [
   {
     id: 'ia', icon: 'spark', name: 'IA',
     build: () => [
-      sec('IAs disponibles en el chat', [
-        ...AI_PROVIDERS.map((p) => ({ t: 'toggle', k: '__ai', provider: p, label: AI_META[p].name + (p === 'ollama' ? ' en tu PC' : ''), note: p === 'ollama' ? 'Sin costo y sin internet' : p === 'custom' ? 'Cualquier servicio con API compatible con OpenAI' : '', rr: true })),
+      sec('Cómo usar la IA', [
+        SEL('aiOpenMode', 'Forma de usarla', [['web', 'Con tu cuenta (iniciar sesión dentro de la isla)'], ['mini', 'Con tu clave de API (mini chat)']], 'Con tu cuenta no hace falta ninguna clave: abres la página oficial dentro de la isla e inicias sesión, también con Google.', { rr: true }),
       ]),
-      sec('Tu IA favorita', [
-        { t: 'aiselect', k: 'aiProvider', label: 'Proveedor por defecto', note: 'Esta sale junto al "+" del calendario' },
-        SEL('aiOpenMode', 'Cómo se abre', [['mini', 'Mini chat con tu clave'], ['web', 'Ventana web con tu cuenta (Claude, ChatGPT, Gemini)']]),
-        INFO('Tu cuenta, tu clave', 'Pagas solo lo que uses a tu proveedor', 'La app no cobra nada ni usa servidores intermedios. No se usa la suscripción de ChatGPT ni de Claude porque sus términos no lo permiten en apps de terceros.'),
-        INFO('Cifrado de claves', () => (ctx.enc ? 'Disponible' : 'No disponible en este equipo'), 'Las claves se guardan cifradas con Windows (solo tu usuario puede leerlas).', 'ok'),
-      ]),
-      ...AI_PROVIDERS.filter((p) => ctx.set.aiEnabled && ctx.set.aiEnabled[p]).map((p) =>
-        sec(AI_META[p].name, [
-          modelRow(p),
-          ...(AI_META[p].needsKey ? [keyRow(p)] : []),
-          ...(p === 'ollama' ? [{ t: 'text', k: 'ollamaUrl', label: 'Dirección de Ollama', placeholder: 'http://localhost:11434' }] : []),
-          ...(p === 'custom' ? [{ t: 'text', k: 'customBaseUrl', label: 'Dirección de la API', placeholder: 'https://api.ejemplo.com/v1' }] : []),
-        ]),
-      ),
-      sec('Privacidad', [
-        INFO('Mensajes', 'Van directo de tu PC al proveedor'),
-        T('aiSaveHistory', 'Guardar el historial en tu PC'),
-        T('aiIncludeNowPlaying', 'Incluir la canción que suena como contexto'),
-        shortcutRow('shortcutChat'),
-      ]),
+      ...(ctx.set.aiOpenMode === 'web'
+        ? [
+            sec('Con tu cuenta', [
+              ...WEB_AI.map((p) => ({ t: 'toggle', k: '__aiweb', provider: p, label: WEB_AI_META[p].name, note: 'Página oficial dentro de la isla. La sesión se guarda solo en este PC.', rr: true })),
+              { t: 'webselect', label: 'La que sale junto al "+" del calendario' },
+              INFO('Privacidad', 'Hablas directamente con el sitio oficial', 'La app no ve tus mensajes ni tu contraseña: es la página de ese servicio. Para Google, la ventana de inicio de sesión es la oficial de Google.'),
+            ]),
+          ]
+        : [
+            sec('IAs con clave de API (avanzado)', [
+              ...AI_PROVIDERS.map((p) => ({ t: 'toggle', k: '__ai', provider: p, label: AI_META[p].name + (p === 'ollama' ? ' en tu PC' : ''), note: p === 'ollama' ? 'Sin costo y sin internet' : p === 'custom' ? 'Cualquier servicio con API compatible con OpenAI' : '', rr: true })),
+              { t: 'aiselect', k: 'aiProvider', label: 'Proveedor por defecto', note: 'Esta sale junto al "+" del calendario' },
+              INFO('Tu clave, tu cuenta', 'Pagas solo lo que uses a tu proveedor', 'La app no cobra nada ni usa servidores intermedios.'),
+              INFO('Cifrado de claves', () => (ctx.enc ? 'Disponible' : 'No disponible en este equipo'), 'Las claves se guardan cifradas con Windows (solo tu usuario puede leerlas).', 'ok'),
+            ]),
+            ...AI_PROVIDERS.filter((p) => ctx.set.aiEnabled && ctx.set.aiEnabled[p]).map((p) =>
+              sec(AI_META[p].name, [
+                modelRow(p),
+                ...(AI_META[p].needsKey ? [keyRow(p)] : []),
+                ...(p === 'ollama' ? [{ t: 'text', k: 'ollamaUrl', label: 'Dirección de Ollama', placeholder: 'http://localhost:11434' }] : []),
+                ...(p === 'custom' ? [{ t: 'text', k: 'customBaseUrl', label: 'Dirección de la API', placeholder: 'https://api.ejemplo.com/v1' }] : []),
+              ]),
+            ),
+            sec('Privacidad del mini chat', [
+              INFO('Mensajes', 'Van directo de tu PC al proveedor'),
+              T('aiSaveHistory', 'Guardar el historial en tu PC'),
+              T('aiIncludeNowPlaying', 'Incluir la canción que suena como contexto'),
+            ]),
+          ]),
+      sec('Atajo', [shortcutRow('shortcutChat')]),
     ],
   },
   {
@@ -373,6 +383,7 @@ function rowHTML(r) {
   const label = `<span>${esc(r.label)}${r.note ? `<small>${esc(val(r.note))}</small>` : ''}</span>`;
   switch (r.t) {
     case 'toggle':
+      if (r.k === '__aiweb') return `<div class="r">${label}${toggleHTML('__aiweb', !!(ctx.set.aiWebEnabled || {})[r.provider], r.label, `data-provider="${r.provider}" data-rr="1"`)}</div>`;
       if (r.k === '__ai') return `<div class="r">${label}${toggleHTML('__ai', !!(ctx.set.aiEnabled || {})[r.provider], r.label, `data-provider="${r.provider}" data-rr="1"`)}</div>`;
       return `<div class="r">${label}${toggleHTML(r.k, !!ctx.set[r.k], r.label, r.rr ? 'data-rr="1"' : '')}</div>`;
     case 'select': {
@@ -406,6 +417,11 @@ function rowHTML(r) {
       const d = (ctx.info && ctx.info.displays) || [];
       const opts = d.map((x) => `<option value="${x.id}"${String(ctx.set.displayKey) === String(x.id) ? ' selected' : ''}>${esc(x.label)} · ${x.size.width}×${x.size.height}${x.primary ? ' (principal)' : ''}</option>`).join('');
       return `<div class="r">${label}<select data-k="displayKey" aria-label="Pantalla">${opts}</select></div>`;
+    }
+    case 'webselect': {
+      const en = WEB_AI.filter((p) => (ctx.set.aiWebEnabled || {})[p]);
+      const opts = (en.length ? en : ['claude']).map((p) => `<option value="${p}"${ctx.set.aiWebProvider === p ? ' selected' : ''}>${esc(WEB_AI_META[p].name)}</option>`).join('');
+      return `<div class="r">${label}<select data-k="aiWebProvider" aria-label="IA favorita">${opts}</select></div>`;
     }
     case 'aiselect': {
       const en = AI_PROVIDERS.filter((p) => (ctx.set.aiEnabled || {})[p]);
@@ -542,7 +558,9 @@ document.addEventListener('click', async (e) => {
   if (tg) {
     const on = tg.getAttribute('aria-checked') !== 'true';
     tg.setAttribute('aria-checked', String(on));
-    if (tg.dataset.k === '__ai') {
+    if (tg.dataset.k === '__aiweb') {
+      patch({ aiWebEnabled: { ...ctx.set.aiWebEnabled, [tg.dataset.provider]: on } });
+    } else if (tg.dataset.k === '__ai') {
       patch({ aiEnabled: { ...ctx.set.aiEnabled, [tg.dataset.provider]: on } });
     } else if (tg.dataset.k === '__comp') {
       patch({ components: ctx.set.components.map((c) => (c.id === tg.dataset.comp ? { ...c, enabled: on } : c)) });

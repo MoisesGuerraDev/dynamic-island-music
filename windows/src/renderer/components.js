@@ -1,5 +1,5 @@
 // HTML of every component of the home row. Same markup and classes as the mockup, filled with real data.
-import { S, aiMeta, defaultAI } from './state.js';
+import { S, aiMeta, quickAI, webMode, WEB_AI_META } from './state.js';
 import { esc, addDays, dayKey, dayName, monthName } from './util.js';
 import { ic, fi, sourceBadge } from './icons.js';
 import { formatDuration, relativeAge } from '../shared/time.js';
@@ -51,8 +51,7 @@ function player() {
 }
 
 export function aiButton() {
-  const p = defaultAI();
-  const m = aiMeta(p);
+  const { key: p, meta: m } = quickAI();
   return `<button class="nbtn aib" data-act="ai-open" data-ai="${p}" aria-label="Abrir ${esc(m.name)}" title="${esc(m.name)} (dentro del chat cambias de IA)" style="--ac:${m.color}">${esc(m.letter)}</button>`;
 }
 
@@ -132,6 +131,10 @@ function camera() {
 }
 
 function chatMini() {
+  if (webMode()) {
+    const q = quickAI();
+    return `<div class="mc"><div class="mch"><b>${ic('spark')}Chat de IA</b><span class="pill">${esc(q.meta.name)}</span></div><div class="mcb">Inicia sesión con tu cuenta de ${esc(q.meta.name)} y chatea aquí mismo.</div><button class="nbtn pbtn" data-act="ai-open" data-ai="${q.key}">Abrir…</button></div>`;
+  }
   const last = S.chat.messages.length ? S.chat.messages[S.chat.messages.length - 1].text : 'Pregúntale lo que quieras a tu IA favorita.';
   const p = S.chat.provider;
   return `<div class="mc"><div class="mch"><b>${ic('spark')}Chat de IA</b><span class="pill">${esc(aiMeta(p).name)}</span></div><div class="mcb">${esc(last)}</div><button class="nbtn pbtn" data-act="open-view" data-v="chat">Escribir…</button></div>`;

@@ -1,5 +1,5 @@
 // Full tabs of the island: tray, clipboard, chat and the snake game.
-import { S, bus, aiMeta, enabledAI, defaultAI } from './state.js';
+import { S, bus, aiMeta, enabledAI, defaultAI, enabledWebAI, defaultWebAI, WEB_AI_META } from './state.js';
 import { esc } from './util.js';
 import { ic, fi } from './icons.js';
 import { fileColor } from './components.js';
@@ -157,4 +157,36 @@ export function bindGame() {
     e.preventDefault();
     turn(game, d);
   };
+}
+
+// ---------- Chat with your own account (official site inside the island) ----------
+
+const webviews = {};
+
+export function webBarHTML() {
+  const en = enabledWebAI();
+  if (!en.includes(S.chat.web)) S.chat.web = defaultWebAI();
+  const p = S.chat.web;
+  return `<div class="pv">${en.map((k) => `<button aria-pressed="${p === k}" data-act="chat-web" data-p="${k}">${esc(WEB_AI_META[k].name)}</button>`).join('')}</div>
+    <span class="chat-f"><button class="linkbtn" data-act="web-reload">Recargar</button> · <button class="linkbtn" data-act="web-pop">Abrir en ventana</button></span>`;
+}
+
+/** One <webview> per site, created the first time and never moved, so a redraw never reloads the page. */
+export function showWebview(p) {
+  const host = document.getElementById('webviews');
+  for (const k of Object.keys(webviews)) webviews[k].style.display = k === p ? '' : 'none';
+  if (!webviews[p]) {
+    const w = document.createElement('webview');
+    w.className = 'aiw';
+    w.setAttribute('src', WEB_AI_META[p].url);
+    w.setAttribute('partition', `persist:ai-${p}`);
+    w.setAttribute('allowpopups', '');
+    host.appendChild(w);
+    webviews[p] = w;
+  }
+}
+
+export function reloadWebview(p) {
+  const w = webviews[p];
+  if (w && w.reload) w.reload();
 }

@@ -1,5 +1,5 @@
 // Everything the island page knows. The main process owns the real data and pushes changes here.
-import { COMPONENT_META, AI_META, AI_PROVIDERS, DEFAULTS, normalizeComponents } from '../shared/defaults.js';
+import { COMPONENT_META, AI_META, AI_PROVIDERS, DEFAULTS, WEB_AI, WEB_AI_META, normalizeComponents } from '../shared/defaults.js';
 import { paginate } from '../shared/layout.js';
 
 export const S = {
@@ -19,7 +19,7 @@ export const S = {
   hasBattery: null,
   battery: null,
   game: { exclusive: false, busy: false },
-  chat: { provider: 'claude', messages: [], sending: false },
+  chat: { provider: 'claude', web: 'claude', messages: [], sending: false },
   ui: { noteAdding: false, calAdding: false, timeEditing: false, calDay: 0, camOn: false, camError: '' },
   lastPlayedAt: 0,
   rot: 0,
@@ -81,3 +81,32 @@ export function tabsAvailable() {
 export function componentOn(id) {
   return activeComps().some((c) => c.id === id);
 }
+
+// --- AI by signing in with the person's own account (the default) or by API key ---
+
+export function webMode() {
+  return S.set.aiOpenMode === 'web';
+}
+
+export function enabledWebAI() {
+  const on = S.set.aiWebEnabled || {};
+  const list = WEB_AI.filter((p) => on[p]);
+  return list.length ? list : ['claude'];
+}
+
+export function defaultWebAI() {
+  const list = enabledWebAI();
+  return list.includes(S.set.aiWebProvider) ? S.set.aiWebProvider : list[0];
+}
+
+/** Provider and look of the round AI button next to the calendar. */
+export function quickAI() {
+  if (webMode()) {
+    const key = defaultWebAI();
+    return { key, meta: WEB_AI_META[key] };
+  }
+  const key = defaultAI();
+  return { key, meta: AI_META[key] };
+}
+
+export { WEB_AI_META };

@@ -1,10 +1,10 @@
 // The island page: open panel, closed pill, edit mode and every tab. The main process owns the data;
 // this file draws it and sends back what the person does.
-import { S, bus, comps, activeComps, pages, metaOf, tabsAvailable, enabledAI, defaultAI, aiMeta, componentOn } from './state.js';
+import { S, bus, comps, activeComps, pages, metaOf, tabsAvailable, enabledAI, defaultAI, aiMeta, componentOn, webMode, defaultWebAI } from './state.js';
 import { esc, $, $$, dayKey } from './util.js';
 import { ic, fi } from './icons.js';
 import { colHTML, musicPos, pomoRemaining, timeFontSize, perfHTML } from './components.js';
-import { trayHTML, clipHTML, chatHTML, bindChat, gameHTML, bindGame, stopGame, focusChatInput } from './views.js';
+import { trayHTML, clipHTML, chatHTML, bindChat, gameHTML, bindGame, stopGame, focusChatInput, webBarHTML, showWebview, reloadWebview } from './views.js';
 import { editBarHTML, bindEdit, setComps } from './edit.js';
 import { setLensEnabled, startLens } from './lens.js';
 import { startAmbient } from './ambient.js';
@@ -120,6 +120,21 @@ function setWidth(px) {
 }
 
 function renderRow() {
+  const web = S.view === 'chat' && webMode();
+  $('#row').hidden = web;
+  $('#webdock').hidden = !web;
+  if (web) {
+    // The embedded site is never rebuilt: only the bar above it is.
+    $('#ntabs-m').innerHTML = '';
+    $('#editbar').hidden = true;
+    $('#webbar').innerHTML = webBarHTML();
+    showWebview(S.chat.web);
+    const homeW = openWidth(pages()[Math.min(S.page, pages().length - 1)] || [], S.info.cap);
+    setWidth(Math.min(S.info.cap, Math.max(680, homeW)));
+    renderPill();
+    scheduleRect();
+    return;
+  }
   keepFocus(() => {
     const row = $('#row');
     stopGame();
@@ -446,7 +461,16 @@ function stopCam() {
 
 function setView(v) {
   if (S.view === v) return;
+  const wasWeb = S.view === 'chat' && webMode();
   S.view = v;
+  if (v === 'chat' && webMode()) {
+    // Typing into the site needs the keyboard: take it while this tab is showing.
+    dim.island.pin('web', true);
+    dim.island.wantFocus(true);
+  } else if (wasWeb) {
+    dim.island.pin('web', false);
+    dim.island.wantFocus(false);
+  }
   S.editing = false;
   dim.island.pin('edit', false);
   stopGame();
@@ -465,6 +489,7 @@ function setOpenLocal(open) {
     S.page = 0;
     stopGame();
     stopCam();
+    dim.island.pin('web', false);
     dim.island.wantFocus(false);
     renderTabs();
     renderRow();
@@ -539,14 +564,24 @@ const actions = {
   'cal-del': (t) => dim.calendar.remove(t.dataset.id),
   'ai-open': (t) => {
     const p = t.dataset.ai;
-    if (S.set.aiOpenMode === 'web' && ['claude', 'openai', 'gemini'].includes(p)) {
-      dim.ai.openWeb(p);
+    if (webMode()) {
+      S.chat.web = p;
+      dim.settings.patch({ aiWebProvider: p });
+      if (S.view === 'chat') renderRow();
+      else setView('chat');
       return;
     }
     S.chat.provider = p;
     setView('chat');
     if (S.view === 'chat') renderRow();
   },
+  'chat-web': (t) => {
+    S.chat.web = t.dataset.p;
+    dim.settings.patch({ aiWebProvider: t.dataset.p });
+    renderRow();
+  },
+  'web-reload': () => reloadWebview(S.chat.web),
+  'web-pop': () => dim.ai.openWeb(S.chat.web),
   // notes
   'note-add': () => {
     S.ui.noteAdding = !S.ui.noteAdding;
@@ -737,6 +772,7 @@ async function boot() {
   S.shelf = shelf;
   S.chat.messages = (hist || []).map((m) => ({ role: m.role, text: m.text }));
   S.chat.provider = defaultAI();
+  S.chat.web = defaultWebAI();
 
   dim.settings.onChange((changed) => {
     Object.assign(S.set, changed);
@@ -756,6 +792,7 @@ async function boot() {
   dim.island.onCommand((c) => {
     if (c.name === 'open-chat') {
       S.chat.provider = defaultAI();
+      S.chat.web = defaultWebAI();
       if (S.view === 'chat') renderRow();
       else setView('chat');
       setTimeout(focusChatInput, 120);

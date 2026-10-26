@@ -361,3 +361,8 @@ button.ct:hover { background: rgba(255, 255, 255, .14); }
 @keyframes gin { from { opacity: 0; transform: translateY(-8px) scale(.94); } }
 
 @media (prefers-reduced-motion: reduce) { .notch.g-strong { animation: none; } .viz i { animation: none; height: 60%; } .col.ed { animation: none; } }
+
+/* AI with your own account: the official site inside the island */
+.webdock { display: flex; flex-direction: column; gap: 8px; }
+.webdock[hidden] { display: none; }
+.aiw { display: block; width: 100%; height: 262px; border-radius: 16px; overflow: hidden; background: #000; border: 1px solid rgba(255, 255, 255, .12); }

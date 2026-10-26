@@ -97,6 +97,30 @@ try {
     errors.push(...[]);
   }
 
+  // AI tab: the official site is embedded with the person's own account (no API key).
+  await page.click('[data-act="tab"][data-v="chat"]');
+  await page.waitForTimeout(2500);
+  const web = await page.evaluate(() => {
+    const w = document.querySelector('webview');
+    let id = null;
+    try { id = w && w.getWebContentsId(); } catch { /* not attached */ }
+    return { has: !!w, id, dockVisible: !document.getElementById('webdock').hidden, src: w && w.getAttribute('src') };
+  });
+  check('pestaña de IA muestra la página oficial dentro de la isla', web.has && web.dockVisible && typeof web.id === 'number', JSON.stringify(web));
+  await page.screenshot({ path: path.join(out, 'island-ai.png') });
+  await page.click('[data-act="tab"][data-v="home"]');
+
+  // Closed island: cover on the left, timer on the right, both sides the same width.
+  await app.evaluate(() => { const c = globalThis.__DIM__; const i = c.islands.first(); i.pins.clear(); c.islands.setOpen(i, false); });
+  await page.waitForTimeout(1200);
+  const pill = await page.evaluate(() => {
+    const p = document.getElementById('pill');
+    const l = p.querySelector('.lside'), r = p.querySelector('.rside');
+    return { off: p.classList.contains('off'), l: l && l.getBoundingClientRect().width, r: r && r.getBoundingClientRect().width, w: p.getBoundingClientRect().width, text: p.textContent.trim() };
+  });
+  check('isla cerrada muestra música y Pomodoro, lados simétricos', !pill.off && pill.l > 0 && Math.abs(pill.l - pill.r) < 2, JSON.stringify(pill));
+  await page.screenshot({ path: path.join(out, 'island-closed.png'), clip: { x: 0, y: 0, width: 1198, height: 120 } });
+
   // Settings changes reach the island.
   await app.evaluate(() => globalThis.__DIM__.store.set('glowStyle', 'strong'));
   await page.waitForTimeout(300);

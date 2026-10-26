@@ -62,7 +62,7 @@ struct WelcomeView: View {
                 .padding(.top)
             }
             
-            Text(AppInfo.basedOn)
+            Text(AppInfo.author)
                 .font(.caption)
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)

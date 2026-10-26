@@ -283,19 +283,11 @@ struct GlassSettings: View {
                     ForEach(GlowStyle.allCases) { Text($0.title).tag($0) }
                 }
                 .pickerStyle(.segmented)
-                Picker("Color", selection: $glowColorMode) {
-                    ForEach(GlowColorMode.allCases) { Text($0.title).tag($0) }
-                }
-                .pickerStyle(.segmented)
-                if glowColorMode == .custom {
-                    ColorPicker("Tu color", selection: Binding(
-                        get: { Color(nsColor: NSColor(hex: glowCustomHex) ?? .systemPink) },
-                        set: { glowCustomHex = NSColor($0).hexString }), supportsOpacity: false)
-                }
+                GlowColorControls()
             } header: {
                 Text("Color")
             } footer: {
-                Text("Por defecto toma los dos colores principales de la carátula. Abajo se regula aparte la luz de adentro y la de afuera.")
+                Text("Automático toma los colores de lo que escuchas. Arcoíris usa todos los colores. En Mis colores eliges dos con cuadros, la rueda o el gotero. Abajo se regula aparte la luz de adentro y la de afuera.")
             }
 
             Section {

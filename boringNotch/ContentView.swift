@@ -32,6 +32,7 @@ struct ContentView: View {
     @Default(.notchBorder) var notchBorder
     @Default(.glowMotion) var glowMotion
     @Default(.glowSpread) var glowSpread
+    @Default(.glowColorMode) var glowColorMode
     @Default(.danceSize) var danceSize
     @Default(.livePomodoro) var livePomodoro
     @Default(.liveControls) var liveControls
@@ -82,7 +83,7 @@ struct ContentView: View {
     }
 
     private var glowOn: Bool {
-        glowStyle != .off && (vm.notchState == .open || musicManager.isPlaying)
+        glowStyle != .off && (vm.notchState == .open || musicManager.isPlaying || glowColorMode == .rainbow)
     }
 
     private var glowOpacity: Double {
@@ -222,7 +223,8 @@ struct ContentView: View {
                         if glowOn {
                             NotchGlow(shape: currentNotchShape, color: Color(nsColor: musicManager.glowColor),
                                       opacity: glowOpacity, radius: glowRadius, dances: glowMotion && musicManager.isPlaying,
-                                      amount: danceSize.danceFactor, intensity: glowIntensity)
+                                      amount: danceSize.danceFactor, intensity: glowIntensity,
+                                      rainbow: glowColorMode == .rainbow)
                         }
                     }
                     .padding(

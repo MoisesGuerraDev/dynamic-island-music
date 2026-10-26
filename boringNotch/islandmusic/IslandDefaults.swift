@@ -171,6 +171,7 @@ extension Defaults.Keys {
     /// Where the glow color comes from: the cover of the song, or a color the person picks.
     static let glowColorMode = Key<GlowColorMode>("glowColorMode", default: .cover)
     static let glowCustomHex = Key<String>("glowCustomHex", default: "#FF3B5C")
+    static let glowCustomHex2 = Key<String>("glowCustomHex2", default: "#4D7CFF")
     /// 0 = solid black notch, 1 = full glass.
     static let glassAmount = Key<Double>("glassAmount", default: 0)
     /// Shrink the closed notch's sides to the free room in the menu bar.
@@ -273,9 +274,20 @@ enum NotchBorder: String, CaseIterable, Identifiable, Defaults.Serializable {
 }
 
 enum GlowColorMode: String, CaseIterable, Identifiable, Defaults.Serializable {
-    case cover, custom
+    /// Follows what is playing: the colors of the cover.
+    case cover
+    /// Every color, slowly turning.
+    case rainbow
+    /// Two colors the person picks.
+    case custom
     var id: String { rawValue }
-    var title: String { self == .cover ? "De la carátula" : "Elegir un color" }
+    var title: String {
+        switch self {
+        case .cover: "Automático"
+        case .rainbow: "Arcoíris"
+        case .custom: "Mis colores"
+        }
+    }
 }
 
 enum GlowSize: String, CaseIterable, Identifiable, Defaults.Serializable {

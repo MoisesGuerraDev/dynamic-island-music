@@ -83,7 +83,7 @@ class MusicManager: ObservableObject {
 
         startAutoObservers()
         startAutoProbe()
-        Defaults.publisher(keys: .glowColorMode, .glowCustomHex, options: [])
+        Defaults.publisher(keys: .glowColorMode, .glowCustomHex, .glowCustomHex2, options: [])
             .sink { [weak self] _ in self?.calculateAverageColor() }
             .store(in: &cancellables)
 
@@ -700,9 +700,9 @@ class MusicManager: ObservableObject {
                         self.glowColor2 = self.glowColor
                     }
                     if Defaults[.glowColorMode] == .custom {
-                        let chosen = NSColor(hex: Defaults[.glowCustomHex]) ?? .systemPink
-                        self.glowColor = chosen
-                        self.glowColor2 = chosen.shiftedHue(by: 0.09)
+                        let first = NSColor(hex: Defaults[.glowCustomHex]) ?? .systemPink
+                        self.glowColor = first
+                        self.glowColor2 = NSColor(hex: Defaults[.glowCustomHex2]) ?? first.shiftedHue(by: 0.09)
                     }
                 }
             }

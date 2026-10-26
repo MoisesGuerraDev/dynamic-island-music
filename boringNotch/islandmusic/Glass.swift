@@ -187,9 +187,10 @@ struct AmbientLight: View {
     @Default(.innerMotion) var motion
     @Default(.innerSpread) var spreadSize
     @Default(.innerDance) var danceSize
+    @Default(.glowColorMode) var colorMode
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: !(motion && music.isPlaying))) { tl in
+        TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: !((motion && music.isPlaying) || colorMode == .rainbow))) { tl in
             light(date: tl.date)
         }
         .allowsHitTesting(false)
@@ -215,6 +216,20 @@ struct AmbientLight: View {
             // Past the point where the light is already at full strength, more intensity keeps adding light on top.
             let extra = min(1, max(0, intensity - 1.5) / 2.5)
             ZStack {
+                if colorMode == .rainbow {
+                    // Every color, turning slowly: five lights spread across the notch.
+                    ForEach(0..<5, id: \.self) { i in
+                        let hue = (t * 0.045 + Double(i) / 5).truncatingRemainder(dividingBy: 1)
+                        let col = Color(hue: hue, saturation: 0.95, brightness: 1)
+                        let width = g.size.width * (0.42 + 0.06 * beat) * spread
+                        Ellipse()
+                            .fill(RadialGradient(colors: [col.opacity(strength), col.opacity(strength * 0.3), .clear], center: .center, startRadius: 0, endRadius: width / 2))
+                            .frame(width: width, height: g.size.height * (1.4 + 0.2 * beat))
+                            .blur(radius: 26)
+                            .position(x: g.size.width * (0.1 + 0.2 * Double(i)) + px * (0.8 + 0.2 * Double(i)) + (i % 2 == 0 ? dx : -dx),
+                                      y: g.size.height * (0.62 + 0.08 * sin(t * 0.6 + Double(i))) + py + dy)
+                    }
+                } else {
                 Ellipse()
                     .fill(RadialGradient(colors: [c.opacity(strength), c.opacity(strength * 0.35), .clear], center: .center, startRadius: 0, endRadius: g.size.width * 0.34))
                     .frame(width: g.size.width * (0.8 + 0.1 * beat) * spread, height: g.size.height * (1.7 + 0.3 * beat))
@@ -239,6 +254,7 @@ struct AmbientLight: View {
                     .frame(width: g.size.width * (0.5 + 0.08 * beat) * spread, height: g.size.height * (1.3 + 0.2 * beat))
                     .blur(radius: 40)
                     .position(x: g.size.width * 0.5 + px * 1.6 - dx * 1.4, y: g.size.height * 0.7 + py * 1.6 - dy * 1.2)
+                }
                 if let p {
                     Circle()
                         .fill(RadialGradient(colors: [c.opacity(0.95), .clear], center: .center, startRadius: 0, endRadius: 95))
@@ -265,15 +281,24 @@ struct NotchGlow: View {
     let dances: Bool
     var amount: Double = 1
     var intensity: Double = 1
+    var rainbow = false
+
+    /// What the glow is painted with: the cover color, or every color along the notch.
+    private func paint(_ t: Double) -> AnyShapeStyle {
+        guard rainbow else { return AnyShapeStyle(color) }
+        let stops = (0...6).map { Color(hue: (t * 0.045 + Double($0) / 6).truncatingRemainder(dividingBy: 1), saturation: 0.95, brightness: 1) }
+        return AnyShapeStyle(LinearGradient(colors: stops, startPoint: .leading, endPoint: .trailing))
+    }
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: !dances)) { tl in
+        TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: !(dances || rainbow))) { tl in
             let beat = dances ? BeatPulse.shared.sample(at: tl.date) * amount : 0
+            let paint = paint(tl.date.timeIntervalSinceReferenceDate)
             let swell = 0.55 + 0.8 * min(beat, 1.4)
             ZStack {
                 // Soft halo.
                 shape
-                    .fill(color)
+                    .fill(paint)
                     .opacity(min(1, opacity * 0.55 * swell))
                     .blur(radius: radius * (0.9 + 0.5 * beat))
                     .scaleEffect(1 + 0.04 * beat)
@@ -281,7 +306,7 @@ struct NotchGlow: View {
                 // More intensity than the base glow can show adds a hot bloom under the notch.
                 if intensity > 1.5 {
                     shape
-                        .fill(color)
+                        .fill(paint)
                         .opacity(min(1, (intensity - 1.5) * 0.45 * swell))
                         .blur(radius: radius * 1.5)
                         .blendMode(.plusLighter)
@@ -289,7 +314,7 @@ struct NotchGlow: View {
                 }
                 // Tight bright edge right under the notch.
                 shape
-                    .fill(color)
+                    .fill(paint)
                     .opacity(min(1, opacity * 0.9 * swell))
                     .blur(radius: max(3, radius * 0.3))
                     .offset(y: 3)

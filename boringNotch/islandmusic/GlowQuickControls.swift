@@ -28,6 +28,8 @@ struct GlowQuickControls: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
+            GlowColorControls()
+            Divider()
             group("Luz de adentro", intensity: $innerIntensity, spread: $innerSpread, motion: $innerMotion, dance: $innerDance)
             Divider()
             group("Luz de afuera (isla cerrada)", intensity: $glowIntensity, spread: $glowSpread, motion: $glowMotion, dance: $danceSize)
@@ -40,7 +42,7 @@ struct GlowQuickControls: View {
             }
         }
         .padding(16)
-        .frame(width: 380)
+        .frame(width: 400)
     }
 
     private func group(_ title: String, intensity: Binding<Double>, spread: Binding<GlowSize>, motion: Binding<Bool>, dance: Binding<GlowSize>) -> some View {

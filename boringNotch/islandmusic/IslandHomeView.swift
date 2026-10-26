@@ -207,38 +207,48 @@ struct EditBar: View {
     var body: some View {
         let off = layout.configs.filter { !$0.enabled }
         HStack(spacing: 10) {
-            Text("Arrastra para ordenar. Tira de la esquina para cambiar el tamaño.")
-                .font(.system(size: 11))
-                .foregroundStyle(.gray)
-                .lineLimit(1)
-            if pageCount > 1 {
-                Text("Aquí no caben todos: el resto pasa a la página 2")
-                    .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(.orange)
-                    .lineLimit(1)
-            }
-            Spacer(minLength: 6)
-            ForEach(off.prefix(5)) { c in
-                Button {
-                    withAnimation(.smooth) { layout.setEnabled(c.id, true) }
-                } label: {
-                    Label(c.id.title, systemImage: "plus")
-                        .font(.system(size: 11, weight: .medium))
-                        .padding(.horizontal, 9).padding(.vertical, 4)
-                        .foregroundStyle(.white)
-                }
-                .buttonStyle(.plain)
-                .islandGlass(Capsule())
-            }
-            Text(String(format: "Espacio %.0f%%", layout.usage(for: vm.screenUUID)))
-                .font(.system(size: 11, weight: .semibold, design: .monospaced))
-                .foregroundStyle(layout.usage(for: vm.screenUUID) > 100 ? Color.orange : Color.gray)
             Button("Listo") { withAnimation(.smooth) { layout.editing = false } }
                 .buttonStyle(.plain)
                 .font(.system(size: 12, weight: .semibold))
                 .foregroundStyle(.white)
                 .padding(.horizontal, 12).padding(.vertical, 4)
                 .islandGlass(Capsule(), tint: .blue.opacity(0.5))
+
+            Text(pageCount > 1 ? "No caben todos: el resto pasa a la página 2" : "Arrastra para ordenar · esquina = tamaño")
+                .font(.system(size: 11, weight: pageCount > 1 ? .medium : .regular))
+                .foregroundStyle(pageCount > 1 ? Color.orange : Color.gray)
+                .lineLimit(1)
+                .fixedSize()
+
+            // Every component that is turned off can be added from here (the row scrolls if they do not all fit).
+            if !off.isEmpty {
+                ScrollView(.horizontal, showsIndicators: false) {
+                    HStack(spacing: 6) {
+                        ForEach(off) { c in
+                            Button {
+                                withAnimation(.smooth) { layout.setEnabled(c.id, true) }
+                            } label: {
+                                Label(c.id.title, systemImage: "plus")
+                                    .font(.system(size: 11, weight: .medium))
+                                    .padding(.horizontal, 9).padding(.vertical, 4)
+                                    .foregroundStyle(.white)
+                                    .fixedSize()
+                            }
+                            .buttonStyle(.plain)
+                            .islandGlass(Capsule())
+                        }
+                    }
+                    .padding(.vertical, 2)
+                }
+                .frame(maxWidth: .infinity)
+            } else {
+                Spacer(minLength: 6)
+            }
+
+            Text(String(format: "Espacio %.0f%%", layout.usage(for: vm.screenUUID)))
+                .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                .foregroundStyle(layout.usage(for: vm.screenUUID) > 100 ? Color.orange : Color.gray)
+                .fixedSize()
         }
         .padding(.horizontal, 12)
         .frame(height: 32)

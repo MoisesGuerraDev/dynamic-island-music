@@ -4,7 +4,7 @@ import { S, bus, comps, activeComps, pages, metaOf, tabsAvailable, enabledAI, de
 import { esc, $, $$, dayKey } from './util.js';
 import { ic, fi } from './icons.js';
 import { colHTML, musicPos, pomoRemaining, timeFontSize, perfHTML } from './components.js';
-import { trayHTML, clipHTML, chatHTML, bindChat, gameHTML, bindGame, stopGame, focusChatInput, webBarHTML, showWebview, reloadWebview, resetWebviews } from './views.js';
+import { trayHTML, clipHTML, chatHTML, bindChat, gameHTML, bindGame, stopGame, focusChatInput, lockHTML, bindLock, webBarHTML, showWebview, reloadWebview, resetWebviews } from './views.js';
 import { editBarHTML, bindEdit, setComps } from './edit.js';
 import { setLensEnabled, startLens } from './lens.js';
 import { startAmbient } from './ambient.js';
@@ -170,10 +170,11 @@ function syncHalo() {
 }
 
 function renderRow() {
-  const web = S.view === 'chat' && webMode();
+  const web = S.view === 'chat' && webMode() && !S.lock.locked;
   $('#row').hidden = web;
   $('#webdock').hidden = !web;
   if (web) {
+    $('#row').innerHTML = '';
     // The embedded site is never rebuilt: only the bar above it is.
     $('#ntabs-m').innerHTML = '';
     $('#editbar').hidden = true;
@@ -202,6 +203,9 @@ function renderRow() {
       else if (S.view === 'game') {
         row.innerHTML = gameHTML();
         bindGame();
+      } else if (S.view === 'chat' && S.lock.locked) {
+        row.innerHTML = lockHTML();
+        bindLock();
       } else if (S.view === 'chat') {
         row.innerHTML = chatHTML();
         bindChat();
@@ -527,7 +531,7 @@ function setView(v) {
   stopGame();
   renderTabs();
   renderRow();
-  if (v === 'chat') setTimeout(focusChatInput, 60);
+  if (v === 'chat' && !S.lock.locked) setTimeout(focusChatInput, 60);
 }
 
 function setOpenLocal(open) {
@@ -631,6 +635,15 @@ const actions = {
     S.chat.web = t.dataset.p;
     dim.settings.patch({ aiWebProvider: t.dataset.p });
     renderRow();
+  },
+  'lock-hello': async (t) => {
+    t.disabled = true;
+    const r = await dim.ailock.unlockHello();
+    t.disabled = false;
+    if (!(r && r.ok)) {
+      S.ui.lockMsg = (r && r.error) || 'No se pudo verificar que eres tú.';
+      renderRow();
+    }
   },
   'web-reload': () => reloadWebview(S.chat.web),
   'web-pop': () => dim.ai.openWeb(S.chat.web),
@@ -801,7 +814,7 @@ async function boot() {
   if (!window.dim) await import('./dev-shim.js');
   dim = window.dim;
 
-  const [set, info, music, pomo, notes, clip, cal, shelf, hist] = await Promise.all([
+  const [set, info, music, pomo, notes, clip, cal, shelf, hist, lock] = await Promise.all([
     dim.settings.getAll(),
     dim.island.info(),
     dim.music.get(),
@@ -811,7 +824,9 @@ async function boot() {
     dim.calendar.list(),
     dim.shelf.list(),
     dim.ai.history(),
+    dim.ailock.state(),
   ]);
+  if (lock) S.lock = lock;
   S.set = set;
   if (info) S.info = info;
   S.open = !!(info && info.open);
@@ -848,6 +863,20 @@ async function boot() {
       if (S.view === 'chat') renderRow();
       else setView('chat');
       setTimeout(focusChatInput, 120);
+    }
+  });
+  dim.ailock.onState((l) => {
+    const was = S.lock.locked;
+    const changed = JSON.stringify(S.lock) !== JSON.stringify(l);
+    S.lock = l;
+    if (!l.locked) S.ui.lockMsg = '';
+    if (S.view === 'chat' && changed) {
+      // The chat showed, or hid, the lock screen: the first time it opens, give the input the keyboard.
+      if (was && !l.locked && webMode()) {
+        dim.island.pin('web', true);
+        dim.island.wantFocus(true);
+      }
+      renderRow();
     }
   });
   dim.ai.onSignedOut(() => {

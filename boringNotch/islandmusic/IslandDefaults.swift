@@ -225,6 +225,9 @@ extension Defaults.Keys {
     static let aiUseKey = Key<[String: Bool]>("aiUseKey", default: [:])
     static let aiModels = Key<[String: String]>("aiModels", default: [:])
     static let aiSaveHistory = Key<Bool>("aiSaveHistory", default: true)
+    /// Folder (security-scoped bookmark) where an encrypted copy of the AI sign-ins is kept.
+    static let sessionFolderBookmark = Key<Data?>("sessionFolderBookmark", default: nil)
+    static let sessionBackupAuto = Key<Bool>("sessionBackupAuto", default: true)
     /// Ask for the fingerprint before opening the AI chat (on by default when this Mac has Touch ID).
     static let aiTouchID = Key<Bool>("aiTouchID", default: AILock.biometricsAvailable)
 

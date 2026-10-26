@@ -88,7 +88,7 @@ export class PsRpc extends EventEmitter {
   }
 
   /** Sends a request and waits for its reply. Rejects on timeout (and restarts the helper). */
-  call(cmd, args = {}) {
+  call(cmd, args = {}, { timeoutMs = this.timeoutMs } = {}) {
     if (this.dead) return Promise.reject(new Error(`${this.name} no está disponible`));
     if (!this.child) this.start();
     if (!this.child) return Promise.reject(new Error(`${this.name} no está disponible`));
@@ -106,7 +106,7 @@ export class PsRpc extends EventEmitter {
             /* ignore */
           }
         }
-      }, this.timeoutMs);
+      }, timeoutMs);
       this.pending.set(id, { resolve, reject, timer });
       try {
         this.child.stdin.write(`${JSON.stringify({ id, cmd, ...args })}\n`);

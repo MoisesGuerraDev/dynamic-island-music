@@ -19,6 +19,8 @@ import { AppTray } from './tray.js';
 import { PsRpc } from './psrpc.js';
 import { registerIpc } from './ipc.js';
 import { AiSession } from './aisession.js';
+import { AiLock } from './ailock.js';
+import { PinVault } from './pin.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(here, '..', '..');
@@ -109,7 +111,10 @@ async function boot(ctx) {
   const aiSession = new AiSession();
   aiSession.start();
 
-  Object.assign(ctx, { aiSession, store, secrets, helper, islands, system, media, pomodoro, notes, clip, ai, perf, calendar, shelf });
+  const aiLock = new AiLock({ store, vault: new PinVault(path.join(userData, 'aipin.json')), helper });
+  islands.onClosed = () => aiLock.relock();
+
+  Object.assign(ctx, { aiLock, aiSession, store, secrets, helper, islands, system, media, pomodoro, notes, clip, ai, perf, calendar, shelf });
 
   // --- Commands from shortcuts and the tray ---
   const send = (name, extra = {}) => islands.send('cmd', { name, ...extra });
@@ -157,6 +162,8 @@ async function boot(ctx) {
   const notesPayload = () => ({ items: notes.list(), info: notes.info() });
   const clipPayload = () => ({ items: clip.list().map(({ id, kind, text, thumb, date, app: a }) => ({ id, kind, text, thumb, date, app: a })), paused: store.get('clipPaused') });
 
+  aiLock.on('state', (s) => everyone('ailock:state', s));
+  aiLock.refresh();
   media.on('state', (s) => everyone('music:state', s));
   pomodoro.on('state', (s) => {
     everyone('pomo:state', s);
@@ -223,6 +230,7 @@ async function boot(ctx) {
       everyone('clip:changed', clipPayload());
       ctx.tray.update();
     }
+    if (has('aiLock', 'aiLockPreferPin')) aiLock.settingsChanged();
     if (has('perfInterval')) perf.reschedule();
     if (has('notesFolder')) notes.reload();
     if (has('gameHideExclusive', 'gameBasicOnly')) watchGame();

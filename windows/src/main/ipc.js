@@ -12,7 +12,7 @@ const WEB_AI = {
 
 /** Wires every call a page can make. A call from anything that is not one of our own windows is ignored. */
 export function registerIpc(ctx) {
-  const { store, islands, media, pomodoro, notes, clip, ai, perf, system, calendar, shelf, shortcuts, secrets, aiSession } = ctx;
+  const { store, islands, media, pomodoro, notes, clip, ai, perf, system, calendar, shelf, shortcuts, secrets, aiSession, aiLock } = ctx;
 
   const trusted = (sender) => !!islands.find(sender) || (islands.settingsWin && !islands.settingsWin.isDestroyed() && islands.settingsWin.webContents === sender);
   const handle = (channel, fn) =>
@@ -161,6 +161,27 @@ export function registerIpc(ctx) {
     await aiSession.signOutAll();
     islands.send('ai:signedOut', true);
     return true;
+  });
+  handle('ailock:state', () => aiLock.state());
+  handle('ailock:refresh', () => aiLock.refresh());
+  handle('ailock:unlockHello', () => aiLock.unlockHello());
+  handle('ailock:unlockPin', (_e, pin) => aiLock.unlockPin(pin));
+  handle('ailock:setPin', (_e, pin) => {
+    if (aiLock.vault.isSet()) return { ok: false, error: 'Ya hay un PIN: usa Cambiar PIN.' };
+    const r = aiLock.vault.set(String(pin ?? ''));
+    aiLock.emit('state', aiLock.state());
+    return r;
+  });
+  handle('ailock:changePin', (_e, oldPin, newPin) => {
+    const r = aiLock.vault.change(String(oldPin ?? ''), String(newPin ?? ''));
+    aiLock.emit('state', aiLock.state());
+    return r;
+  });
+  handle('ailock:removePin', (_e, pin) => {
+    const r = aiLock.vault.remove(String(pin ?? ''));
+    if (r.ok) aiLock.unlocked = false;
+    aiLock.emit('state', aiLock.state());
+    return r;
   });
   handle('ai:encryptionAvailable', () => secrets.available());
   listen('ai:openWeb', (_e, provider) => {

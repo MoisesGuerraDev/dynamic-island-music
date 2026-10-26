@@ -6,7 +6,7 @@ import { ic } from './icons.js';
 import { esc, $, $$ } from './util.js';
 
 let dim;
-const ctx = { set: {}, info: null, notes: null, keys: {}, shortcuts: {}, enc: true, app: null, events: [], clip: { items: [] }, shelf: [] };
+const ctx = { lock: { mode: 'none', hello: false, pinSet: false, needsPin: false }, set: {}, info: null, notes: null, keys: {}, shortcuts: {}, enc: true, app: null, events: [], clip: { items: [] }, shelf: [] };
 let curTab = 'general';
 
 const SHORTCUT_NAMES = {
@@ -58,6 +58,16 @@ function screenInfoRows() {
   const d = (ctx.info && ctx.info.displays) || [];
   if (!d.length) return [INFO('Pantallas', 'Detectando…')];
   return d.map((x, i) => INFO(`${x.label}${x.primary ? ' (principal)' : ''}`, `${x.pixels.width} × ${x.pixels.height} px · se ve como ${x.size.width} × ${x.size.height} · ${Math.round(x.scaleFactor * 100)} % · ${x.hz} Hz`));
+}
+
+function pinHTML() {
+  const L = ctx.lock;
+  const need = L.needsPin ? '<small style="color:var(--warn)">Falta crear el PIN: hasta entonces el chat queda bloqueado.</small>' : '';
+  return `<div class="r col"><span>${L.pinSet ? 'Cambiar o quitar el PIN de la app' : 'Crear un PIN de la app'}<small>De 4 a 8 dígitos. Se guarda solo como hash con sal, nunca el PIN en claro. Tras 5 fallos hay que esperar, cada vez más.</small>${need}</span>
+    <span class="keyrow">${L.pinSet ? '<input type="password" inputmode="numeric" maxlength="8" id="pin-old" placeholder="PIN actual" autocomplete="off" aria-label="PIN actual">' : ''}
+    <input type="password" inputmode="numeric" maxlength="8" id="pin-new" placeholder="PIN nuevo" autocomplete="off" aria-label="PIN nuevo">
+    <input type="password" inputmode="numeric" maxlength="8" id="pin-new2" placeholder="Repite el PIN" autocomplete="off" aria-label="Repite el PIN">
+    <button class="btn primary" data-do="pin-save">${L.pinSet ? 'Cambiar PIN' : 'Guardar PIN'}</button>${L.pinSet ? '<button class="btn danger" data-do="pin-remove">Quitar PIN</button>' : ''}</span></div>`;
 }
 
 // ---------- Tabs ----------
@@ -238,6 +248,12 @@ const TABS = [
       sec('Cómo usar la IA', [
         SEL('aiOpenMode', 'Forma de usarla', [['web', 'Con tu cuenta (iniciar sesión dentro de la isla)'], ['mini', 'Con tu clave de API (mini chat)']], 'Con tu cuenta no hace falta ninguna clave: abres la página oficial dentro de la isla e inicias sesión, también con Google.', { rr: true }),
       ]),
+      sec('Bloqueo del chat de IA', [
+        SEL('aiLock', 'Pedir confirmación para abrir el chat', [['auto', 'Automático: Windows Hello si está disponible'], ['secure', 'Windows Hello o PIN de la app'], ['none', 'Sin bloqueo']], 'Se vuelve a bloquear cada vez que se cierra la isla. Solo tapa el chat: no borra tu sesión guardada.', { rr: true }),
+        INFO('Windows Hello', () => (ctx.lock.hello ? 'Disponible (huella, cara o PIN de Windows)' : 'No disponible en este equipo'), () => (ctx.lock.hello ? '' : 'Sin Windows Hello se usa el PIN de la app, si eliges «Windows Hello o PIN de la app».'), () => (ctx.lock.hello ? 'ok' : 'warn')),
+        { ...T('aiLockPreferPin', 'Usar el PIN de la app en vez de Windows Hello', null, { rr: true }), when: (s) => s.aiLock !== 'none' },
+        { ...HTML(pinHTML), when: (s) => s.aiLock !== 'none' },
+      ]),
       ...(ctx.set.aiOpenMode === 'web'
         ? [
             sec('Con tu cuenta', [
@@ -413,7 +429,7 @@ function rowHTML(r) {
     case 'button':
       return `<div class="r">${label}<button class="btn${r.danger ? ' danger' : ''}" data-do="${r.act}">${esc(r.btn)}</button></div>`;
     case 'info':
-      return `<div class="r"><span>${esc(r.label)}${r.note ? `<small>${esc(val(r.note))}</small>` : ''}</span><span class="val ${r.cls || ''}">${esc(val(r.value))}</span></div>`;
+      return `<div class="r"><span>${esc(r.label)}${r.note ? `<small>${esc(val(r.note))}</small>` : ''}</span><span class="val ${typeof r.cls === 'function' ? r.cls() : r.cls || ''}">${esc(val(r.value))}</span></div>`;
     case 'html':
       return r.html();
     case 'display': {
@@ -696,6 +712,22 @@ async function doAction(b) {
       say('Clave borrada.');
       render();
       break;
+    case 'pin-save': {
+      const a = $('#pin-new').value;
+      if (a !== $('#pin-new2').value) return say('Los dos PIN no coinciden.');
+      const r = ctx.lock.pinSet ? await dim.ailock.changePin($('#pin-old').value, a) : await dim.ailock.setPin(a);
+      if (r && r.ok) say(ctx.lock.pinSet ? 'PIN cambiado.' : 'PIN guardado.');
+      else if (r && r.retryIn) say(`Demasiados intentos. Espera ${r.retryIn} s.`);
+      else say((r && r.error) || (r && typeof r.attemptsLeft === 'number' ? `PIN actual incorrecto. Te quedan ${r.attemptsLeft} intentos.` : 'No se pudo guardar el PIN.'));
+      break;
+    }
+    case 'pin-remove': {
+      const r = await dim.ailock.removePin($('#pin-old').value);
+      if (r && r.ok) say('PIN quitado.');
+      else if (r && r.retryIn) say(`Demasiados intentos. Espera ${r.retryIn} s.`);
+      else say('Escribe tu PIN actual para quitarlo.');
+      break;
+    }
     case 'ai-signout':
       if (await dim.ai.signOutAll()) say('Sesiones cerradas.');
       break;
@@ -778,7 +810,7 @@ async function doAction(b) {
 // ---------- Boot ----------
 
 async function loadAll() {
-  const [set, info, notes, app, shortcuts, enc, events] = await Promise.all([
+  const [set, info, notes, app, shortcuts, enc, events, lock] = await Promise.all([
     dim.settings.getAll(),
     dim.system.info(),
     dim.notes.get(),
@@ -786,7 +818,9 @@ async function loadAll() {
     dim.app.shortcutStatus(),
     dim.ai.encryptionAvailable(),
     dim.calendar.list(),
+    dim.ailock.refresh(),
   ]);
+  if (lock) ctx.lock = lock;
   ctx.set = set;
   ctx.info = info;
   ctx.notes = notes.info;
@@ -809,6 +843,10 @@ async function boot() {
   dim.settings.onChange((changed) => {
     Object.assign(ctx.set, changed);
     if (!document.activeElement || !document.activeElement.closest || !document.activeElement.closest('#wbody')) render();
+  });
+  dim.ailock.onState((l) => {
+    ctx.lock = l;
+    if (curTab === 'ia' && !(document.activeElement && document.activeElement.closest && document.activeElement.closest('#wbody'))) render();
   });
   dim.notes.onChange((n) => {
     ctx.notes = n.info;

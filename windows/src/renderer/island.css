@@ -377,3 +377,11 @@ button.ct:hover { background: rgba(255, 255, 255, .14); }
 .webdock { display: flex; flex-direction: column; gap: 8px; }
 .webdock[hidden] { display: none; }
 .aiw { display: block; width: 100%; height: 262px; border-radius: 16px; overflow: hidden; background: #000; border: 1px solid rgba(255, 255, 255, .12); }
+
+/* Lock in front of the AI chat */
+.lockbox { width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; text-align: center; }
+.lockbox b { font-size: 16px; }
+.lockbox .lk-ico { display: grid; place-items: center; width: 44px; height: 44px; border-radius: 50%; background: rgba(255, 255, 255, .08); }
+.lockbox .lk-ico svg { width: 22px; height: 22px; fill: none; stroke: #fff; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.lockbox .lockf { width: 260px; }
+.lockbox .lk-msg { min-height: 16px; color: #ffb86b; }

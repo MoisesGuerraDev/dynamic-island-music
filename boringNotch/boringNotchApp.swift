@@ -335,6 +335,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         BeatPulse.shared.applyPreference()
+        Task { @MainActor in
+            try? await Task.sleep(for: .seconds(3))
+            await AISessionBackup.shared.restoreIfFresh()
+        }
 
         NotificationCenter.default.addObserver(
             self,
@@ -535,6 +539,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         hook("dim.debug.reset") { LayoutManager.shared.reset() }
         hook("dim.debug.ai.probe") { AIWebStore.shared.debugProbe() }
         hook("dim.debug.ai.setcookie") { AIWebStore.shared.debugSetSessionCookie() }
+        hook("dim.debug.backup.write") { AIWebStore.shared.debugBackupTest(step: "write") }
+        hook("dim.debug.backup.delete") { AIWebStore.shared.debugBackupTest(step: "delete") }
+        hook("dim.debug.backup.default") { AIWebStore.shared.debugBackupTest(step: "default") }
+        hook("dim.debug.backup.read") { AIWebStore.shared.debugBackupTest(step: "read") }
         hook("dim.debug.cookie.set") { AIWebStore.shared.debugCookie(set: true) }
         hook("dim.debug.cookie.dump") { AIWebStore.shared.debugCookie(set: false) }
         hook("dim.debug.ai.claude") { AIChatManager.shared.provider = .claude }

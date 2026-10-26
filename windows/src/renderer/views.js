@@ -198,3 +198,39 @@ export function reloadWebview(p) {
   const w = webviews[p];
   if (w && w.reload) w.reload();
 }
+
+// ---------- Lock in front of the AI chat ----------
+
+export function lockHTML() {
+  const L = S.lock;
+  let action = '';
+  if (L.mode === 'hello') {
+    action = `<button class="nbtn pbtn" data-act="lock-hello">${ic('shield')}Usar Windows Hello</button>`;
+  } else if (L.needsPin) {
+    action = '<span class="chat-f">Falta crear un PIN para este bloqueo.</span><button class="nbtn pbtn" data-act="open-ai-settings">Crear PIN en Ajustes</button>';
+  } else {
+    action = `<form class="chatf lockf" id="lockf"><input id="lockpin" type="password" inputmode="numeric" maxlength="8" placeholder="PIN" aria-label="PIN" autocomplete="off"><button type="submit">Desbloquear</button></form>`;
+  }
+  const wait = L.retryIn > 0 ? `Demasiados intentos. Espera ${L.retryIn} s.` : S.ui.lockMsg;
+  return `<div class="lockbox"><span class="lk-ico">${ic('shield')}</span><b>Chat de IA bloqueado</b><span class="chat-f">Confirma que eres tú para abrirlo.</span>${action}<span class="chat-f lk-msg" id="lockmsg" role="status">${esc(wait)}</span></div>`;
+}
+
+export function bindLock() {
+  const form = document.getElementById('lockf');
+  if (!form) return;
+  const input = document.getElementById('lockpin');
+  input.focus();
+  form.onsubmit = async (e) => {
+    e.preventDefault();
+    const r = await dim().ailock.unlockPin(input.value);
+    input.value = '';
+    if (r && r.ok) {
+      S.ui.lockMsg = '';
+      return; // the state event unlocks the chat
+    }
+    if (r && r.retryIn) S.ui.lockMsg = `Demasiados intentos. Espera ${r.retryIn} s.`;
+    else if (r && typeof r.attemptsLeft === 'number') S.ui.lockMsg = `PIN incorrecto. Te quedan ${r.attemptsLeft} intentos.`;
+    else S.ui.lockMsg = (r && r.error) || 'No se pudo desbloquear.';
+    bus.render();
+  };
+}

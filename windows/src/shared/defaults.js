@@ -119,6 +119,8 @@ export const DEFAULTS = {
   aiOpenMode: 'web', // web = sign in with your own account inside the island | mini = chat with your own API key
   aiWebEnabled: { claude: true, openai: true, gemini: true, deepseek: true },
   aiWebProvider: 'claude',
+  aiLock: 'auto', // auto (Windows Hello if there is one) | secure (Windows Hello or the app's PIN) | none
+  aiLockPreferPin: false,
 
   // Clipboard
   clipEnabled: true,

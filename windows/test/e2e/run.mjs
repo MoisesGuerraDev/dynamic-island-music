@@ -144,6 +144,51 @@ try {
   else check('las llaves de acceso (WebAuthn) están ocultas en el webview de la IA', pk === 'undefined', String(pk));
   await page.click('[data-act="tab"][data-v="home"]');
 
+  // Lock in front of the AI chat: default is Windows Hello if there is one, otherwise no lock (this Mac has none).
+  const lk = (fn, ...a) => page.evaluate(([f, args]) => window.dim.ailock[f](...args), [fn, a]);
+  const st0 = await lk('state');
+  check('por defecto, sin Windows Hello, el chat no se bloquea', st0.locked === false && st0.mode === 'none', JSON.stringify(st0));
+  await app.evaluate(() => globalThis.__DIM__.store.patch({ aiLock: 'secure' }));
+  await page.waitForTimeout(400);
+  const st1 = await lk('state');
+  check('«Windows Hello o PIN de la app» sin Hello pide un PIN y bloquea', st1.mode === 'pin' && st1.needsPin === true && st1.locked === true, JSON.stringify(st1));
+  await page.click('[data-act="tab"][data-v="chat"]');
+  await page.waitForTimeout(500);
+  const scr = await page.evaluate(() => ({ lock: document.querySelector('.lockbox')?.textContent || '', dock: !document.getElementById('webdock').hidden }));
+  check('pantalla «Chat de IA bloqueado» y el chat tapado', scr.lock.includes('Chat de IA bloqueado') && scr.dock === false, scr.lock.slice(0, 60));
+  const set1 = await lk('setPin', '2468');
+  check('se crea el PIN', set1.ok === true, JSON.stringify(set1));
+  const pinFile = fs.readFileSync(path.join(ud, 'aipin.json'), 'utf8');
+  check('el PIN se guarda solo como hash con sal (nunca en claro)', !pinFile.includes('2468') && pinFile.includes('"hash"') && pinFile.includes('"salt"'));
+  await page.waitForTimeout(400);
+  try {
+    await page.waitForSelector('#lockpin', { timeout: 5000 });
+  } catch {
+    console.log('  (diagnóstico) fila:', (await page.evaluate(() => ({ row: document.getElementById('row').innerHTML.slice(0, 160), hidden: document.getElementById('row').hidden, open: document.getElementById('stage').className }))));
+  }
+  await page.fill('#lockpin', '1111');
+  await page.press('#lockpin', 'Enter');
+  await page.waitForTimeout(500);
+  check('PIN incorrecto: avisa y cuenta intentos', (await page.textContent('#lockmsg')).includes('Te quedan 4'));
+  await page.fill('#lockpin', '2468');
+  await page.press('#lockpin', 'Enter');
+  await page.waitForTimeout(900);
+  const open1 = await page.evaluate(() => ({ lock: !!document.querySelector('.lockbox'), dock: !document.getElementById('webdock').hidden }));
+  check('PIN correcto: se abre el chat', open1.lock === false && open1.dock === true, JSON.stringify(open1));
+  await page.click('[data-act="tab"][data-v="home"]');
+  await app.evaluate(() => { const c = globalThis.__DIM__; const i = c.islands.first(); i.pins.clear(); c.islands.setOpen(i, false); });
+  await page.waitForTimeout(500);
+  check('al cerrar la isla se vuelve a bloquear', (await lk('state')).locked === true);
+  let lastTry;
+  for (let i = 0; i < 5; i++) lastTry = await lk('unlockPin', '0000');
+  check('5 intentos fallidos: espera obligatoria', lastTry.retryIn >= 30, JSON.stringify(lastTry));
+  const blocked = await lk('unlockPin', '2468');
+  check('durante la espera ni el PIN correcto entra', blocked.ok === false && blocked.retryIn > 0, JSON.stringify(blocked));
+  const sess = await app.evaluate(async () => (await globalThis.__DIM__.aiSession.cookies.get({ name: 'dim_test_session' })).length);
+  check('el bloqueo no borra la sesión guardada de la IA', sess === 1);
+  await app.evaluate(() => { const c = globalThis.__DIM__; c.store.patch({ aiLock: 'none' }); const i = c.islands.first(); i.pins.add('toggle'); c.islands.setOpen(i, true); });
+  await page.waitForTimeout(500);
+
   // Closed island: cover on the left, timer on the right, both sides the same width.
   await app.evaluate(() => { const c = globalThis.__DIM__; const i = c.islands.first(); i.pins.clear(); c.islands.setOpen(i, false); });
   await page.waitForTimeout(1200);

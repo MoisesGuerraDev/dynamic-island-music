@@ -20,6 +20,7 @@ Si tu antivirus protesta por PowerShell: la app usa dos scripts pequeños (`reso
 - **Portapapeles:** copia texto; debe aparecer. Copia una contraseña desde tu gestor: no debe guardarse.
 - **Lápiz** (arriba a la derecha): arrastra, cambia el tamaño, quita y agrega componentes.
 - **Ajustes** (rueda dentada): Estilo tiene un deslizador de negro a vidrio, otro para la intensidad del color, «Los colores bailan con la música» (el brillo late al ritmo de cada canción) y el contorno de la isla (por defecto sin borde). En vivo: qué se ve con la isla cerrada.
+- **Bloqueo del chat de IA** (Ajustes › IA): por defecto pide Windows Hello (huella, cara o PIN de Windows) si tu PC lo tiene. Si no lo tiene, elige «Windows Hello o PIN de la app» y crea un PIN de 4 a 8 dígitos. Se vuelve a bloquear cada vez que se cierra la isla, y no borra tu sesión guardada.
 - **Juego (PC gamer):** abre un juego en **pantalla completa sin bordes**; la isla debe verse encima y no robar el foco. Si el juego usa pantalla completa *exclusiva* la isla se oculta a propósito (Ajustes › Modo juego); `Ctrl+Shift+Espacio` la asoma un momento.
 - Atajos: `Ctrl+Shift+N` abre/cierra, `Ctrl+Shift+P` pausa la música, `Ctrl+Shift+T` el Pomodoro, `Ctrl+Alt+Espacio` el chat.
 

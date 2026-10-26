@@ -34,6 +34,7 @@ export class IslandManager {
     this.settingsWin = null;
     this.onFirstLoad = onFirstLoad;
     this.hiddenByUser = false;
+    this.onClosed = null; // called whenever an island closes (the AI chat lock locks again)
   }
 
   start() {
@@ -214,6 +215,7 @@ export class IslandManager {
     } else {
       isl.pins.clear();
       this.#giveUpFocus(isl);
+      if (this.onClosed) this.onClosed();
     }
     isl.win.webContents.send('island:state', { open });
   }

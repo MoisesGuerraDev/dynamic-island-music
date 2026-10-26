@@ -13,7 +13,10 @@ final class SessionCookieKeeper: NSObject, WKHTTPCookieStoreObserver {
         convert(in: store)
     }
 
-    func cookiesDidChange(in cookieStore: WKHTTPCookieStore) { convert(in: cookieStore) }
+    func cookiesDidChange(in cookieStore: WKHTTPCookieStore) {
+        convert(in: cookieStore)
+        Task { @MainActor in AISessionBackup.shared.scheduleBackup() }
+    }
 
     private func convert(in store: WKHTTPCookieStore) {
         store.getAllCookies { cookies in
@@ -49,6 +52,14 @@ final class AIWebStore: NSObject, WKNavigationDelegate, WKUIDelegate, Observable
 
     private func provider(of web: WKWebView) -> AIProvider? {
         views.first { $0.value === web }?.key
+    }
+
+    /// After sign-ins were restored from the backup: load every open AI page again.
+    func reloadAll() {
+        for (provider, web) in views {
+            errors[provider] = nil
+            if let url = provider.webURL { web.load(URLRequest(url: url)) }
+        }
     }
 
     func reload(_ provider: AIProvider) {
@@ -157,6 +168,39 @@ final class AIWebStore: NSObject, WKNavigationDelegate, WKUIDelegate, Observable
                 let line = found.map { "found expires=\(String(describing: $0.expiresDate)) sessionOnly=\($0.isSessionOnly)" } ?? "not found (total \(cookies.count))"
                 try? line.write(to: file, atomically: true, encoding: .utf8)
             }
+        }
+    }
+
+    func debugBackupTest(step: String) {
+        let file = FileManager.default.temporaryDirectory.appendingPathComponent("backup-test.txt")
+        let folder = FileManager.default.temporaryDirectory.appendingPathComponent("backup-folder")
+        try? FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        let store = WKWebsiteDataStore.default().httpCookieStore
+        Task { @MainActor in
+            let backup = AISessionBackup.shared
+            var line = ""
+            switch step {
+            case "write":
+                backup.customPassphrase = ""
+                if let c = HTTPCookie(properties: [.name: "dimsession", .value: "abc123", .domain: "chatgpt.com", .path: "/", .secure: "TRUE",
+                                                    .expires: Date().addingTimeInterval(86400)]) { await store.setCookie(c) }
+                line = "wrote \((try? await backup.write(to: folder)) ?? -1)"
+            case "delete":
+                for c in await store.allCookies() where c.name == "dimsession" { await store.deleteCookie(c) }
+                line = "deleted; remaining=\(await store.allCookies().filter { $0.name == "dimsession" }.count)"
+            case "read":
+                let n = (try? await backup.read(from: folder)) ?? -1
+                let back = await store.allCookies().first { $0.name == "dimsession" }
+                line = "restored \(n); cookie=\(back?.value ?? "missing")"
+            case "default":
+                await backup.backupNow()
+                let dir = FileManager.default.urls(for: .applicationSupportDirectory, in: .userDomainMask)[0]
+                    .appendingPathComponent("Dynamic Island Music/Sesiones-IA.dimsession")
+                let size = (try? FileManager.default.attributesOfItem(atPath: dir.path)[.size] as? Int) ?? nil
+                line = "default folder file size=\(size ?? -1) message=\(backup.message)"
+            default: break
+            }
+            try? line.write(to: file, atomically: true, encoding: .utf8)
         }
     }
 

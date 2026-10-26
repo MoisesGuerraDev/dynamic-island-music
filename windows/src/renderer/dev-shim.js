@@ -222,6 +222,16 @@ const dim = {
     onSignedOut: (cb) => on('ai:signedOut', cb),
     encryptionAvailable: async () => true,
   },
+  ailock: {
+    state: async () => ({ mode: set.aiLock === 'none' || set.aiLock === 'auto' ? 'none' : 'pin', locked: false, hello: false, pinSet: false, needsPin: false, retryIn: 0 }),
+    refresh: async () => ({ mode: 'none', locked: false, hello: false, pinSet: false, needsPin: false, retryIn: 0 }),
+    onState: (cb) => on('ailock:state', cb),
+    unlockHello: async () => ({ ok: true }),
+    unlockPin: async () => ({ ok: true }),
+    setPin: async () => ({ ok: true }),
+    changePin: async () => ({ ok: true }),
+    removePin: async () => ({ ok: true }),
+  },
   perf: {
     subscribe: (flag) => {
       clearInterval(dim.__perfTimer);

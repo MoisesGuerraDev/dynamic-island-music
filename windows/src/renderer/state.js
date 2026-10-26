@@ -20,7 +20,8 @@ export const S = {
   battery: null,
   game: { exclusive: false, busy: false },
   chat: { provider: 'claude', web: 'claude', messages: [], sending: false },
-  ui: { noteAdding: false, calAdding: false, timeEditing: false, calDay: 0, camOn: false, camError: '' },
+  lock: { mode: 'none', locked: false, hello: false, pinSet: false, needsPin: false, retryIn: 0 },
+  ui: { lockMsg: '', noteAdding: false, calAdding: false, timeEditing: false, calDay: 0, camOn: false, camError: '' },
   lastPlayedAt: 0,
   rot: 0,
 };

@@ -3,6 +3,7 @@
 #   qstate  is a full-screen game running (SHQueryUserNotificationState)
 #   gpu     GPU load and temperature (NVIDIA through nvidia-smi, any GPU through Windows counters)
 #   sysinfo PC model, GPU names, battery presence
+#   hello-check / hello-verify  Windows Hello (fingerprint, face or Windows PIN) through UserConsentVerifier
 # It answers one JSON request per line on stdin with one JSON line on stdout. It only reads local
 # information about this PC. It does not touch the network or write any file.
 
@@ -99,6 +100,37 @@ function Get-SysInfo {
     return $r
 }
 
+$script:asTask = $null
+function Initialize-Winrt {
+    if ($script:asTask) { return }
+    Add-Type -AssemblyName System.Runtime.WindowsRuntime
+    $null = [Windows.Security.Credentials.UI.UserConsentVerifier, Windows.Security.Credentials.UI, ContentType=WindowsRuntime]
+    $null = [Windows.Security.Credentials.UI.UserConsentVerifierAvailability, Windows.Security.Credentials.UI, ContentType=WindowsRuntime]
+    $null = [Windows.Security.Credentials.UI.UserConsentVerificationResult, Windows.Security.Credentials.UI, ContentType=WindowsRuntime]
+    $script:asTask = ([System.WindowsRuntimeSystemExtensions].GetMethods() | Where-Object {
+            $_.Name -eq 'AsTask' -and $_.GetParameters().Count -eq 1 -and
+            $_.GetParameters()[0].ParameterType.Name -eq 'IAsyncOperation`1'
+        })[0]
+}
+
+function Await($op, [Type]$resultType, [int]$ms = 8000) {
+    $task = $script:asTask.MakeGenericMethod($resultType).Invoke($null, @($op))
+    if (-not $task.Wait($ms)) { throw 'La operacion tardo demasiado.' }
+    return $task.Result
+}
+
+function Get-HelloAvailability {
+    Initialize-Winrt
+    $r = Await ([Windows.Security.Credentials.UI.UserConsentVerifier]::CheckAvailabilityAsync()) ([Windows.Security.Credentials.UI.UserConsentVerifierAvailability])
+    return @{ hello = ($r.ToString() -eq 'Available'); availability = $r.ToString() }
+}
+
+function Request-Hello([string]$message) {
+    Initialize-Winrt
+    $r = Await ([Windows.Security.Credentials.UI.UserConsentVerifier]::RequestVerificationAsync($message)) ([Windows.Security.Credentials.UI.UserConsentVerificationResult]) 90000
+    return @{ verified = ($r.ToString() -eq 'Verified'); result = $r.ToString() }
+}
+
 Send @{ ready = $true }
 
 while ($true) {
@@ -114,6 +146,8 @@ while ($true) {
             'qstate' { Get-QState }
             'gpu' { Get-Gpu }
             'sysinfo' { Get-SysInfo }
+            'hello-check' { Get-HelloAvailability }
+            'hello-verify' { Request-Hello ([string]$req.message) }
             default { @{} }
         }
         foreach ($k in $data.Keys) { $reply[$k] = $data[$k] }

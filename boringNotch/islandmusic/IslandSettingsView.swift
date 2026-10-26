@@ -546,6 +546,8 @@ struct AISettings: View {
                 }
             }
 
+            SessionBackupSection()
+
             Section {
                 Defaults.Toggle("Pedir la huella (Touch ID) para abrir el chat de IA", key: .aiTouchID)
                 Button("Cerrar sesión en todas las IA", role: .destructive) { AIWebStore.shared.clearSessions() }
@@ -814,6 +816,44 @@ struct AboutIsland: View {
                 }
                 Link("Boring Notch en GitHub", destination: URL(string: "https://github.com/TheBoredTeam/boring.notch")!)
             }
+        }
+    }
+}
+
+/// Encrypted copy of the AI sign-ins: in the app's own folder by default, or in any folder the person picks.
+struct SessionBackupSection: View {
+    @ObservedObject var backup = AISessionBackup.shared
+    @Default(.sessionBackupAuto) var auto
+    @Default(.sessionFolderBookmark) var bookmark
+    @State private var custom = AISessionBackup.shared.customPassphrase
+
+    var body: some View {
+        Section {
+            Toggle("Guardar mis sesiones de IA automáticamente", isOn: $auto)
+            LabeledContent("Carpeta") {
+                Text(backup.folderPath ?? "").foregroundStyle(.secondary).lineLimit(1).truncationMode(.middle)
+            }
+            HStack {
+                Button("Elegir otra carpeta…") { backup.chooseFolder() }
+                if bookmark != nil {
+                    Button("Usar la carpeta de la app") { backup.useDefaultFolder() }
+                }
+                Spacer()
+            }
+            SecureField("Contraseña propia (opcional, para abrir la copia en otra computadora)", text: $custom)
+                .onChange(of: custom) { _, new in backup.customPassphrase = new }
+            HStack {
+                Button("Guardar ahora") { Task { await backup.backupNow() } }
+                Button("Restaurar ahora") { Task { await backup.restore() } }
+                Spacer()
+            }
+            if !backup.message.isEmpty {
+                Text(backup.message).font(.footnote).foregroundStyle(.secondary)
+            }
+        } header: {
+            Text("Sesiones guardadas")
+        } footer: {
+            Text("No hay que configurar nada: tus inicios de sesión de las IA se guardan cifrados en una carpeta de la app y vuelven solos si reinstalas. Si quieres llevarlos a otra computadora, elige una carpeta cualquiera (Documentos, un USB, OneDrive, Dropbox, iCloud…) y pon una contraseña propia; en la otra computadora elige la misma carpeta y escribe la misma contraseña. Solo se guardan las sesiones de las páginas de las IA; tus contraseñas nunca pasan por aquí.")
         }
     }
 }

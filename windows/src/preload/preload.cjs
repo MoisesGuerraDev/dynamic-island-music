@@ -77,6 +77,16 @@ contextBridge.exposeInMainWorld('dim', {
     onSignedOut: (cb) => on('ai:signedOut', cb),
     encryptionAvailable: () => invoke('ai:encryptionAvailable'),
   },
+  ailock: {
+    state: () => invoke('ailock:state'),
+    refresh: () => invoke('ailock:refresh'),
+    onState: (cb) => on('ailock:state', cb),
+    unlockHello: () => invoke('ailock:unlockHello'),
+    unlockPin: (pin) => invoke('ailock:unlockPin', pin),
+    setPin: (pin) => invoke('ailock:setPin', pin),
+    changePin: (oldPin, newPin) => invoke('ailock:changePin', oldPin, newPin),
+    removePin: (pin) => invoke('ailock:removePin', pin),
+  },
   perf: {
     subscribe: (on_) => ipcRenderer.send('perf:sub', !!on_),
     onSample: (cb) => on('perf:sample', cb),

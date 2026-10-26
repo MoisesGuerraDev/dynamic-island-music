@@ -462,6 +462,7 @@ struct PerformanceSettings: View {
 struct DisplaySettings: View {
     @Default(.manualSize) var manual
     @Default(.manualOpenWidth) var manualWidth
+    @Default(.uiScale) var scale
     @State private var screens: [SystemInfo.ScreenInfo] = []
 
     var body: some View {
@@ -492,6 +493,17 @@ struct DisplaySettings: View {
             }
 
             Section {
+                HStack {
+                    Text("Tamaño")
+                    Slider(value: $scale, in: 0.55...1.1, step: 0.05)
+                    Text("\(Int(scale * 100)) %").font(.system(.body, design: .monospaced)).frame(width: 60)
+                }
+            } header: {
+                Text("Tamaño del notch")
+            } footer: {
+                Text("Más pequeño es más minimalista; 100 % es el tamaño del diseño original. Lo que no cabe pasa a otra página.")
+            }
+            Section {
                 Toggle("Ajustar el ancho a mano", isOn: $manual)
                 if manual {
                     HStack {
@@ -508,6 +520,7 @@ struct DisplaySettings: View {
         .onAppear { screens = SystemInfo.screens() }
         .onChange(of: manual) { _, _ in NotificationCenter.default.post(name: .islandLayoutChanged, object: nil) }
         .onChange(of: manualWidth) { _, _ in NotificationCenter.default.post(name: .islandLayoutChanged, object: nil) }
+        .onChange(of: scale) { _, _ in NotificationCenter.default.post(name: .islandLayoutChanged, object: nil) }
     }
 }
 

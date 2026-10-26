@@ -40,31 +40,31 @@ enum IslandComponent: String, Codable, CaseIterable, Identifiable, Defaults.Seri
 
     var defaultWidth: CGFloat {
         switch self {
-        case .player: 300
-        case .calendar: 190
-        case .notes: 180
-        case .pomodoro: 170
-        case .camera: 130
-        case .chat: 220
-        case .clipboard: 210
-        case .shelf: 210
-        case .game: 160
-        case .performance: 190
+        case .player: 270
+        case .calendar: 165
+        case .notes: 150
+        case .pomodoro: 150
+        case .camera: 100
+        case .chat: 200
+        case .clipboard: 190
+        case .shelf: 190
+        case .game: 150
+        case .performance: 170
         }
     }
 
     var minWidth: CGFloat {
         switch self {
-        case .player: 280
-        case .calendar: 170
-        case .notes: 150
-        case .pomodoro: 160
-        case .camera: 110
-        case .chat: 190
-        case .clipboard: 170
-        case .shelf: 170
-        case .game: 130
-        case .performance: 160
+        case .player: 250
+        case .calendar: 150
+        case .notes: 130
+        case .pomodoro: 140
+        case .camera: 90
+        case .chat: 180
+        case .clipboard: 160
+        case .shelf: 160
+        case .game: 120
+        case .performance: 150
         }
     }
 
@@ -135,6 +135,8 @@ enum AIProvider: String, CaseIterable, Identifiable, Defaults.Serializable {
 extension Defaults.Keys {
     // Layout
     static let islandComponents = Key<[ComponentConfig]>("islandComponents", default: IslandComponent.defaultConfigs)
+    /// Size of the open notch content. 1.0 is the design size; the default is smaller and minimal.
+    static let uiScale = Key<Double>("uiScale", default: 0.78)
     static let manualSize = Key<Bool>("manualSize", default: false)
     static let manualOpenWidth = Key<Double>("manualOpenWidth", default: 900)
 

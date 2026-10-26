@@ -23,13 +23,18 @@ struct IslandHomeView: View {
                     .foregroundStyle(.gray)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
+                let s = layout.scale
+                let designW = page.reduce(0) { $0 + $1.width } + 2 * LayoutManager.sidePadding
                 HStack(spacing: 0) {
                     ForEach(Array(page.enumerated()), id: \.element.id) { index, cfg in
                         cell(cfg, showSeparator: index > 0)
                     }
                 }
                 .padding(.horizontal, LayoutManager.sidePadding)
-                .frame(maxHeight: .infinity)
+                .frame(width: designW, height: LayoutManager.designHeight)
+                .scaleEffect(s, anchor: .topLeading)
+                .frame(width: designW * s, height: LayoutManager.designHeight * s, alignment: .topLeading)
+                .frame(maxWidth: .infinity)
             }
 
             if layout.editing {

@@ -24,8 +24,12 @@ final class LayoutManager: ObservableObject {
         didSet { NotificationCenter.default.post(name: .islandLayoutChanged, object: nil) }
     }
 
-    /// Horizontal padding that wraps all the components inside the notch.
-    static let sidePadding: CGFloat = 18
+    /// Horizontal padding that wraps all the components inside the notch (design units).
+    static let sidePadding: CGFloat = 14
+    /// Height of the row of components in design units, before the scale.
+    static let designHeight: CGFloat = 152
+
+    var scale: CGFloat { CGFloat(max(0.5, min(1.2, Defaults[.uiScale]))) }
 
     private init() {
         var stored = Defaults[.islandComponents]
@@ -50,7 +54,7 @@ final class LayoutManager: ObservableObject {
 
     /// Components that do not fit on one page go to the next one instead of being squeezed.
     func pages(capacity: CGFloat) -> [[ComponentConfig]] {
-        let room = capacity - 2 * Self.sidePadding
+        let room = capacity / scale - 2 * Self.sidePadding
         var pages: [[ComponentConfig]] = []
         var current: [ComponentConfig] = []
         var sum: CGFloat = 0
@@ -78,20 +82,21 @@ final class LayoutManager: ObservableObject {
         let cap = capacity(for: screenUUID)
         let page = currentPage(capacity: cap)
         let sum = page.reduce(0) { $0 + $1.width } + 2 * Self.sidePadding
-        return max(560, min(cap, sum))
+        return max(520, min(cap, sum * scale))
     }
 
     /// Size of the open notch for the tab that is showing (the home row sizes itself from its components).
     func openSize(for screenUUID: String?, view: NotchViews) -> CGSize {
         let cap = capacity(for: screenUUID)
-        let width = view == .home ? openWidth(for: screenUUID) : min(cap, max(820, openWidth(for: screenUUID)))
-        return CGSize(width: width, height: openNotchSize.height + (editing && view == .home ? editExtraHeight : 0))
+        let width = view == .home ? openWidth(for: screenUUID) : min(cap, max(680, openWidth(for: screenUUID)))
+        let height = 52 + Self.designHeight * scale + 6 + (editing && view == .home ? 34 : 0)
+        return CGSize(width: width, height: height)
     }
 
     func usage(for screenUUID: String?) -> Double {
         let cap = capacity(for: screenUUID)
         let sum = enabled.reduce(0) { $0 + $1.width } + 2 * Self.sidePadding
-        return Double(sum / cap) * 100
+        return Double(sum * scale / cap) * 100
     }
 
     // MARK: Edit

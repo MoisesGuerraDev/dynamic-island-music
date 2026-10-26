@@ -58,7 +58,7 @@ struct PomodoroView: View {
                 pomo.editingTime = true
             } label: {
                 Text(text)
-                    .font(.system(size: text.count >= 7 ? 26 : (text.count > 5 ? 34 : 42), weight: .semibold, design: .monospaced))
+                    .font(.system(size: text.count >= 7 ? 24 : (text.count > 5 ? 30 : 36), weight: .semibold, design: .monospaced))
                     .foregroundStyle(.white)
                     .minimumScaleFactor(0.5)
                     .lineLimit(1)

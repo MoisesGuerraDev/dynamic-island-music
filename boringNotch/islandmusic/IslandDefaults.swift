@@ -176,6 +176,8 @@ extension Defaults.Keys {
     static let notchBorder = Key<NotchBorder>("notchBorder", default: .off)
     /// The color glow breathes and drifts slowly while music plays.
     static let glowMotion = Key<Bool>("glowMotion", default: true)
+    /// Follow the real sound of the Mac (asks for the system audio permission) instead of a simulated beat.
+    static let realAudioBeat = Key<Bool>("realAudioBeat", default: false)
     static let manualSize = Key<Bool>("manualSize", default: false)
     static let manualOpenWidth = Key<Double>("manualOpenWidth", default: 900)
 

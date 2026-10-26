@@ -334,6 +334,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
+        BeatPulse.shared.applyPreference()
 
         NotificationCenter.default.addObserver(
             self,

@@ -214,6 +214,7 @@ struct GlassSettings: View {
     @Default(.glassAmount) var glassAmount
     @Default(.notchBorder) var notchBorder
     @Default(.glowMotion) var glowMotion
+    @Default(.realAudioBeat) var realAudio
     @Default(.liquidGlassButtons) var glassButtons
 
     var body: some View {
@@ -233,11 +234,14 @@ struct GlassSettings: View {
                     ForEach(NotchBorder.allCases) { Text($0.title).tag($0) }
                 }
                 .pickerStyle(.segmented)
-                Toggle("El brillo respira y se mueve mientras suena la música", isOn: $glowMotion)
+                Toggle("Los colores bailan con la música", isOn: $glowMotion)
+                Toggle("Seguir el sonido real del Mac (pide el permiso de audio del sistema)", isOn: $realAudio)
+                    .disabled(!glowMotion)
+                    .onChange(of: realAudio) { _, _ in BeatPulse.shared.applyPreference() }
             } header: {
                 Text("Contorno y movimiento")
             } footer: {
-                Text("Sin borde, el notch es negro liso como en la maqueta y solo se ve el brillo de color a su alrededor.")
+                Text("Sin borde, el notch es negro liso como en la maqueta y solo se ve el brillo de color a su alrededor. Los colores bailan al ritmo de la canción; con el sonido real siguen exactamente los golpes. Solo se mide el volumen: no se graba audio.")
             }
             Section {
                 HStack {

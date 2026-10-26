@@ -171,32 +171,34 @@ struct AmbientLight: View {
     @Default(.glowMotion) var motion
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: 1.0 / 20.0, paused: !(motion && music.isPlaying))) { tl in
-            light(time: tl.date.timeIntervalSinceReferenceDate)
+        TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: !(motion && music.isPlaying))) { tl in
+            light(date: tl.date)
         }
         .allowsHitTesting(false)
     }
 
-    private func light(time t: Double) -> some View {
-        GeometryReader { g in
+    private func light(date: Date) -> some View {
+        let t = date.timeIntervalSinceReferenceDate
+        let beat = (motion && music.isPlaying) ? BeatPulse.shared.sample(at: date) : 0
+        return GeometryReader { g in
             let c = Color(nsColor: music.glowColor)
             // Slow drift, so the red light moves behind the glass.
             let drift = (motion && music.isPlaying)
             let dx = drift ? sin(t * 0.42) * g.size.width * 0.045 : 0
             let dy = drift ? cos(t * 0.31) * g.size.height * 0.07 : 0
-            let strength: Double = min(1, (style == .strong ? 1.0 : 0.9) * intensity) * (music.isPlaying ? 1 : 0.6)
+            let strength: Double = min(1, (style == .strong ? 1.0 : 0.9) * intensity * (0.78 + 0.4 * beat)) * (music.isPlaying ? 1 : 0.6)
             let p = pointer.point
             let px = ((p?.x ?? g.size.width / 2) - g.size.width / 2) * 0.07
             let py = ((p?.y ?? g.size.height / 2) - g.size.height / 2) * 0.07
             ZStack {
                 Ellipse()
                     .fill(RadialGradient(colors: [c.opacity(strength), c.opacity(strength * 0.35), .clear], center: .center, startRadius: 0, endRadius: g.size.width * 0.34))
-                    .frame(width: g.size.width * 0.8, height: g.size.height * 1.7)
+                    .frame(width: g.size.width * (0.8 + 0.1 * beat), height: g.size.height * (1.7 + 0.3 * beat))
                     .blur(radius: 30)
                     .position(x: g.size.width * 0.14 + px + dx, y: g.size.height * 0.62 + py + dy)
                 Ellipse()
                     .fill(RadialGradient(colors: [c.opacity(strength * 0.7), .clear], center: .center, startRadius: 0, endRadius: g.size.width * 0.25))
-                    .frame(width: g.size.width * 0.5, height: g.size.height * 1.3)
+                    .frame(width: g.size.width * (0.5 + 0.08 * beat), height: g.size.height * (1.3 + 0.2 * beat))
                     .blur(radius: 40)
                     .hueRotation(.degrees(38))
                     .position(x: g.size.width * 0.5 + px * 1.6 - dx * 1.4, y: g.size.height * 0.7 + py * 1.6 - dy * 1.2)
@@ -214,5 +216,27 @@ struct AmbientLight: View {
             .animation(.interactiveSpring(response: 0.28, dampingFraction: 0.85), value: p)
             .animation(.smooth(duration: 0.6), value: music.glowColor)
         }
+    }
+}
+
+/// Color glow around the notch. It swells with the beat while music plays, always right around the notch.
+struct NotchGlow: View {
+    let shape: IslandShape
+    let color: Color
+    let opacity: Double
+    let radius: CGFloat
+    let dances: Bool
+
+    var body: some View {
+        TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: !dances)) { tl in
+            let beat = dances ? BeatPulse.shared.sample(at: tl.date) : 0
+            shape
+                .fill(color)
+                .opacity(min(1, opacity * (0.5 + 0.9 * beat)))
+                .blur(radius: radius * (0.8 + 0.6 * beat))
+                .scaleEffect(1 + 0.05 * beat)
+                .offset(y: 6)
+        }
+        .allowsHitTesting(false)
     }
 }

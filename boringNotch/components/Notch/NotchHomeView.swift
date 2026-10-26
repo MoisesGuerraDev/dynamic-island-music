@@ -47,8 +47,7 @@ struct AlbumArtView: View {
             }
         }
         .buttonStyle(.plain)
-        // simple scale animation instead of custom PhaseAnimator
-        .scaleEffect(musicManager.isPlaying ? 1.03 : 1.0)
+        .modifier(CoverBeat(playing: musicManager.isPlaying))
         .animation(.spring(response: 0.4, dampingFraction: 0.75, blendDuration: 0), value: musicManager.isPlaying)
     }
 
@@ -648,6 +647,19 @@ struct CustomSlider: View {
                     }
             )
             .animation(.spring(response: 0.35, dampingFraction: 0.7), value: dragging)
+        }
+    }
+}
+
+/// The cover swells a little with the beat.
+private struct CoverBeat: ViewModifier {
+    let playing: Bool
+    @Default(.glowMotion) private var motion
+
+    func body(content: Content) -> some View {
+        TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: !(playing && motion))) { tl in
+            let beat = (playing && motion) ? BeatPulse.shared.sample(at: tl.date) : 0
+            content.scaleEffect((playing ? 1.02 : 1.0) + 0.03 * beat)
         }
     }
 }

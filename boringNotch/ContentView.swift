@@ -31,7 +31,6 @@ struct ContentView: View {
     @Default(.glowIntensity) var glowIntensity
     @Default(.notchBorder) var notchBorder
     @Default(.glowMotion) var glowMotion
-    @State private var glowBreath = false
     @Default(.livePomodoro) var livePomodoro
     @Default(.liveControls) var liveControls
     @Default(.livePerformance) var livePerformance
@@ -80,19 +79,18 @@ struct ContentView: View {
         }
     }
 
-    /// Glow around the notch. Closed with music it is stronger and breathes, like the red light under the mockup's notch.
-    private var glowShadowColor: Color {
-        guard glowStyle != .off && (vm.notchState == .open || musicManager.isPlaying) else { return .clear }
-        let base = glowStyle == .strong ? 0.55 : 0.34
-        let boost = vm.notchState == .closed ? 1.55 : 1.0
-        let breath = (glowMotion && musicManager.isPlaying) ? (glowBreath ? 1.2 : 0.78) : 1.0
-        return Color(nsColor: musicManager.glowColor).opacity(min(1, base * glowIntensity * boost * breath))
+    private var glowOn: Bool {
+        glowStyle != .off && (vm.notchState == .open || musicManager.isPlaying)
     }
 
-    private var glowShadowRadius: CGFloat {
+    private var glowOpacity: Double {
+        let base = glowStyle == .strong ? 0.55 : 0.34
+        return min(1, base * glowIntensity * (vm.notchState == .closed ? 1.55 : 1.0))
+    }
+
+    private var glowRadius: CGFloat {
         let base: CGFloat = glowStyle == .strong ? 24 : 15
-        let breath: CGFloat = (glowMotion && musicManager.isPlaying) ? (glowBreath ? 1.15 : 0.85) : 1
-        return base * min(1.6, max(0.8, glowIntensity)) * (vm.notchState == .closed ? 1.25 : 1) * breath
+        return base * min(1.6, max(0.8, glowIntensity)) * (vm.notchState == .closed ? 1.25 : 1)
     }
 
     private var topCornerRadius: CGFloat {
@@ -218,16 +216,10 @@ struct ContentView: View {
                         color: ((vm.notchState == .open || isHovering) && Defaults[.enableShadow])
                             ? .black.opacity(0.7) : .clear, radius: Defaults[.cornerRadiusScaling] ? 6 : 4
                     )
-                    .shadow(color: glowShadowColor, radius: glowShadowRadius, y: 6)
-                    .onAppear {
-                        guard glowMotion else { return }
-                        withAnimation(.easeInOut(duration: 2.6).repeatForever(autoreverses: true)) { glowBreath = true }
-                    }
-                    .onChange(of: glowMotion) { _, on in
-                        if on {
-                            withAnimation(.easeInOut(duration: 2.6).repeatForever(autoreverses: true)) { glowBreath = true }
-                        } else {
-                            withAnimation(.easeOut(duration: 0.3)) { glowBreath = false }
+                    .background {
+                        if glowOn {
+                            NotchGlow(shape: currentNotchShape, color: Color(nsColor: musicManager.glowColor),
+                                      opacity: glowOpacity, radius: glowRadius, dances: glowMotion && musicManager.isPlaying)
                         }
                     }
                     .padding(

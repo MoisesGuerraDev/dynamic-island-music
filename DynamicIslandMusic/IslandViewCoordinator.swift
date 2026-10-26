@@ -1,6 +1,6 @@
 //
-//  BoringViewCoordinator.swift
-//  boringNotch
+//  IslandViewCoordinator.swift
+//  DynamicIslandMusic
 //
 //  Created by Alexander on 2024-11-20.
 //
@@ -47,8 +47,8 @@ struct ExpandedItem {
 }
 
 @MainActor
-class BoringViewCoordinator: ObservableObject {
-    static let shared = BoringViewCoordinator()
+class IslandViewCoordinator: ObservableObject {
+    static let shared = IslandViewCoordinator()
 
     @Published var currentView: NotchViews = .home
     private var sneakPeekDispatch: DispatchWorkItem?

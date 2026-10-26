@@ -452,7 +452,7 @@ button.ct:hover { background: rgba(255, 255, 255, .14); }
 .gcard { top: calc(var(--top) + 34px * var(--ui)); scale: var(--ui); transform-origin: 50% 0; }
 
 /* Strip of 40 px: tabs on the left, battery / sun / pencil / gear / close on the right, 25 px glass circles */
-.ntabs { height: 40px; margin-bottom: 0; }
+.ntabs { height: 40px; margin-bottom: 0; padding-top: 8px; box-sizing: border-box; }
 .ntabs > div { gap: 6px; }
 .ntabs .tab, .ntabs .round { width: 25px; height: 25px; border-radius: 50%; }
 .ntabs .tab svg { width: 14px; height: 14px; }

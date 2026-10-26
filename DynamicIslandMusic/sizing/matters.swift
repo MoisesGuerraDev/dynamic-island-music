@@ -1,6 +1,6 @@
 //
 //  sizeMatters.swift
-//  boringNotch
+//  DynamicIslandMusic
 //
 //  Created by Harsh Vardhan  Goswami  on 05/08/24.
 //

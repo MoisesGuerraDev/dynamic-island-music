@@ -1,6 +1,6 @@
 //
 //  ApplicationRelauncher.swift
-//  boringNotch
+//  DynamicIslandMusic
 //
 //  Created by Corentin132 on 03/10/2025.
 //

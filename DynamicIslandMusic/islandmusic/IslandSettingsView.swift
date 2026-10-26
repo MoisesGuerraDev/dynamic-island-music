@@ -751,7 +751,7 @@ struct DisplaySettings: View {
 // MARK: - Live activities
 
 struct LiveSettings: View {
-    @ObservedObject var coordinator = BoringViewCoordinator.shared
+    @ObservedObject var coordinator = IslandViewCoordinator.shared
     @Default(.liveMax) var liveMax
     @Default(.livePriority) var livePriority
 

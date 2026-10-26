@@ -1,6 +1,6 @@
 //
-//  BoringCalendar.swift
-//  boringNotch
+//  IslandCalendar.swift
+//  DynamicIslandMusic
 //
 //  Created by Harsh Vardhan  Goswami  on 08/09/24.
 //
@@ -19,7 +19,7 @@ struct Config: Equatable {
 }
 
 struct WheelPicker: View {
-    @EnvironmentObject var vm: BoringViewModel
+    @EnvironmentObject var vm: IslandViewModel
     @Binding var selectedDate: Date
     @State private var scrollPosition: Int?
     @State private var haptics: Bool = false
@@ -179,7 +179,7 @@ struct WheelPicker: View {
 }
 
 struct CalendarView: View {
-    @EnvironmentObject var vm: BoringViewModel
+    @EnvironmentObject var vm: IslandViewModel
     @ObservedObject private var calendarManager = CalendarManager.shared
     @State private var selectedDate = Date()
 
@@ -476,5 +476,5 @@ struct ReminderToggle: View {
     CalendarView()
         .frame(width: 215, height: 130)
         .background(.black)
-        .environmentObject(BoringViewModel())
+        .environmentObject(IslandViewModel())
 }

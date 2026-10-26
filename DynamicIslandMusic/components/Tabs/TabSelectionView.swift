@@ -1,6 +1,6 @@
 //
 //  TabSelectionView.swift
-//  boringNotch
+//  DynamicIslandMusic
 //
 //  Created by Hugo Persson on 2024-08-25.
 //
@@ -23,7 +23,7 @@ let tabs = [
 ]
 
 struct TabSelectionView: View {
-    @ObservedObject var coordinator = BoringViewCoordinator.shared
+    @ObservedObject var coordinator = IslandViewCoordinator.shared
     @Namespace var animation
     var body: some View {
         HStack(spacing: 6) {
@@ -41,5 +41,5 @@ struct TabSelectionView: View {
 }
 
 #Preview {
-    BoringHeader().environmentObject(BoringViewModel())
+    IslandHeader().environmentObject(IslandViewModel())
 }

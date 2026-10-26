@@ -1,6 +1,6 @@
     //
     //  ProgressIndicator.swift
-    //  boringNotch
+    //  DynamicIslandMusic
     //
     //  Created by Harsh Vardhan  Goswami  on 11/08/24.
     //

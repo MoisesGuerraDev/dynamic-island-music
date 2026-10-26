@@ -1,6 +1,6 @@
 //
 //  Button+Bouncing.swift
-//  boringNotch
+//  DynamicIslandMusic
 //
 //  Created by Harsh Vardhan  Goswami  on 19/08/24.
 //
@@ -8,7 +8,7 @@ import SwiftUI
 import Defaults
 
 struct BouncingButtonStyle: ButtonStyle {
-    let vm: BoringViewModel
+    let vm: IslandViewModel
     @State private var isPressed = false
     
     func makeBody(configuration: Configuration) -> some View {
@@ -29,7 +29,7 @@ struct BouncingButtonStyle: ButtonStyle {
 }
 
 extension Button {
-    func bouncingStyle(vm: BoringViewModel) -> some View {
+    func bouncingStyle(vm: IslandViewModel) -> some View {
         self.buttonStyle(BouncingButtonStyle(vm: vm))
     }
 }

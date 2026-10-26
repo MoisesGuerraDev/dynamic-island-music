@@ -1,6 +1,6 @@
 //
 //  ShelfItemView.swift
-//  boringNotch
+//  DynamicIslandMusic
 //
 //  Created by Alexander on 2025-09-24.
 //
@@ -9,7 +9,7 @@ import SwiftUI
 import AppKit
 
 struct ShelfView: View {
-    @EnvironmentObject var vm: BoringViewModel
+    @EnvironmentObject var vm: IslandViewModel
     @StateObject var tvm = ShelfStateViewModel.shared
     @StateObject var selection = ShelfSelectionModel.shared
     @StateObject private var quickLookService = QuickLookService()

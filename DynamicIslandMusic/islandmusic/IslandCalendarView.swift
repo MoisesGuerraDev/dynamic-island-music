@@ -3,7 +3,7 @@ import SwiftUI
 /// Calendar component laid out like the design: month on top, the day's events (or "Sin eventos") in the middle,
 /// and three days at the bottom.
 struct IslandCalendarView: View {
-    @EnvironmentObject var vm: BoringViewModel
+    @EnvironmentObject var vm: IslandViewModel
     @ObservedObject private var calendarManager = CalendarManager.shared
     @State private var selectedDate = Date()
 

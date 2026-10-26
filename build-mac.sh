@@ -26,7 +26,7 @@ fi
 
 mkdir -p build
 echo "Compilando $APP_NAME (la primera vez tarda unos minutos)…"
-if ! xcodebuild -project DynamicIslandMusic.xcodeproj -scheme boringNotch -configuration Release \
+if ! xcodebuild -project DynamicIslandMusic.xcodeproj -scheme DynamicIslandMusic -configuration Release \
       -derivedDataPath build -destination 'platform=macOS' \
       CODE_SIGN_IDENTITY="-" ENABLE_HARDENED_RUNTIME=NO DEVELOPMENT_TEAM="" CODE_SIGN_STYLE=Manual \
       -skipMacroValidation -skipPackagePluginValidation -quiet build > build/xcodebuild.log 2>&1; then

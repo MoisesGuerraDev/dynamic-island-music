@@ -1,6 +1,6 @@
 //
-//  BoringViewModel.swift
-//  boringNotch
+//  IslandViewModel.swift
+//  DynamicIslandMusic
 //
 //  Created by Harsh Vardhan  Goswami  on 04/08/24.
 //
@@ -9,11 +9,11 @@ import Combine
 import Defaults
 import SwiftUI
 
-class BoringViewModel: NSObject, ObservableObject {
-    @ObservedObject var coordinator = BoringViewCoordinator.shared
+class IslandViewModel: NSObject, ObservableObject {
+    @ObservedObject var coordinator = IslandViewCoordinator.shared
     @ObservedObject var detector = FullscreenMediaDetector.shared
 
-    let animationLibrary: BoringAnimations = .init()
+    let animationLibrary: IslandAnimations = .init()
     let animation: Animation?
 
     @Published var contentType: ContentType = .normal

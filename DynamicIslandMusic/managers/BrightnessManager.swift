@@ -1,5 +1,5 @@
 //  BrightnessManager.swift
-//  boringNotch
+//  DynamicIslandMusic
 //
 //  Created by JeanLouis on 08/22/24.
 
@@ -37,7 +37,7 @@ final class BrightnessManager: ObservableObject {
 			} else {
 				refresh()
 			}
-			BoringViewCoordinator.shared.toggleSneakPeek(status: true, type: .brightness, value: CGFloat(target))
+			IslandViewCoordinator.shared.toggleSneakPeek(status: true, type: .brightness, value: CGFloat(target))
 		}
 	}
 
@@ -98,7 +98,7 @@ final class KeyboardBacklightManager: ObservableObject {
 			} else {
 				refresh()
 			}
-			BoringViewCoordinator.shared.toggleSneakPeek(
+			IslandViewCoordinator.shared.toggleSneakPeek(
 				status: true,
 				type: .backlight,
 				value: CGFloat(target)

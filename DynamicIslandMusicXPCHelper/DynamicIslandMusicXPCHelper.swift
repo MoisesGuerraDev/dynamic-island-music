@@ -1,6 +1,6 @@
 //
-//  BoringNotchXPCHelper.swift
-//  BoringNotchXPCHelper
+//  DynamicIslandMusicXPCHelper.swift
+//  DynamicIslandMusicXPCHelper
 //
 //  Created by Alexander on 2025-11-16.
 //
@@ -10,7 +10,7 @@ import ApplicationServices
 import IOKit
 import CoreGraphics
 
-class BoringNotchXPCHelper: NSObject, BoringNotchXPCHelperProtocol {
+class DynamicIslandMusicXPCHelper: NSObject, DynamicIslandMusicXPCHelperProtocol {
     
     @objc func isAccessibilityAuthorized(with reply: @escaping (Bool) -> Void) {
         reply(AXIsProcessTrusted())

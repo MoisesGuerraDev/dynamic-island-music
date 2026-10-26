@@ -1,6 +1,6 @@
 //
 //  SettingsView.swift
-//  boringNotch
+//  DynamicIslandMusic
 //
 //  Created by Richard Kunkli on 07/08/2024.
 //
@@ -132,8 +132,8 @@ struct GeneralSettings: View {
         guard let uuid = screen.displayUUID else { return nil }
         return (uuid, screen.localizedName)
     }
-    @EnvironmentObject var vm: BoringViewModel
-    @ObservedObject var coordinator = BoringViewCoordinator.shared
+    @EnvironmentObject var vm: IslandViewModel
+    @ObservedObject var coordinator = IslandViewCoordinator.shared
 
     @Default(.mirrorShape) var mirrorShape
     @Default(.showEmojis) var showEmojis
@@ -463,11 +463,11 @@ struct Charge: View {
 //}
 
 struct HUD: View {
-    @EnvironmentObject var vm: BoringViewModel
+    @EnvironmentObject var vm: IslandViewModel
     @Default(.inlineHUD) var inlineHUD
     @Default(.enableGradient) var enableGradient
     @Default(.optionKeyAction) var optionKeyAction
-    @ObservedObject var coordinator = BoringViewCoordinator.shared
+    @ObservedObject var coordinator = IslandViewCoordinator.shared
     @State private var accessibilityAuthorized = false
     var body: some View {
         Form {
@@ -558,7 +558,7 @@ struct HUD: View {
 struct Media: View {
     @Default(.waitInterval) var waitInterval
     @Default(.mediaController) var mediaController
-    @ObservedObject var coordinator = BoringViewCoordinator.shared
+    @ObservedObject var coordinator = IslandViewCoordinator.shared
     @Default(.hideNotchOption) var hideNotchOption
     @Default(.enableSneakPeek) private var enableSneakPeek
     @Default(.sneakPeekStyles) var sneakPeekStyles
@@ -865,7 +865,7 @@ struct About: View {
             }
             VStack(spacing: 0) {
                 Divider()
-                Text("Made with 🫶🏻 by not so boring not.people")
+                Text("By: MoisesGuerraDev")
                     .foregroundStyle(.secondary)
                     .padding(.top, 5)
                     .padding(.bottom, 7)
@@ -903,7 +903,7 @@ struct Shelf: View {
     var body: some View {
         Form {
             Section {
-                Defaults.Toggle(key: .boringShelf) {
+                Defaults.Toggle(key: .islandShelf) {
                     Text("Enable shelf")
                 }
                 Defaults.Toggle(key: .openShelfByDefault) {
@@ -1134,7 +1134,7 @@ struct Shelf: View {
 //}
 
 struct Appearance: View {
-    @ObservedObject var coordinator = BoringViewCoordinator.shared
+    @ObservedObject var coordinator = IslandViewCoordinator.shared
     @Default(.mirrorShape) var mirrorShape
     @Default(.sliderColor) var sliderColor
     @Default(.useMusicVisualizer) var useMusicVisualizer
@@ -1354,7 +1354,7 @@ struct Appearance: View {
 
             Section {
                 Defaults.Toggle(key: .showMirror) {
-                    Text("Enable boring mirror")
+                    Text("Enable mirror")
                 }
                     .disabled(!checkVideoInput())
                 Picker("Mirror shape", selection: $mirrorShape) {

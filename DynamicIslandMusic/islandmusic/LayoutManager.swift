@@ -89,7 +89,7 @@ final class LayoutManager: ObservableObject {
     func openSize(for screenUUID: String?, view: NotchViews) -> CGSize {
         let cap = capacity(for: screenUUID)
         let width = view == .home ? openWidth(for: screenUUID) : min(cap, max(680, openWidth(for: screenUUID)))
-        var height = 40 + Self.designHeight * scale + 7 + (editing && view == .home ? 34 : 0)
+        var height = 46 + Self.designHeight * scale + 7 + (editing && view == .home ? 34 : 0)
         var finalWidth = width
         if view == .chat {
             // The web chat needs room to read and write; the key-based chat is a bit shorter.
@@ -163,7 +163,7 @@ final class KeyboardFocus: ObservableObject {
         // The notch floats over whatever app is in front. For typing to reach it, the app has to be the active one:
         // without this the panel never becomes the key window and text fields (and web pages) ignore the keyboard.
         if !NSApp.isActive { NSApp.activate(ignoringOtherApps: true) }
-        for w in NSApp.windows where w is BoringNotchSkyLightWindow {
+        for w in NSApp.windows where w is DynamicIslandMusicSkyLightWindow {
             w.makeKeyAndOrderFront(nil)
         }
     }
@@ -171,7 +171,7 @@ final class KeyboardFocus: ObservableObject {
     func release() {
         wantsKey = false
         SharingStateManager.shared.preventNotchClose = false
-        for w in NSApp.windows where w is BoringNotchSkyLightWindow {
+        for w in NSApp.windows where w is DynamicIslandMusicSkyLightWindow {
             if w.isKeyWindow { w.resignKey() }
         }
     }

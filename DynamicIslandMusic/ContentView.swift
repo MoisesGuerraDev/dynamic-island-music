@@ -1,6 +1,6 @@
 //
 //  ContentView.swift
-//  boringNotchApp
+//  DynamicIslandMusicApp
 //
 //  Created by Harsh Vardhan Goswami  on 02/08/24
 //  Modified by Richard Kunkli on 24/08/2024.
@@ -15,10 +15,10 @@ import SwiftUIIntrospect
 
 @MainActor
 struct ContentView: View {
-    @EnvironmentObject var vm: BoringViewModel
+    @EnvironmentObject var vm: IslandViewModel
     @ObservedObject var webcamManager = WebcamManager.shared
 
-    @ObservedObject var coordinator = BoringViewCoordinator.shared
+    @ObservedObject var coordinator = IslandViewCoordinator.shared
     @ObservedObject var musicManager = MusicManager.shared
     @ObservedObject var batteryModel = BatteryStatusViewModel.shared
     @ObservedObject var brightnessManager = BrightnessManager.shared
@@ -419,7 +419,7 @@ struct ContentView: View {
                                 .frame(width: vm.closedNotchSize.width + 10)
 
                             HStack {
-                                BoringBatteryView(
+                                IslandBatteryView(
                                     batteryWidth: 30,
                                     isCharging: batteryModel.isCharging,
                                     isInLowPowerMode: batteryModel.isInLowPowerMode,
@@ -438,10 +438,11 @@ struct ContentView: View {
                           ClosedActivityView(kinds: closedKinds, albumArtNamespace: albumArtNamespace)
                               .frame(alignment: .center)
                       } else if !coordinator.expandingView.show && vm.notchState == .closed && (!musicManager.isPlaying && musicManager.isPlayerIdle) && Defaults[.showNotHumanFace] && !vm.hideOnClosed  {
-                          BoringFaceAnimation()
+                          IslandFaceAnimation()
                        } else if vm.notchState == .open {
-                           BoringHeader()
+                           IslandHeader()
                                .frame(height: max(24, vm.effectiveClosedNotchHeight))
+                               .padding(.top, 6)
                                .opacity(gestureProgress != 0 ? 1.0 - min(abs(gestureProgress) * 0.1, 0.3) : 1.0)
                        } else {
                            Rectangle().fill(.clear).frame(width: vm.closedNotchSize.width - 20, height: vm.effectiveClosedNotchHeight)
@@ -523,7 +524,7 @@ struct ContentView: View {
     }
 
     @ViewBuilder
-    func BoringFaceAnimation() -> some View {
+    func IslandFaceAnimation() -> some View {
         HStack {
             HStack {
                 Rectangle()
@@ -545,7 +546,7 @@ struct ContentView: View {
 
     @ViewBuilder
     var dragDetector: some View {
-        if Defaults[.boringShelf] && vm.notchState == .closed {
+        if Defaults[.islandShelf] && vm.notchState == .closed {
             Color.clear
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .contentShape(Rectangle())
@@ -715,7 +716,7 @@ struct GeneralDropTargetDelegate: DropDelegate {
 }
 
 #Preview {
-    let vm = BoringViewModel()
+    let vm = IslandViewModel()
     vm.open()
     return ContentView()
         .environmentObject(vm)

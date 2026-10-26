@@ -1,6 +1,6 @@
 //
 //  KeyboardShortcutsHelper.swift
-//  boringNotch
+//  DynamicIslandMusic
 //
 //  Created by Richard Kunkli on 16/08/2024.
 //

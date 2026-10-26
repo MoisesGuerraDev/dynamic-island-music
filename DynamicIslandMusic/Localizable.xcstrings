@@ -3508,202 +3508,202 @@
         }
       }
     },
-    "Boring Notch" : {
+    "Dynamic Island Music" : {
       "localizations" : {
         "ar" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Boring Notch"
+            "value" : "Dynamic Island Music"
           }
         },
         "cs" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Boring Notch"
+            "value" : "Dynamic Island Music"
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Boring Notch"
+            "value" : "Dynamic Island Music"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Boring Notch"
+            "value" : "Dynamic Island Music"
           }
         },
         "en-GB" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Boring Notch"
+            "value" : "Dynamic Island Music"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Boring Notch"
+            "value" : "Dynamic Island Music"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Boring Notch"
+            "value" : "Dynamic Island Music"
           }
         },
         "hu" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Boring Notch"
+            "value" : "Dynamic Island Music"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Boring Notch"
+            "value" : "Dynamic Island Music"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Boring Notch"
+            "value" : "Dynamic Island Music"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Boring Notch"
+            "value" : "Dynamic Island Music"
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Boring Notch"
+            "value" : "Dynamic Island Music"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Boring Notch"
+            "value" : "Dynamic Island Music"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Boring Notch"
+            "value" : "Dynamic Island Music"
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Boring Notch"
+            "value" : "Dynamic Island Music"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Boring Notch"
+            "value" : "Dynamic Island Music"
           }
         }
       }
     },
-    "boring.notch" : {
+    "dynamic-island-music" : {
       "localizations" : {
         "ar" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "boring.notch"
+            "value" : "dynamic-island-music"
           }
         },
         "cs" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "boring.notch"
+            "value" : "dynamic-island-music"
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "boring.notch"
+            "value" : "dynamic-island-music"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "boring.notch"
+            "value" : "dynamic-island-music"
           }
         },
         "en-GB" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "boring.notch"
+            "value" : "dynamic-island-music"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "boring.notch"
+            "value" : "dynamic-island-music"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "boring.notch"
+            "value" : "dynamic-island-music"
           }
         },
         "hu" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "boring.notch"
+            "value" : "dynamic-island-music"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "boring.notch"
+            "value" : "dynamic-island-music"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "boring.notch"
+            "value" : "dynamic-island-music"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "boring.notch"
+            "value" : "dynamic-island-music"
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "boring.notch"
+            "value" : "dynamic-island-music"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "boring.notch"
+            "value" : "dynamic-island-music"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "boring.notch"
+            "value" : "dynamic-island-music"
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "boring.notch"
+            "value" : "dynamic-island-music"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "boring.notch"
+            "value" : "dynamic-island-music"
           }
         }
       }
@@ -8012,18 +8012,18 @@
         }
       }
     },
-    "Enable boring mirror" : {
+    "Enable mirror" : {
       "localizations" : {
         "ar" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Enable boring mirror"
+            "value" : "Enable mirror"
           }
         },
         "cs" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Povolit boring zrcadlo"
+            "value" : "Povolit island zrcadlo"
           }
         },
         "de" : {
@@ -8035,19 +8035,19 @@
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Enable boring mirror"
+            "value" : "Enable mirror"
           }
         },
         "en-GB" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Enable boring mirror"
+            "value" : "Enable mirror"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Habilitar espejo boring"
+            "value" : "Habilitar espejo island"
           }
         },
         "fr" : {
@@ -8059,7 +8059,7 @@
         "hu" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Enable boring mirror"
+            "value" : "Enable mirror"
           }
         },
         "it" : {
@@ -8071,25 +8071,25 @@
         "ko" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Boring 거울 켜기"
+            "value" : "Island 거울 켜기"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Włącz boring mirror"
+            "value" : "Włącz island mirror"
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Enable boring mirror"
+            "value" : "Enable mirror"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Enable boring mirror"
+            "value" : "Enable mirror"
           }
         },
         "tr" : {
@@ -8101,7 +8101,7 @@
         "uk" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Enable boring mirror"
+            "value" : "Enable mirror"
           }
         },
         "zh-Hans" : {
@@ -11630,12 +11630,12 @@
         }
       }
     },
-    "Made with 🫶🏻 by not so boring not.people" : {
+    "By: MoisesGuerraDev" : {
       "localizations" : {
         "ar" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Made with 🫶🏻 by not so boring not.people"
+            "value" : "By: MoisesGuerraDev"
           }
         },
         "cs" : {
@@ -11647,19 +11647,19 @@
         "de" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Gemacht mit 🫶🏻 durch nicht so boring not.people"
+            "value" : "Gemacht mit 🫶🏻 durch nicht so island not.people"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Made with 🫶🏻 by not so boring not.people"
+            "value" : "By: MoisesGuerraDev"
           }
         },
         "en-GB" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Made with 🫶🏻 by not so boring not.people"
+            "value" : "By: MoisesGuerraDev"
           }
         },
         "es" : {
@@ -11671,19 +11671,19 @@
         "fr" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Fait avec 🫶🏻 par des personnes pas si ennuyeuses - boring not.people"
+            "value" : "Fait avec 🫶🏻 par des personnes pas si ennuyeuses - island not.people"
           }
         },
         "hu" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Made with 🫶🏻 by not so boring not.people"
+            "value" : "By: MoisesGuerraDev"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Realizzato col 🫶🏻 da not so boring not.people"
+            "value" : "Realizzato col 🫶🏻 da not so island not.people"
           }
         },
         "ko" : {
@@ -11701,13 +11701,13 @@
         "pt-BR" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Made with 🫶🏻 by not so boring not.people"
+            "value" : "By: MoisesGuerraDev"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Made with 🫶🏻 by not so boring not.people"
+            "value" : "By: MoisesGuerraDev"
           }
         },
         "tr" : {
@@ -11719,7 +11719,7 @@
         "uk" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Made with 🫶🏻 by not so boring not.people"
+            "value" : "By: MoisesGuerraDev"
           }
         },
         "zh-Hans" : {
@@ -16932,102 +16932,102 @@
         }
       }
     },
-    "Restart Boring Notch" : {
+    "Restart Dynamic Island Music" : {
       "localizations" : {
         "ar" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Restart Boring Notch"
+            "value" : "Restart Dynamic Island Music"
           }
         },
         "cs" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Restartovat Boring Notch"
+            "value" : "Restartovat Dynamic Island Music"
           }
         },
         "de" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Boring Notch neu starten"
+            "value" : "Dynamic Island Music neu starten"
           }
         },
         "en" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Restart Boring Notch"
+            "value" : "Restart Dynamic Island Music"
           }
         },
         "en-GB" : {
           "stringUnit" : {
             "state" : "translated",
-            "value" : "Restart Boring Notch"
+            "value" : "Restart Dynamic Island Music"
           }
         },
         "es" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Reiniciar Boring Notch"
+            "value" : "Reiniciar Dynamic Island Music"
           }
         },
         "fr" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Redémarrer Boring Notch"
+            "value" : "Redémarrer Dynamic Island Music"
           }
         },
         "hu" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Restart Boring Notch"
+            "value" : "Restart Dynamic Island Music"
           }
         },
         "it" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Riavvia Boring Notch"
+            "value" : "Riavvia Dynamic Island Music"
           }
         },
         "ko" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Boring Notch 재시작"
+            "value" : "Dynamic Island Music 재시작"
           }
         },
         "pl" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Uruchom ponownie Boring Notch"
+            "value" : "Uruchom ponownie Dynamic Island Music"
           }
         },
         "pt-BR" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Restart Boring Notch"
+            "value" : "Restart Dynamic Island Music"
           }
         },
         "ru" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Restart Boring Notch"
+            "value" : "Restart Dynamic Island Music"
           }
         },
         "tr" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Boring Notch'u yeniden başlat"
+            "value" : "Dynamic Island Music'u yeniden başlat"
           }
         },
         "uk" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "Restart Boring Notch"
+            "value" : "Restart Dynamic Island Music"
           }
         },
         "zh-Hans" : {
           "stringUnit" : {
             "state" : "needs_review",
-            "value" : "重启 Boring Notch"
+            "value" : "重启 Dynamic Island Music"
           }
         }
       }

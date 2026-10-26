@@ -1,6 +1,6 @@
 //
 //  InlineHUDs.swift
-//  boringNotch
+//  DynamicIslandMusic
 //
 //  Created by Richard Kunkli on 14/09/2024.
 //
@@ -8,7 +8,7 @@
 import SwiftUI
 
 struct InlineHUD: View {
-    @EnvironmentObject var vm: BoringViewModel
+    @EnvironmentObject var vm: IslandViewModel
     @Binding var type: SneakContentType
     @Binding var value: CGFloat
     @Binding var icon: String
@@ -149,5 +149,5 @@ struct InlineHUD: View {
         .padding(.horizontal, 8)
         .background(Color.black)
         .padding()
-        .environmentObject(BoringViewModel())
+        .environmentObject(IslandViewModel())
 }

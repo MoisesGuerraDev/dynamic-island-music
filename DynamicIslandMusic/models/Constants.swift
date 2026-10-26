@@ -1,6 +1,6 @@
 //
 //  Constants.swift
-//  boringNotch
+//  DynamicIslandMusic
 //
 //  Created by Richard Kunkli on 2024. 10. 17..
 //
@@ -162,7 +162,7 @@ extension Defaults.Keys {
     static let optionKeyAction = Key<OptionKeyAction>("optionKeyAction", default: OptionKeyAction.openSettings)
     
     // MARK: Shelf
-    static let boringShelf = Key<Bool>("boringShelf", default: true)
+    static let islandShelf = Key<Bool>("boringShelf", default: true)
     static let openShelfByDefault = Key<Bool>("openShelfByDefault", default: true)
     static let shelfTapToOpen = Key<Bool>("shelfTapToOpen", default: true)
     static let quickShareProvider = Key<String>("quickShareProvider", default: QuickShareProvider.defaultProvider.id)

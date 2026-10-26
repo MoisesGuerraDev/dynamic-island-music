@@ -1,6 +1,6 @@
 //
 //  drop.swift
-//  boringNotch
+//  DynamicIslandMusic
 //
 //  Created by Harsh Vardhan  Goswami  on  04/08/24.
 //
@@ -9,7 +9,7 @@ import Foundation
 import SwiftUI
 
 
-public class BoringAnimations {
+public class IslandAnimations {
     @Published var notchStyle: Style = .notch
     
     init() {

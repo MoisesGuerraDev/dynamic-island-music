@@ -1,6 +1,6 @@
 import Cocoa
 
-class BoringStatusMenu: NSMenu {
+class IslandStatusMenu: NSMenu {
     
     var statusItem: NSStatusItem!
     

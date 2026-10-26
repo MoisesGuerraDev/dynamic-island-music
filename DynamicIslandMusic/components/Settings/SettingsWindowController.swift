@@ -1,6 +1,6 @@
 //
 //  SettingsWindowController.swift
-//  boringNotch
+//  DynamicIslandMusic
 //
 //  Created by Alexander on 2025-06-14.
 //
@@ -58,7 +58,7 @@ class SettingsWindowController: NSWindowController {
         
         // Configure window to be a standard document-style window
         window.isRestorable = true
-        window.identifier = NSUserInterfaceItemIdentifier("BoringNotchSettingsWindow")
+        window.identifier = NSUserInterfaceItemIdentifier("DynamicIslandMusicSettingsWindow")
         
         // Create the SwiftUI content
         let settingsView = IslandSettingsView()

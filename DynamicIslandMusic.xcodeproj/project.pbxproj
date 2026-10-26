@@ -53,12 +53,12 @@
 		118EBE3B2E9720C500D54B5A /* ShelfStateViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 118EBE3A2E9720C500D54B5A /* ShelfStateViewModel.swift */; };
 		1194E87C2EA19E09009C82D6 /* ImageProcessingService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1194E87B2EA19E09009C82D6 /* ImageProcessingService.swift */; };
 		1194E8852EA57D23009C82D6 /* SkyLightWindow in Frameworks */ = {isa = PBXBuildFile; productRef = 1194E8842EA57D23009C82D6 /* SkyLightWindow */; };
-		1194E8872EA6DDA7009C82D6 /* BoringNotchSkyLightWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1194E8862EA6DDA7009C82D6 /* BoringNotchSkyLightWindow.swift */; };
+		1194E8872EA6DDA7009C82D6 /* DynamicIslandMusicSkyLightWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1194E8862EA6DDA7009C82D6 /* DynamicIslandMusicSkyLightWindow.swift */; };
 		1194E9402EACC652009C82D6 /* Color+AccentColor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1194E93F2EACC652009C82D6 /* Color+AccentColor.swift */; };
 		11A45C792E34E63100CEB175 /* MediaChecker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11A45C782E34E63100CEB175 /* MediaChecker.swift */; };
 		11C5E3132DFE85970065821E /* SettingsWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11C5E3112DFE85970065821E /* SettingsWindowController.swift */; };
 		11C5E3162DFE88510065821E /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11C5E3152DFE88510065821E /* SettingsView.swift */; };
-		11CC44A22CEE614100C7244B /* BoringViewCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11CC44A12CEE614100C7244B /* BoringViewCoordinator.swift */; };
+		11CC44A22CEE614100C7244B /* IslandViewCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11CC44A12CEE614100C7244B /* IslandViewCoordinator.swift */; };
 		11CFC65B2E097E9D00748C80 /* WelcomeView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11CFC65A2E097E9D00748C80 /* WelcomeView.swift */; };
 		11CFC65F2E097F2F00748C80 /* OnboardingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11CFC65E2E097F2100748C80 /* OnboardingView.swift */; };
 		11CFC6612E097F6800748C80 /* PermissionsRequestView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11CFC6602E097F6800748C80 /* PermissionsRequestView.swift */; };
@@ -67,8 +67,8 @@
 		11D58EA22E760AE100FA8377 /* ImageService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11D58EA12E760AE100FA8377 /* ImageService.swift */; };
 		11EFCD702E8E92D600D0B974 /* ShelfItemViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11EFCD6F2E8E92D600D0B974 /* ShelfItemViewModel.swift */; };
 		11F747CE2EC75CEA00F841DB /* DragPreviewView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11F747CD2EC75CEA00F841DB /* DragPreviewView.swift */; };
-		11F7485B2EC9AABA00F841DB /* BoringNotchXPCHelper.xpc in Embed XPC Services */ = {isa = PBXBuildFile; fileRef = 11F7484F2EC9AABA00F841DB /* BoringNotchXPCHelper.xpc */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
-		11F748682EC9AC9600F841DB /* BoringNotchXPCHelperProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11F748652EC9AC9600F841DB /* BoringNotchXPCHelperProtocol.swift */; };
+		11F7485B2EC9AABA00F841DB /* DynamicIslandMusicXPCHelper.xpc in Embed XPC Services */ = {isa = PBXBuildFile; fileRef = 11F7484F2EC9AABA00F841DB /* DynamicIslandMusicXPCHelper.xpc */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		11F748682EC9AC9600F841DB /* DynamicIslandMusicXPCHelperProtocol.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11F748652EC9AC9600F841DB /* DynamicIslandMusicXPCHelperProtocol.swift */; };
 		11F748692EC9AC9600F841DB /* XPCHelperClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11F748662EC9AC9600F841DB /* XPCHelperClient.swift */; };
 		11F748732EC9DA9300F841DB /* Lottie in Frameworks */ = {isa = PBXBuildFile; productRef = 11F748722EC9DA9300F841DB /* Lottie */; };
 		11F748822ECB07A400F841DB /* MusicControlButton.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11F748812ECB07A400F841DB /* MusicControlButton.swift */; };
@@ -79,15 +79,15 @@
 		1443E7F32C609DCE0027C1FC /* matters.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1443E7F22C609DCE0027C1FC /* matters.swift */; };
 		147163982C5D35B70068B555 /* MusicVisualizer.swift in Sources */ = {isa = PBXBuildFile; fileRef = 147163972C5D35B70068B555 /* MusicVisualizer.swift */; };
 		1471639A2C5D35FF0068B555 /* MusicManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 147163992C5D35FF0068B555 /* MusicManager.swift */; };
-		1471A8592C6281BD0058408D /* BoringNotchWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1471A8582C6281BD0058408D /* BoringNotchWindow.swift */; };
+		1471A8592C6281BD0058408D /* DynamicIslandMusicWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1471A8582C6281BD0058408D /* DynamicIslandMusicWindow.swift */; };
 		149E0B972C737D00006418B1 /* WebcamManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 149E0B962C737D00006418B1 /* WebcamManager.swift */; };
 		149E0B9A2C737D40006418B1 /* WebcamView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 149E0B992C737D40006418B1 /* WebcamView.swift */; };
 		14A7E5882C64A89C008C1BE9 /* HelloAnimation.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14A7E5872C64A89C008C1BE9 /* HelloAnimation.swift */; };
-		14A7E5972C65FD31008C1BE9 /* boring.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 14A7E5962C65FD31008C1BE9 /* boring.m4a */; };
+		14A7E5972C65FD31008C1BE9 /* island.m4a in Resources */ = {isa = PBXBuildFile; fileRef = 14A7E5962C65FD31008C1BE9 /* island.m4a */; };
 		14C08BB62C8DE42D000F8AA0 /* CalendarManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14C08BB52C8DE42D000F8AA0 /* CalendarManager.swift */; };
-		14C08BB92C8DE4B1000F8AA0 /* BoringCalendar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14C08BB82C8DE4B1000F8AA0 /* BoringCalendar.swift */; };
+		14C08BB92C8DE4B1000F8AA0 /* IslandCalendar.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14C08BB82C8DE4B1000F8AA0 /* IslandCalendar.swift */; };
 		14C08BC12C8E03AD000F8AA0 /* NSImage+Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14C08BC02C8E03AD000F8AA0 /* NSImage+Extensions.swift */; };
-		14CEF4162C5CAED300855D72 /* boringNotchApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14CEF4152C5CAED300855D72 /* boringNotchApp.swift */; };
+		14CEF4162C5CAED300855D72 /* DynamicIslandMusicApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14CEF4152C5CAED300855D72 /* DynamicIslandMusicApp.swift */; };
 		14CEF4182C5CAED300855D72 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14CEF4172C5CAED300855D72 /* ContentView.swift */; };
 		14CEF41A2C5CAED400855D72 /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 14CEF4192C5CAED400855D72 /* Assets.xcassets */; };
 		14CEF41D2C5CAED400855D72 /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 14CEF41C2C5CAED400855D72 /* Preview Assets.xcassets */; };
@@ -97,11 +97,11 @@
 		14D570BC2C5E98EB0011E668 /* generic.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14D570BB2C5E98EB0011E668 /* generic.swift */; };
 		14D570C02C5EA5870011E668 /* AnimatedFace.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14D570BF2C5EA5870011E668 /* AnimatedFace.swift */; };
 		14D570C22C5EAFBF0011E668 /* EmptyState.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14D570C12C5EAFBF0011E668 /* EmptyState.swift */; };
-		14D570C62C5F38210011E668 /* BoringHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14D570C52C5F38210011E668 /* BoringHeader.swift */; };
-		14D570C92C5F38890011E668 /* BoringViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14D570C82C5F38890011E668 /* BoringViewModel.swift */; };
+		14D570C62C5F38210011E668 /* IslandHeader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14D570C52C5F38210011E668 /* IslandHeader.swift */; };
+		14D570C92C5F38890011E668 /* IslandViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14D570C82C5F38890011E668 /* IslandViewModel.swift */; };
 		14D570CB2C5F4B2C0011E668 /* BatteryStatusViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14D570CA2C5F4B2C0011E668 /* BatteryStatusViewModel.swift */; };
-		14D570CD2C5F4BB70011E668 /* BoringBattery.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14D570CC2C5F4BB70011E668 /* BoringBattery.swift */; };
-		14D570D22C5F6C6A0011E668 /* BoringExtrasMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14D570D12C5F6C6A0011E668 /* BoringExtrasMenu.swift */; };
+		14D570CD2C5F4BB70011E668 /* IslandBattery.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14D570CC2C5F4BB70011E668 /* IslandBattery.swift */; };
+		14D570D22C5F6C6A0011E668 /* IslandExtrasMenu.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14D570D12C5F6C6A0011E668 /* IslandExtrasMenu.swift */; };
 		14D570D52C5F710B0011E668 /* constants.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14D570D42C5F710B0011E668 /* constants.swift */; };
 		14E9FEAA2C70BF610062E83F /* DownloadView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14E9FEA92C70BF610062E83F /* DownloadView.swift */; };
 		14E9FEAE2C7325770062E83F /* Button+Bouncing.swift in Sources */ = {isa = PBXBuildFile; fileRef = 14E9FEAD2C7325770062E83F /* Button+Bouncing.swift */; };
@@ -151,7 +151,7 @@
 			containerPortal = 14CEF40A2C5CAED200855D72 /* Project object */;
 			proxyType = 1;
 			remoteGlobalIDString = 11F7484E2EC9AABA00F841DB;
-			remoteInfo = BoringNotchXPCHelper;
+			remoteInfo = DynamicIslandMusicXPCHelper;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -162,7 +162,7 @@
 			dstPath = "$(CONTENTS_FOLDER_PATH)/XPCServices";
 			dstSubfolderSpec = 16;
 			files = (
-				11F7485B2EC9AABA00F841DB /* BoringNotchXPCHelper.xpc in Embed XPC Services */,
+				11F7485B2EC9AABA00F841DB /* DynamicIslandMusicXPCHelper.xpc in Embed XPC Services */,
 			);
 			name = "Embed XPC Services";
 			runOnlyForDeploymentPostprocessing = 0;
@@ -221,12 +221,12 @@
 		118EBE302E9717DB00D54B5A /* URL+SecurityScoped.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "URL+SecurityScoped.swift"; sourceTree = "<group>"; };
 		118EBE3A2E9720C500D54B5A /* ShelfStateViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShelfStateViewModel.swift; sourceTree = "<group>"; };
 		1194E87B2EA19E09009C82D6 /* ImageProcessingService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageProcessingService.swift; sourceTree = "<group>"; };
-		1194E8862EA6DDA7009C82D6 /* BoringNotchSkyLightWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoringNotchSkyLightWindow.swift; sourceTree = "<group>"; };
+		1194E8862EA6DDA7009C82D6 /* DynamicIslandMusicSkyLightWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicIslandMusicSkyLightWindow.swift; sourceTree = "<group>"; };
 		1194E93F2EACC652009C82D6 /* Color+AccentColor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Color+AccentColor.swift"; sourceTree = "<group>"; };
 		11A45C782E34E63100CEB175 /* MediaChecker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaChecker.swift; sourceTree = "<group>"; };
 		11C5E3112DFE85970065821E /* SettingsWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsWindowController.swift; sourceTree = "<group>"; };
 		11C5E3152DFE88510065821E /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
-		11CC44A12CEE614100C7244B /* BoringViewCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoringViewCoordinator.swift; sourceTree = "<group>"; };
+		11CC44A12CEE614100C7244B /* IslandViewCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IslandViewCoordinator.swift; sourceTree = "<group>"; };
 		11CFC65A2E097E9D00748C80 /* WelcomeView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WelcomeView.swift; sourceTree = "<group>"; };
 		11CFC65E2E097F2100748C80 /* OnboardingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OnboardingView.swift; sourceTree = "<group>"; };
 		11CFC6602E097F6800748C80 /* PermissionsRequestView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PermissionsRequestView.swift; sourceTree = "<group>"; };
@@ -235,8 +235,8 @@
 		11D58EA12E760AE100FA8377 /* ImageService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ImageService.swift; sourceTree = "<group>"; };
 		11EFCD6F2E8E92D600D0B974 /* ShelfItemViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShelfItemViewModel.swift; sourceTree = "<group>"; };
 		11F747CD2EC75CEA00F841DB /* DragPreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DragPreviewView.swift; sourceTree = "<group>"; };
-		11F7484F2EC9AABA00F841DB /* BoringNotchXPCHelper.xpc */ = {isa = PBXFileReference; explicitFileType = "wrapper.xpc-service"; includeInIndex = 0; path = BoringNotchXPCHelper.xpc; sourceTree = BUILT_PRODUCTS_DIR; };
-		11F748652EC9AC9600F841DB /* BoringNotchXPCHelperProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoringNotchXPCHelperProtocol.swift; sourceTree = "<group>"; };
+		11F7484F2EC9AABA00F841DB /* DynamicIslandMusicXPCHelper.xpc */ = {isa = PBXFileReference; explicitFileType = "wrapper.xpc-service"; includeInIndex = 0; path = DynamicIslandMusicXPCHelper.xpc; sourceTree = BUILT_PRODUCTS_DIR; };
+		11F748652EC9AC9600F841DB /* DynamicIslandMusicXPCHelperProtocol.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicIslandMusicXPCHelperProtocol.swift; sourceTree = "<group>"; };
 		11F748662EC9AC9600F841DB /* XPCHelperClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = XPCHelperClient.swift; sourceTree = "<group>"; };
 		11F748812ECB07A400F841DB /* MusicControlButton.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicControlButton.swift; sourceTree = "<group>"; };
 		11F748832ECB27DC00F841DB /* MusicSlotConfigurationView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicSlotConfigurationView.swift; sourceTree = "<group>"; };
@@ -247,31 +247,31 @@
 		1443E7F42C609E650027C1FC /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		147163972C5D35B70068B555 /* MusicVisualizer.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicVisualizer.swift; sourceTree = "<group>"; };
 		147163992C5D35FF0068B555 /* MusicManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MusicManager.swift; sourceTree = "<group>"; };
-		1471A8582C6281BD0058408D /* BoringNotchWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoringNotchWindow.swift; sourceTree = "<group>"; };
+		1471A8582C6281BD0058408D /* DynamicIslandMusicWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicIslandMusicWindow.swift; sourceTree = "<group>"; };
 		149E0B962C737D00006418B1 /* WebcamManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebcamManager.swift; sourceTree = "<group>"; };
 		149E0B992C737D40006418B1 /* WebcamView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WebcamView.swift; sourceTree = "<group>"; };
 		14A7E5872C64A89C008C1BE9 /* HelloAnimation.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HelloAnimation.swift; sourceTree = "<group>"; };
-		14A7E5962C65FD31008C1BE9 /* boring.m4a */ = {isa = PBXFileReference; lastKnownFileType = file; path = boring.m4a; sourceTree = "<group>"; };
+		14A7E5962C65FD31008C1BE9 /* island.m4a */ = {isa = PBXFileReference; lastKnownFileType = file; path = island.m4a; sourceTree = "<group>"; };
 		14C08BB52C8DE42D000F8AA0 /* CalendarManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CalendarManager.swift; sourceTree = "<group>"; };
-		14C08BB82C8DE4B1000F8AA0 /* BoringCalendar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoringCalendar.swift; sourceTree = "<group>"; };
+		14C08BB82C8DE4B1000F8AA0 /* IslandCalendar.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IslandCalendar.swift; sourceTree = "<group>"; };
 		14C08BC02C8E03AD000F8AA0 /* NSImage+Extensions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = "NSImage+Extensions.swift"; sourceTree = "<group>"; };
-		14CEF4122C5CAED300855D72 /* boringNotch.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = boringNotch.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		14CEF4152C5CAED300855D72 /* boringNotchApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = boringNotchApp.swift; sourceTree = "<group>"; };
+		14CEF4122C5CAED300855D72 /* DynamicIslandMusic.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = DynamicIslandMusic.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		14CEF4152C5CAED300855D72 /* DynamicIslandMusicApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicIslandMusicApp.swift; sourceTree = "<group>"; };
 		14CEF4172C5CAED300855D72 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		14CEF4192C5CAED400855D72 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		14CEF41C2C5CAED400855D72 /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
-		14CEF41E2C5CAED400855D72 /* boringNotch.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = boringNotch.entitlements; sourceTree = "<group>"; };
+		14CEF41E2C5CAED400855D72 /* DynamicIslandMusic.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = DynamicIslandMusic.entitlements; sourceTree = "<group>"; };
 		14D031ED2C689DB70096E6A1 /* IOKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = IOKit.framework; path = System/Library/Frameworks/IOKit.framework; sourceTree = SDKROOT; };
 		14D031EF2C689DC00096E6A1 /* ApplicationServices.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = ApplicationServices.framework; path = System/Library/Frameworks/ApplicationServices.framework; sourceTree = SDKROOT; };
 		14D570B82C5E98A20011E668 /* drop.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = drop.swift; sourceTree = "<group>"; };
 		14D570BB2C5E98EB0011E668 /* generic.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = generic.swift; sourceTree = "<group>"; };
 		14D570BF2C5EA5870011E668 /* AnimatedFace.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnimatedFace.swift; sourceTree = "<group>"; };
 		14D570C12C5EAFBF0011E668 /* EmptyState.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EmptyState.swift; sourceTree = "<group>"; };
-		14D570C52C5F38210011E668 /* BoringHeader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoringHeader.swift; sourceTree = "<group>"; };
-		14D570C82C5F38890011E668 /* BoringViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoringViewModel.swift; sourceTree = "<group>"; };
+		14D570C52C5F38210011E668 /* IslandHeader.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IslandHeader.swift; sourceTree = "<group>"; };
+		14D570C82C5F38890011E668 /* IslandViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IslandViewModel.swift; sourceTree = "<group>"; };
 		14D570CA2C5F4B2C0011E668 /* BatteryStatusViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BatteryStatusViewModel.swift; sourceTree = "<group>"; };
-		14D570CC2C5F4BB70011E668 /* BoringBattery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoringBattery.swift; sourceTree = "<group>"; };
-		14D570D12C5F6C6A0011E668 /* BoringExtrasMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BoringExtrasMenu.swift; sourceTree = "<group>"; };
+		14D570CC2C5F4BB70011E668 /* IslandBattery.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IslandBattery.swift; sourceTree = "<group>"; };
+		14D570D12C5F6C6A0011E668 /* IslandExtrasMenu.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IslandExtrasMenu.swift; sourceTree = "<group>"; };
 		14D570D42C5F710B0011E668 /* constants.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = constants.swift; sourceTree = "<group>"; };
 		14E9FEA92C70BF610062E83F /* DownloadView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadView.swift; sourceTree = "<group>"; };
 		14E9FEAD2C7325770062E83F /* Button+Bouncing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Button+Bouncing.swift"; sourceTree = "<group>"; };
@@ -317,13 +317,13 @@
 			membershipExceptions = (
 				Info.plist,
 			);
-			target = 11F7484E2EC9AABA00F841DB /* BoringNotchXPCHelper */;
+			target = 11F7484E2EC9AABA00F841DB /* DynamicIslandMusicXPCHelper */;
 		};
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		112FB72F2CCF12CC0015238C /* private */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = private; sourceTree = "<group>"; };
-		11F748502EC9AABA00F841DB /* BoringNotchXPCHelper */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (11F7485C2EC9AABA00F841DB /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = DynamicIslandMusicXPCHelper; sourceTree = "<group>"; };
+		11F748502EC9AABA00F841DB /* DynamicIslandMusicXPCHelper */ = {isa = PBXFileSystemSynchronizedRootGroup; exceptions = (11F7485C2EC9AABA00F841DB /* PBXFileSystemSynchronizedBuildFileExceptionSet */, ); explicitFileTypes = {}; explicitFolders = (); path = DynamicIslandMusicXPCHelper; sourceTree = "<group>"; };
 		A15C0DE00000000000000001 /* islandmusic */ = {isa = PBXFileSystemSynchronizedRootGroup; explicitFileTypes = {}; explicitFolders = (); path = islandmusic; sourceTree = "<group>"; };
 /* End PBXFileSystemSynchronizedRootGroup section */
 
@@ -447,7 +447,7 @@
 		11F748672EC9AC9600F841DB /* XPCHelperClient */ = {
 			isa = PBXGroup;
 			children = (
-				11F748652EC9AC9600F841DB /* BoringNotchXPCHelperProtocol.swift */,
+				11F748652EC9AC9600F841DB /* DynamicIslandMusicXPCHelperProtocol.swift */,
 				11F748662EC9AC9600F841DB /* XPCHelperClient.swift */,
 			);
 			path = XPCHelperClient;
@@ -534,7 +534,7 @@
 		14C08BB72C8DE49E000F8AA0 /* Calendar */ = {
 			isa = PBXGroup;
 			children = (
-				14C08BB82C8DE4B1000F8AA0 /* BoringCalendar.swift */,
+				14C08BB82C8DE4B1000F8AA0 /* IslandCalendar.swift */,
 			);
 			path = Calendar;
 			sourceTree = "<group>";
@@ -543,8 +543,8 @@
 			isa = PBXGroup;
 			children = (
 				112B0EB62E30DD0F00562D6C /* mediaremote-adapter */,
-				14CEF4142C5CAED300855D72 /* boringNotch */,
-				11F748502EC9AABA00F841DB /* BoringNotchXPCHelper */,
+				14CEF4142C5CAED300855D72 /* DynamicIslandMusic */,
+				11F748502EC9AABA00F841DB /* DynamicIslandMusicXPCHelper */,
 				14CEF4132C5CAED300855D72 /* Products */,
 				14D031EC2C689DB70096E6A1 /* Frameworks */,
 			);
@@ -553,13 +553,13 @@
 		14CEF4132C5CAED300855D72 /* Products */ = {
 			isa = PBXGroup;
 			children = (
-				14CEF4122C5CAED300855D72 /* boringNotch.app */,
-				11F7484F2EC9AABA00F841DB /* BoringNotchXPCHelper.xpc */,
+				14CEF4122C5CAED300855D72 /* DynamicIslandMusic.app */,
+				11F7484F2EC9AABA00F841DB /* DynamicIslandMusicXPCHelper.xpc */,
 			);
 			name = Products;
 			sourceTree = "<group>";
 		};
-		14CEF4142C5CAED300855D72 /* boringNotch */ = {
+		14CEF4142C5CAED300855D72 /* DynamicIslandMusic */ = {
 			isa = PBXGroup;
 			children = (
 				11F748672EC9AC9600F841DB /* XPCHelperClient */,
@@ -576,17 +576,17 @@
 				1153BD8E2D986B1F00979FB0 /* MediaControllers */,
 				B15063502C63D3F600EBB0E3 /* extensions */,
 				1471639B2C5D362F0068B555 /* components */,
-				14CEF4152C5CAED300855D72 /* boringNotchApp.swift */,
+				14CEF4152C5CAED300855D72 /* DynamicIslandMusicApp.swift */,
 				14CEF4172C5CAED300855D72 /* ContentView.swift */,
 				B17266E02C6532560031BA0D /* Localizable.xcstrings */,
 				14CEF4192C5CAED400855D72 /* Assets.xcassets */,
-				14A7E5962C65FD31008C1BE9 /* boring.m4a */,
+				14A7E5962C65FD31008C1BE9 /* island.m4a */,
 				1443E7F42C609E650027C1FC /* Info.plist */,
-				14CEF41E2C5CAED400855D72 /* boringNotch.entitlements */,
+				14CEF41E2C5CAED400855D72 /* DynamicIslandMusic.entitlements */,
 				14CEF41B2C5CAED400855D72 /* Preview Content */,
 				112FB72F2CCF12CC0015238C /* private */,
 				A15C0DE00000000000000001 /* islandmusic */,
-				11CC44A12CEE614100C7244B /* BoringViewCoordinator.swift */,
+				11CC44A12CEE614100C7244B /* IslandViewCoordinator.swift */,
 			);
 			path = DynamicIslandMusic;
 			sourceTree = "<group>";
@@ -634,7 +634,7 @@
 				1163988E2DF5CC870052E6AF /* CalendarModel.swift */,
 				1163988C2DF5CAB40052E6AF /* EventModel.swift */,
 				B19016232CC15B4D00E3F12E /* Constants.swift */,
-				14D570C82C5F38890011E668 /* BoringViewModel.swift */,
+				14D570C82C5F38890011E668 /* IslandViewModel.swift */,
 				14D570CA2C5F4B2C0011E668 /* BatteryStatusViewModel.swift */,
 				1153BD902D986DB300979FB0 /* PlaybackState.swift */,
 			);
@@ -715,12 +715,12 @@
 		B186542F2C6F455E000B926A /* Notch */ = {
 			isa = PBXGroup;
 			children = (
-				1194E8862EA6DDA7009C82D6 /* BoringNotchSkyLightWindow.swift */,
+				1194E8862EA6DDA7009C82D6 /* DynamicIslandMusicSkyLightWindow.swift */,
 				1160F8D72DD98230006FBB94 /* NotchShape.swift */,
 				9AB0C6BB2C73C9CB00F7CD30 /* NotchHomeView.swift */,
-				14D570C52C5F38210011E668 /* BoringHeader.swift */,
-				14D570D12C5F6C6A0011E668 /* BoringExtrasMenu.swift */,
-				1471A8582C6281BD0058408D /* BoringNotchWindow.swift */,
+				14D570C52C5F38210011E668 /* IslandHeader.swift */,
+				14D570D12C5F6C6A0011E668 /* IslandExtrasMenu.swift */,
+				1471A8582C6281BD0058408D /* DynamicIslandMusicWindow.swift */,
 			);
 			path = Notch;
 			sourceTree = "<group>";
@@ -741,7 +741,7 @@
 		B18654312C6F45AE000B926A /* Live activities */ = {
 			isa = PBXGroup;
 			children = (
-				14D570CC2C5F4BB70011E668 /* BoringBattery.swift */,
+				14D570CC2C5F4BB70011E668 /* IslandBattery.swift */,
 				B1C974332C642B6D0000E707 /* MarqueeTextView.swift */,
 				B1D365CD2C6A979C0047BDBC /* LiveActivityModifier.swift */,
 				B1D365CF2C6A9A6C0047BDBC /* SystemEventIndicatorModifier.swift */,
@@ -770,9 +770,9 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
-		11F7484E2EC9AABA00F841DB /* BoringNotchXPCHelper */ = {
+		11F7484E2EC9AABA00F841DB /* DynamicIslandMusicXPCHelper */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 11F7485D2EC9AABA00F841DB /* Build configuration list for PBXNativeTarget "BoringNotchXPCHelper" */;
+			buildConfigurationList = 11F7485D2EC9AABA00F841DB /* Build configuration list for PBXNativeTarget "DynamicIslandMusicXPCHelper" */;
 			buildPhases = (
 				11F7484B2EC9AABA00F841DB /* Sources */,
 				11F7484C2EC9AABA00F841DB /* Frameworks */,
@@ -783,18 +783,18 @@
 			dependencies = (
 			);
 			fileSystemSynchronizedGroups = (
-				11F748502EC9AABA00F841DB /* BoringNotchXPCHelper */,
+				11F748502EC9AABA00F841DB /* DynamicIslandMusicXPCHelper */,
 			);
-			name = BoringNotchXPCHelper;
+			name = DynamicIslandMusicXPCHelper;
 			packageProductDependencies = (
 			);
-			productName = BoringNotchXPCHelper;
-			productReference = 11F7484F2EC9AABA00F841DB /* BoringNotchXPCHelper.xpc */;
+			productName = DynamicIslandMusicXPCHelper;
+			productReference = 11F7484F2EC9AABA00F841DB /* DynamicIslandMusicXPCHelper.xpc */;
 			productType = "com.apple.product-type.xpc-service";
 		};
-		14CEF4112C5CAED300855D72 /* boringNotch */ = {
+		14CEF4112C5CAED300855D72 /* DynamicIslandMusic */ = {
 			isa = PBXNativeTarget;
-			buildConfigurationList = 14CEF4212C5CAED400855D72 /* Build configuration list for PBXNativeTarget "boringNotch" */;
+			buildConfigurationList = 14CEF4212C5CAED400855D72 /* Build configuration list for PBXNativeTarget "DynamicIslandMusic" */;
 			buildPhases = (
 				14CEF40E2C5CAED300855D72 /* Sources */,
 				14CEF40F2C5CAED300855D72 /* Frameworks */,
@@ -811,7 +811,7 @@
 				112FB72F2CCF12CC0015238C /* private */,
 				A15C0DE00000000000000001 /* islandmusic */,
 			);
-			name = boringNotch;
+			name = DynamicIslandMusic;
 			packageProductDependencies = (
 				14D032192C68F32E0096E6A1 /* LaunchAtLogin */,
 				14D0321C2C68F3350096E6A1 /* Sparkle */,
@@ -827,7 +827,7 @@
 				111BEA6E2ED166E20079DD4E /* MacroVisionKit */,
 			);
 			productName = dynamicNotch;
-			productReference = 14CEF4122C5CAED300855D72 /* boringNotch.app */;
+			productReference = 14CEF4122C5CAED300855D72 /* DynamicIslandMusic.app */;
 			productType = "com.apple.product-type.application";
 		};
 /* End PBXNativeTarget section */
@@ -849,7 +849,7 @@
 					};
 				};
 			};
-			buildConfigurationList = 14CEF40D2C5CAED200855D72 /* Build configuration list for PBXProject "boringNotch" */;
+			buildConfigurationList = 14CEF40D2C5CAED200855D72 /* Build configuration list for PBXProject "DynamicIslandMusic" */;
 			compatibilityVersion = "Xcode 14.0";
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
@@ -875,8 +875,8 @@
 			projectDirPath = "";
 			projectRoot = "";
 			targets = (
-				14CEF4112C5CAED300855D72 /* boringNotch */,
-				11F7484E2EC9AABA00F841DB /* BoringNotchXPCHelper */,
+				14CEF4112C5CAED300855D72 /* DynamicIslandMusic */,
+				11F7484E2EC9AABA00F841DB /* DynamicIslandMusicXPCHelper */,
 			);
 		};
 /* End PBXProject section */
@@ -898,7 +898,7 @@
 				112B0EB82E30DD0F00562D6C /* MediaRemoteAdapterTestClient in Resources */,
 				112B0EB92E30DD0F00562D6C /* mediaremote-adapter.pl in Resources */,
 				B17266E12C6532560031BA0D /* Localizable.xcstrings in Resources */,
-				14A7E5972C65FD31008C1BE9 /* boring.m4a in Resources */,
+				14A7E5972C65FD31008C1BE9 /* island.m4a in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -916,11 +916,11 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				14C08BB92C8DE4B1000F8AA0 /* BoringCalendar.swift in Sources */,
+				14C08BB92C8DE4B1000F8AA0 /* IslandCalendar.swift in Sources */,
 				5955950D2E900ED800C66711 /* ApplicationRelauncher.swift in Sources */,
 				1100292A2E8691B400035A57 /* FileShareView.swift in Sources */,
 				147163982C5D35B70068B555 /* MusicVisualizer.swift in Sources */,
-				11CC44A22CEE614100C7244B /* BoringViewCoordinator.swift in Sources */,
+				11CC44A22CEE614100C7244B /* IslandViewCoordinator.swift in Sources */,
 				B186543C2C6F49AE000B926A /* ShortcutConstants.swift in Sources */,
 				11A45C792E34E63100CEB175 /* MediaChecker.swift in Sources */,
 				B1D365CE2C6A979C0047BDBC /* LiveActivityModifier.swift in Sources */,
@@ -931,7 +931,7 @@
 				111BE9952ECF2DF40079DD4E /* DragDetector.swift in Sources */,
 				B1D365D02C6A9A6C0047BDBC /* SystemEventIndicatorModifier.swift in Sources */,
 				1194E87C2EA19E09009C82D6 /* ImageProcessingService.swift in Sources */,
-				1194E8872EA6DDA7009C82D6 /* BoringNotchSkyLightWindow.swift in Sources */,
+				1194E8872EA6DDA7009C82D6 /* DynamicIslandMusicSkyLightWindow.swift in Sources */,
 				14D570CB2C5F4B2C0011E668 /* BatteryStatusViewModel.swift in Sources */,
 				9A0887322C7A693000C160EA /* TabButton.swift in Sources */,
 				1153BD9C2D98853B00979FB0 /* NowPlayingController.swift in Sources */,
@@ -978,14 +978,14 @@
 				1153BD912D986DB300979FB0 /* PlaybackState.swift in Sources */,
 				B1A78C822C8BA08100BD51B0 /* FullscreenMediaDetection.swift in Sources */,
 				14E9FEAE2C7325770062E83F /* Button+Bouncing.swift in Sources */,
-				14D570C92C5F38890011E668 /* BoringViewModel.swift in Sources */,
+				14D570C92C5F38890011E668 /* IslandViewModel.swift in Sources */,
 				14D570BC2C5E98EB0011E668 /* generic.swift in Sources */,
 				118EBE272E92DE8400D54B5A /* NSMenu+AssociatedObject.swift in Sources */,
 				B1CE8CFE2C6F659400DD9871 /* KeyboardShortcutsHelper.swift in Sources */,
-				14D570C62C5F38210011E668 /* BoringHeader.swift in Sources */,
+				14D570C62C5F38210011E668 /* IslandHeader.swift in Sources */,
 				B17266E32C65F7FB0031BA0D /* WhatsNewView.swift in Sources */,
 				14C08BB62C8DE42D000F8AA0 /* CalendarManager.swift in Sources */,
-				14D570CD2C5F4BB70011E668 /* BoringBattery.swift in Sources */,
+				14D570CD2C5F4BB70011E668 /* IslandBattery.swift in Sources */,
 				B10F84A32C6C9596009F3026 /* TestView.swift in Sources */,
 				1443E7F32C609DCE0027C1FC /* matters.swift in Sources */,
 				11C5E3162DFE88510065821E /* SettingsView.swift in Sources */,
@@ -995,13 +995,13 @@
 				110029272E84FD4C00035A57 /* TemporaryFileStorageService.swift in Sources */,
 				11CFC6652E09C7B300748C80 /* OnboardingFinishView.swift in Sources */,
 				507266DB2C908E2E00A2D00D /* HoverButton.swift in Sources */,
-				1471A8592C6281BD0058408D /* BoringNotchWindow.swift in Sources */,
+				1471A8592C6281BD0058408D /* DynamicIslandMusicWindow.swift in Sources */,
 				14CEF4182C5CAED300855D72 /* ContentView.swift in Sources */,
 				9A987A0D2C73CA66005CA465 /* ShelfView.swift in Sources */,
 				1132E5142E777B920068732D /* YouTubeMusicNetworking.swift in Sources */,
 				1132E5122E777B6E0068732D /* YouTubeMusicModels.swift in Sources */,
 				11CFC65F2E097F2F00748C80 /* OnboardingView.swift in Sources */,
-				14CEF4162C5CAED300855D72 /* boringNotchApp.swift in Sources */,
+				14CEF4162C5CAED300855D72 /* DynamicIslandMusicApp.swift in Sources */,
 				B17266DF2C64DFA00031BA0D /* BundleInfos.swift in Sources */,
 				118EBE3B2E9720C500D54B5A /* ShelfStateViewModel.swift in Sources */,
 				11F747CE2EC75CEA00F841DB /* DragPreviewView.swift in Sources */,
@@ -1010,7 +1010,7 @@
 				118D1FD12E98FF5F00A2FF63 /* SharingStateManager.swift in Sources */,
 				14D570C22C5EAFBF0011E668 /* EmptyState.swift in Sources */,
 				118EBE252E92DCCB00D54B5A /* AssociatedObject.swift in Sources */,
-				11F748682EC9AC9600F841DB /* BoringNotchXPCHelperProtocol.swift in Sources */,
+				11F748682EC9AC9600F841DB /* DynamicIslandMusicXPCHelperProtocol.swift in Sources */,
 				11F748692EC9AC9600F841DB /* XPCHelperClient.swift in Sources */,
 				118EBE2D2E97165600D54B5A /* Bookmark.swift in Sources */,
 				B1FEB4992C7686630066EBBC /* PanGesture.swift in Sources */,
@@ -1020,7 +1020,7 @@
 				14FC6E502C7DED5600C7BEA5 /* DataTypes+Extensions.swift in Sources */,
 				1153BD982D9881F900979FB0 /* AppleScriptHelper.swift in Sources */,
 				11CFC6612E097F6800748C80 /* PermissionsRequestView.swift in Sources */,
-				14D570D22C5F6C6A0011E668 /* BoringExtrasMenu.swift in Sources */,
+				14D570D22C5F6C6A0011E668 /* IslandExtrasMenu.swift in Sources */,
 				11D58EA22E760AE100FA8377 /* ImageService.swift in Sources */,
 				11F748822ECB07A400F841DB /* MusicControlButton.swift in Sources */,
 				14288DDC2C6E015000B9F80C /* AudioPlayer.swift in Sources */,
@@ -1039,7 +1039,7 @@
 /* Begin PBXTargetDependency section */
 		11F7485A2EC9AABA00F841DB /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
-			target = 11F7484E2EC9AABA00F841DB /* BoringNotchXPCHelper */;
+			target = 11F7484E2EC9AABA00F841DB /* DynamicIslandMusicXPCHelper */;
 			targetProxy = 11F748592EC9AABA00F841DB /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
@@ -1048,7 +1048,7 @@
 		11F7485E2EC9AABA00F841DB /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CODE_SIGN_ENTITLEMENTS = DynamicIslandMusicXPCHelper/BoringNotchXPCHelper.entitlements;
+				CODE_SIGN_ENTITLEMENTS = DynamicIslandMusicXPCHelper/DynamicIslandMusicXPCHelper.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Automatic;
@@ -1057,7 +1057,7 @@
 				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = DynamicIslandMusicXPCHelper/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = BoringNotchXPCHelper;
+				INFOPLIST_KEY_CFBundleDisplayName = DynamicIslandMusicXPCHelper;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				MACOSX_DEPLOYMENT_TARGET = 15.5;
 				MARKETING_VERSION = 1.0.0;
@@ -1073,7 +1073,7 @@
 		11F7485F2EC9AABA00F841DB /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CODE_SIGN_ENTITLEMENTS = DynamicIslandMusicXPCHelper/BoringNotchXPCHelper.entitlements;
+				CODE_SIGN_ENTITLEMENTS = DynamicIslandMusicXPCHelper/DynamicIslandMusicXPCHelper.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Automatic;
@@ -1082,7 +1082,7 @@
 				DEVELOPMENT_TEAM = "";
 				GENERATE_INFOPLIST_FILE = YES;
 				INFOPLIST_FILE = DynamicIslandMusicXPCHelper/Info.plist;
-				INFOPLIST_KEY_CFBundleDisplayName = BoringNotchXPCHelper;
+				INFOPLIST_KEY_CFBundleDisplayName = DynamicIslandMusicXPCHelper;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				MACOSX_DEPLOYMENT_TARGET = 15.5;
 				MARKETING_VERSION = 1.0.0;
@@ -1227,7 +1227,7 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ALLOW_ENTITLEMENTS_MODIFICATION = YES;
-				CODE_SIGN_ENTITLEMENTS = DynamicIslandMusic/boringNotch.entitlements;
+				CODE_SIGN_ENTITLEMENTS = DynamicIslandMusic/DynamicIslandMusic.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Automatic;
@@ -1281,7 +1281,7 @@
 				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CLANG_ENABLE_MODULES = YES;
 				CODE_SIGN_ALLOW_ENTITLEMENTS_MODIFICATION = YES;
-				CODE_SIGN_ENTITLEMENTS = DynamicIslandMusic/boringNotch.entitlements;
+				CODE_SIGN_ENTITLEMENTS = DynamicIslandMusic/DynamicIslandMusic.entitlements;
 				CODE_SIGN_IDENTITY = "Apple Development";
 				"CODE_SIGN_IDENTITY[sdk=macosx*]" = "-";
 				CODE_SIGN_STYLE = Automatic;
@@ -1329,7 +1329,7 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
-		11F7485D2EC9AABA00F841DB /* Build configuration list for PBXNativeTarget "BoringNotchXPCHelper" */ = {
+		11F7485D2EC9AABA00F841DB /* Build configuration list for PBXNativeTarget "DynamicIslandMusicXPCHelper" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				11F7485E2EC9AABA00F841DB /* Debug */,
@@ -1338,7 +1338,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		14CEF40D2C5CAED200855D72 /* Build configuration list for PBXProject "boringNotch" */ = {
+		14CEF40D2C5CAED200855D72 /* Build configuration list for PBXProject "DynamicIslandMusic" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				14CEF41F2C5CAED400855D72 /* Debug */,
@@ -1347,7 +1347,7 @@
 			defaultConfigurationIsVisible = 0;
 			defaultConfigurationName = Release;
 		};
-		14CEF4212C5CAED400855D72 /* Build configuration list for PBXNativeTarget "boringNotch" */ = {
+		14CEF4212C5CAED400855D72 /* Build configuration list for PBXNativeTarget "DynamicIslandMusic" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
 				14CEF4222C5CAED400855D72 /* Debug */,

@@ -1,6 +1,6 @@
 //
 //  HoverButton.swift
-//  boringNotch
+//  DynamicIslandMusic
 //
 //  Created by Kraigo on 04.09.2024.
 //

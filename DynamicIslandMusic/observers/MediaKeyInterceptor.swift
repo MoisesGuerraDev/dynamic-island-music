@@ -1,6 +1,6 @@
 //
 //  MediaKeyInterceptor.swift
-//  boringNotch
+//  DynamicIslandMusic
 //
 //  Created by JeanLouis on 21/08/2025.
 
@@ -120,7 +120,7 @@ final class MediaKeyInterceptor {
                 case .showHUD:
                     Task { @MainActor in
                         let v = VolumeManager.shared.rawVolume
-                        BoringViewCoordinator.shared.toggleSneakPeek(status: true, type: .volume, value: CGFloat(v))
+                        IslandViewCoordinator.shared.toggleSneakPeek(status: true, type: .volume, value: CGFloat(v))
                     }
                     return nil
                 case .none:
@@ -142,7 +142,7 @@ final class MediaKeyInterceptor {
                 case .showHUD:
                     Task { @MainActor in
                         let v = VolumeManager.shared.rawVolume
-                        BoringViewCoordinator.shared.toggleSneakPeek(status: true, type: .volume, value: CGFloat(v))
+                        IslandViewCoordinator.shared.toggleSneakPeek(status: true, type: .volume, value: CGFloat(v))
                     }
                     return nil
                 case .none:
@@ -163,7 +163,7 @@ final class MediaKeyInterceptor {
                 case .showHUD:
                     Task { @MainActor in
                         let v = VolumeManager.shared.rawVolume
-                        BoringViewCoordinator.shared.toggleSneakPeek(status: true, type: .volume, value: CGFloat(v))
+                        IslandViewCoordinator.shared.toggleSneakPeek(status: true, type: .volume, value: CGFloat(v))
                     }
                     return nil
                 case .none:
@@ -191,12 +191,12 @@ final class MediaKeyInterceptor {
                         if commandDown {
                             Task { @MainActor in
                                 let v = KeyboardBacklightManager.shared.rawBrightness
-                                BoringViewCoordinator.shared.toggleSneakPeek(status: true, type: .backlight, value: CGFloat(v))
+                                IslandViewCoordinator.shared.toggleSneakPeek(status: true, type: .backlight, value: CGFloat(v))
                             }
                         } else {
                             Task { @MainActor in
                                 let v = BrightnessManager.shared.rawBrightness
-                                BoringViewCoordinator.shared.toggleSneakPeek(status: true, type: .brightness, value: CGFloat(v))
+                                IslandViewCoordinator.shared.toggleSneakPeek(status: true, type: .brightness, value: CGFloat(v))
                             }
                         }
                         return nil
@@ -234,12 +234,12 @@ final class MediaKeyInterceptor {
                         if commandDown {
                             Task { @MainActor in
                                 let v = KeyboardBacklightManager.shared.rawBrightness
-                                BoringViewCoordinator.shared.toggleSneakPeek(status: true, type: .backlight, value: CGFloat(v))
+                                IslandViewCoordinator.shared.toggleSneakPeek(status: true, type: .backlight, value: CGFloat(v))
                             }
                         } else {
                             Task { @MainActor in
                                 let v = BrightnessManager.shared.rawBrightness
-                                BoringViewCoordinator.shared.toggleSneakPeek(status: true, type: .brightness, value: CGFloat(v))
+                                IslandViewCoordinator.shared.toggleSneakPeek(status: true, type: .brightness, value: CGFloat(v))
                             }
                         }
                         return nil

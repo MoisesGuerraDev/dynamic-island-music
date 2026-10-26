@@ -1,6 +1,6 @@
 //
 //  URL+SecurityScoped.swift
-//  boringNotch
+//  DynamicIslandMusic
 //
 //  Created by Alexander on 2025-10-07.
 //

@@ -1,6 +1,6 @@
 //
 //  YouTubeMusicController.swift
-//  boringNotch
+//  DynamicIslandMusic
 //
 //  Created By Alexander on 2025-03-30.
 //  Modified by Pranav on 2025-06-16.

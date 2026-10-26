@@ -11,7 +11,7 @@ class BatteryStatusViewModel: ObservableObject {
     private var powerSourceChangedCallback: IOPowerSourceCallbackType?
     private var runLoopSource: Unmanaged<CFRunLoopSource>?
 
-    @ObservedObject var coordinator = BoringViewCoordinator.shared
+    @ObservedObject var coordinator = IslandViewCoordinator.shared
 
     @Published private(set) var levelBattery: Float = 0.0
     @Published private(set) var maxCapacity: Float = 0.0
@@ -27,8 +27,8 @@ class BatteryStatusViewModel: ObservableObject {
 
     static let shared = BatteryStatusViewModel()
 
-    /// Initializes the view model with a given BoringViewModel instance
-    /// - Parameter vm: The BoringViewModel instance
+    /// Initializes the view model with a given IslandViewModel instance
+    /// - Parameter vm: The IslandViewModel instance
     private init() {
         setupPowerStatus()
         setupMonitor()

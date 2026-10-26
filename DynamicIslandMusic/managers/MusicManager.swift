@@ -1,6 +1,6 @@
 //
 //  MusicManager.swift
-//  boringNotch
+//  DynamicIslandMusic
 //
 //  Created by Harsh Vardhan  Goswami  on 03/08/24.
 //
@@ -35,7 +35,7 @@ class MusicManager: ObservableObject {
     @Published var isPlaying = false
     @Published var album: String = "Self Love"
     @Published var isPlayerIdle: Bool = true
-    @Published var animations: BoringAnimations = .init()
+    @Published var animations: IslandAnimations = .init()
     @Published var avgColor: NSColor = .white
     /// Most vivid color of the cover. Used for the glow around the notch and the highlights.
     @Published var glowColor: NSColor = .systemPurple
@@ -50,7 +50,7 @@ class MusicManager: ObservableObject {
     @Published var repeatMode: RepeatMode = .off
     @Published var volume: Double = 0.5
     @Published var volumeControlSupported: Bool = true
-    @ObservedObject var coordinator = BoringViewCoordinator.shared
+    @ObservedObject var coordinator = IslandViewCoordinator.shared
     @Published var usingAppIconForArtwork: Bool = false
     @Published var currentLyrics: String = ""
     @Published var isFetchingLyrics: Bool = false

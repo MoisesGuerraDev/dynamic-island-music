@@ -1,6 +1,6 @@
 //
 //  FileShareView.swift
-//  boringNotch
+//  DynamicIslandMusic
 //
 //  Created by Alexander on 2025-09-24.
 //
@@ -11,7 +11,7 @@ import SwiftUI
 import UniformTypeIdentifiers
 
 struct FileShareView: View {
-    @EnvironmentObject private var vm: BoringViewModel
+    @EnvironmentObject private var vm: IslandViewModel
     @StateObject private var quickShare = QuickShareService.shared
     @Default(.quickShareProvider) var quickShareProvider: String
 

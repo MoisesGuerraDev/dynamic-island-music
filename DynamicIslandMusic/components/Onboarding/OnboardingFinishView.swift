@@ -1,6 +1,6 @@
 //
 //  OnboardingFinishView.swift
-//  boringNotch
+//  DynamicIslandMusic
 //
 //  Created by Alexander on 2025-06-23.
 //

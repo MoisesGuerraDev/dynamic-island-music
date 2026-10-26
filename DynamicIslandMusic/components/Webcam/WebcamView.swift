@@ -1,6 +1,6 @@
 //
 //  WebcamView.swift
-//  boringNotch
+//  DynamicIslandMusic
 //
 //  Created by Harsh Vardhan  Goswami  on 19/08/24.
 //
@@ -10,7 +10,7 @@ import Defaults
 import SwiftUI
 
 struct CameraPreviewView: View {
-    @EnvironmentObject var vm: BoringViewModel
+    @EnvironmentObject var vm: IslandViewModel
     @ObservedObject var webcamManager: WebcamManager
     
     // Track if authorization request is in progress to avoid multiple requests

@@ -150,7 +150,7 @@ struct SnakeTabView: View {
 }
 
 struct GameComponentView: View {
-    @ObservedObject var coordinator = BoringViewCoordinator.shared
+    @ObservedObject var coordinator = IslandViewCoordinator.shared
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Label("Juego", systemImage: "gamecontroller").font(.system(size: 12, weight: .semibold))

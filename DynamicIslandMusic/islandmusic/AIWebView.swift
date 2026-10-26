@@ -229,7 +229,7 @@ final class AIWebStore: NSObject, WKNavigationDelegate, WKUIDelegate, Observable
     func debugProbe() {
         let web = view(for: AIChatManager.shared.provider)
         let js = "JSON.stringify({url: location.href, title: document.title, focus: document.hasFocus(), passkeys: typeof PublicKeyCredential, testcookie: document.cookie.indexOf('dimtest') >= 0, active: document.activeElement ? document.activeElement.tagName + '#' + (document.activeElement.id || '') : '', typed: document.activeElement && (document.activeElement.value || document.activeElement.innerText) ? String(document.activeElement.value || document.activeElement.innerText).slice(0, 40) : '', text: (document.body ? document.body.innerText : '').replace(/\\s+/g, ' ').slice(0, 300)})"
-        let panels = NSApp.windows.compactMap { $0 as? BoringNotchSkyLightWindow }
+        let panels = NSApp.windows.compactMap { $0 as? DynamicIslandMusicSkyLightWindow }
         let native = panels.map { "key=\($0.isKeyWindow) canKey=\($0.canBecomeKey) first=\(String(describing: $0.firstResponder.map { type(of: $0) })) wkInWindow=\(web.window === $0)" }.joined(separator: "; ")
         let appState = "appActive=\(NSApp.isActive) wantsKey=\(KeyboardFocus.shared.wantsKey) loading=\(web.isLoading) progress=\(Int(web.estimatedProgress * 100)) nativeURL=\(web.url?.absoluteString ?? "nil") title=\(web.title ?? "")"
         web.evaluateJavaScript(js) { result, error in

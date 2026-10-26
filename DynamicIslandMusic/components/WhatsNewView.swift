@@ -1,6 +1,6 @@
 //
 //  WhatsNewView.swift
-//  boringNotch
+//  DynamicIslandMusic
 //
 //  Created by Richard Kunkli on 09/08/2024.
 //

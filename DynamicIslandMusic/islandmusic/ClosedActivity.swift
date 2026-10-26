@@ -23,7 +23,7 @@ struct ClosedActivityView: View {
     let kinds: [LiveKind]
     let albumArtNamespace: Namespace.ID
 
-    @EnvironmentObject var vm: BoringViewModel
+    @EnvironmentObject var vm: IslandViewModel
     @ObservedObject var music = MusicManager.shared
     @ObservedObject var pomo = PomodoroManager.shared
     @ObservedObject var perf = PerformanceMonitor.shared

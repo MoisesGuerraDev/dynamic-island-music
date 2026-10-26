@@ -7,7 +7,7 @@ final class XPCHelperClient {
     
     private let serviceName = "app.dynamicislandmusic.mac.XPCHelper"
     
-    private var remoteService: RemoteXPCService<BoringNotchXPCHelperProtocol>?
+    private var remoteService: RemoteXPCService<DynamicIslandMusicXPCHelperProtocol>?
     private var connection: NSXPCConnection?
     private var lastKnownAuthorization: Bool?
     
@@ -20,7 +20,7 @@ final class XPCHelperClient {
     // MARK: - Connection Management (Main Actor Isolated)
     
     @MainActor
-    private func ensureRemoteService() -> RemoteXPCService<BoringNotchXPCHelperProtocol> {
+    private func ensureRemoteService() -> RemoteXPCService<DynamicIslandMusicXPCHelperProtocol> {
         if let existing = remoteService {
             return existing
         }
@@ -43,9 +43,9 @@ final class XPCHelperClient {
         
         conn.resume()
         
-        let service = RemoteXPCService<BoringNotchXPCHelperProtocol>(
+        let service = RemoteXPCService<DynamicIslandMusicXPCHelperProtocol>(
             connection: conn,
-            remoteInterface: BoringNotchXPCHelperProtocol.self
+            remoteInterface: DynamicIslandMusicXPCHelperProtocol.self
         )
         
         connection = conn
@@ -54,7 +54,7 @@ final class XPCHelperClient {
     }
     
     @MainActor
-    private func getRemoteService() -> RemoteXPCService<BoringNotchXPCHelperProtocol>? {
+    private func getRemoteService() -> RemoteXPCService<DynamicIslandMusicXPCHelperProtocol>? {
         remoteService
     }
     

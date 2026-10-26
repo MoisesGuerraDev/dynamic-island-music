@@ -352,7 +352,7 @@ struct ChatTabView: View {
 /// Small version used inside the component row.
 struct ChatComponentView: View {
     @ObservedObject var chat = AIChatManager.shared
-    @ObservedObject var coordinator = BoringViewCoordinator.shared
+    @ObservedObject var coordinator = IslandViewCoordinator.shared
 
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
@@ -390,7 +390,7 @@ struct ChatComponentView: View {
 /// Round button next to the calendar that opens the chat with the default AI.
 struct AIQuickButton: View {
     @ObservedObject var chat = AIChatManager.shared
-    @ObservedObject var coordinator = BoringViewCoordinator.shared
+    @ObservedObject var coordinator = IslandViewCoordinator.shared
 
     var body: some View {
         let p = chat.defaultButtonProvider

@@ -1,6 +1,6 @@
 //
-//  BoringHeader.swift
-//  boringNotch
+//  IslandHeader.swift
+//  DynamicIslandMusic
 //
 //  Created by Harsh Vardhan  Goswami  on 04/08/24.
 //
@@ -8,16 +8,16 @@
 import Defaults
 import SwiftUI
 
-struct BoringHeader: View {
-    @EnvironmentObject var vm: BoringViewModel
+struct IslandHeader: View {
+    @EnvironmentObject var vm: IslandViewModel
     @ObservedObject var batteryModel = BatteryStatusViewModel.shared
-    @ObservedObject var coordinator = BoringViewCoordinator.shared
+    @ObservedObject var coordinator = IslandViewCoordinator.shared
     @StateObject var tvm = ShelfStateViewModel.shared
     @ObservedObject var layout = LayoutManager.shared
     var body: some View {
         HStack(spacing: 0) {
             HStack {
-                if (!tvm.isEmpty || coordinator.alwaysShowTabs) && Defaults[.boringShelf] {
+                if (!tvm.isEmpty || coordinator.alwaysShowTabs) && Defaults[.islandShelf] {
                     TabSelectionView()
                 } else if vm.notchState == .open {
                     EmptyView()
@@ -43,7 +43,7 @@ struct BoringHeader: View {
                         GlowQuickButton()
                         GlassCircleButton(symbol: layout.editing ? "checkmark" : "pencil", size: 25) {
                             withAnimation(.smooth) {
-                                if !layout.editing { BoringViewCoordinator.shared.currentView = .home }
+                                if !layout.editing { IslandViewCoordinator.shared.currentView = .home }
                                 layout.editing.toggle()
                             }
                         }
@@ -54,7 +54,7 @@ struct BoringHeader: View {
                         .help("Ajustes")
                     }
                     if Defaults[.showBatteryIndicator] {
-                        BoringBatteryView(
+                        IslandBatteryView(
                             batteryWidth: 30,
                             isCharging: batteryModel.isCharging,
                             isInLowPowerMode: batteryModel.isInLowPowerMode,
@@ -79,5 +79,5 @@ struct BoringHeader: View {
 }
 
 #Preview {
-    BoringHeader().environmentObject(BoringViewModel())
+    IslandHeader().environmentObject(IslandViewModel())
 }

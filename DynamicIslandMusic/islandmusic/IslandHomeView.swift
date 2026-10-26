@@ -3,10 +3,10 @@ import SwiftUI
 
 /// Home of the open notch: a row of components that the user can turn on or off, reorder and resize.
 struct IslandHomeView: View {
-    @EnvironmentObject var vm: BoringViewModel
+    @EnvironmentObject var vm: IslandViewModel
     @ObservedObject var layout = LayoutManager.shared
     @ObservedObject var webcamManager = WebcamManager.shared
-    @ObservedObject var coordinator = BoringViewCoordinator.shared
+    @ObservedObject var coordinator = IslandViewCoordinator.shared
     let albumArtNamespace: Namespace.ID
 
     @State private var wiggle = false
@@ -201,7 +201,7 @@ private struct ReorderDelegate: DropDelegate {
 struct EditBar: View {
     let capacity: CGFloat
     let pageCount: Int
-    @EnvironmentObject var vm: BoringViewModel
+    @EnvironmentObject var vm: IslandViewModel
     @ObservedObject var layout = LayoutManager.shared
 
     var body: some View {
@@ -259,7 +259,7 @@ struct EditBar: View {
 // MARK: - Small components
 
 struct CameraComponent: View {
-    @EnvironmentObject var vm: BoringViewModel
+    @EnvironmentObject var vm: IslandViewModel
     @ObservedObject var webcamManager = WebcamManager.shared
 
     var body: some View {
@@ -289,7 +289,7 @@ struct CameraComponent: View {
 
 struct ShelfComponentView: View {
     @ObservedObject var tvm = ShelfStateViewModel.shared
-    @ObservedObject var coordinator = BoringViewCoordinator.shared
+    @ObservedObject var coordinator = IslandViewCoordinator.shared
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {

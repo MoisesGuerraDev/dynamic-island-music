@@ -1,6 +1,6 @@
 //
-//  boringNotchApp.swift
-//  boringNotchApp
+//  DynamicIslandMusicApp.swift
+//  DynamicIslandMusicApp
 //
 //  Created by Harsh Vardhan  Goswami  on 02/08/24.
 //
@@ -50,10 +50,10 @@ struct DynamicNotchApp: App {
 class AppDelegate: NSObject, NSApplicationDelegate {
     var statusItem: NSStatusItem?
     var windows: [String: NSWindow] = [:] // UUID -> NSWindow
-    var viewModels: [String: BoringViewModel] = [:] // UUID -> BoringViewModel
+    var viewModels: [String: IslandViewModel] = [:] // UUID -> IslandViewModel
     var window: NSWindow?
-    let vm: BoringViewModel = .init()
-    @ObservedObject var coordinator = BoringViewCoordinator.shared
+    let vm: IslandViewModel = .init()
+    @ObservedObject var coordinator = IslandViewCoordinator.shared
     var quickShareService = QuickShareService.shared
     var whatsNewWindow: NSWindow?
     var timer: Timer?
@@ -68,7 +68,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var sizeObservers: [ObjectIdentifier: AnyCancellable] = [:]
 
     /// The window only covers what is needed, so it never blocks clicks in the menu bar around the notch.
-    private func observeWindowSize(_ window: NSWindow, viewModel: BoringViewModel) {
+    private func observeWindowSize(_ window: NSWindow, viewModel: IslandViewModel) {
         sizeObservers[ObjectIdentifier(window)] = Publishers.CombineLatest(
                 viewModel.$notchSize,
                 Defaults.publisher(.islandOffsetX).map(\.newValue))
@@ -86,7 +86,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             height: max(windowSize.height, notchSize.height + editExtraHeight + shadowPadding))
     }
 
-    private func fitWindow(_ window: NSWindow, notchSize: CGSize, viewModel: BoringViewModel, delayShrink: Bool) {
+    private func fitWindow(_ window: NSWindow, notchSize: CGSize, viewModel: IslandViewModel, delayShrink: Bool) {
         let desired = windowTarget(for: notchSize)
         let screenNow = viewModel.screenUUID.flatMap { NSScreen.screen(withUUID: $0) } ?? window.screen ?? NSScreen.main
         let wantedX = screenNow.map { islandCenterX(on: $0, windowWidth: desired.width) - desired.width / 2 } ?? window.frame.minX
@@ -152,12 +152,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private func enableSkyLightOnAllWindows() {
         if Defaults[.showOnAllDisplays] {
             windows.values.forEach { window in
-                if let skyWindow = window as? BoringNotchSkyLightWindow {
+                if let skyWindow = window as? DynamicIslandMusicSkyLightWindow {
                     skyWindow.enableSkyLight()
                 }
             }
         } else {
-            if let skyWindow = window as? BoringNotchSkyLightWindow {
+            if let skyWindow = window as? DynamicIslandMusicSkyLightWindow {
                 skyWindow.enableSkyLight()
             }
         }
@@ -171,12 +171,12 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             await MainActor.run {
                 if Defaults[.showOnAllDisplays] {
                     self.windows.values.forEach { window in
-                        if let skyWindow = window as? BoringNotchSkyLightWindow {
+                        if let skyWindow = window as? DynamicIslandMusicSkyLightWindow {
                             skyWindow.disableSkyLight()
                         }
                     }
                 } else {
-                    if let skyWindow = self.window as? BoringNotchSkyLightWindow {
+                    if let skyWindow = self.window as? DynamicIslandMusicSkyLightWindow {
                         skyWindow.disableSkyLight()
                     }
                 }
@@ -274,11 +274,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    private func createBoringNotchWindow(for screen: NSScreen, with viewModel: BoringViewModel) -> NSWindow {
+    private func createDynamicIslandMusicWindow(for screen: NSScreen, with viewModel: IslandViewModel) -> NSWindow {
         let rect = NSRect(x: 0, y: 0, width: windowSize.width, height: windowSize.height)
         let styleMask: NSWindow.StyleMask = [.borderless, .nonactivatingPanel, .utilityWindow, .hudWindow]
         
-        let window = BoringNotchSkyLightWindow(contentRect: rect, styleMask: styleMask, backing: .buffered, defer: false)
+        let window = DynamicIslandMusicSkyLightWindow(contentRect: rect, styleMask: styleMask, backing: .buffered, defer: false)
         
         // Enable SkyLight only when screen is locked
         if isScreenLocked {
@@ -475,7 +475,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         if !Defaults[.showOnAllDisplays] {
             let viewModel = self.vm
-            let window = createBoringNotchWindow(
+            let window = createDynamicIslandMusicWindow(
                 for: NSScreen.main ?? NSScreen.screens.first!, with: viewModel)
             self.window = window
             adjustWindowPosition(changeAlpha: true)
@@ -568,7 +568,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     #endif
 
     func playWelcomeSound() {
-        // No welcome sound: the original one belongs to Boring Notch.
+        // No welcome sound: the original one belongs to Dynamic Island Music.
     }
 
     func deviceHasNotch() -> Bool {
@@ -621,8 +621,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 guard let uuid = screen.displayUUID else { continue }
                 
                 if windows[uuid] == nil {
-                    let viewModel = BoringViewModel(screenUUID: uuid)
-                    let window = createBoringNotchWindow(for: screen, with: viewModel)
+                    let viewModel = IslandViewModel(screenUUID: uuid)
+                    let window = createDynamicIslandMusicWindow(for: screen, with: viewModel)
 
                     windows[uuid] = window
                     viewModels[uuid] = viewModel
@@ -657,7 +657,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             vm.notchSize = getClosedNotchSize(screenUUID: selectedScreen.displayUUID)
 
             if window == nil {
-                window = createBoringNotchWindow(for: selectedScreen, with: vm)
+                window = createDynamicIslandMusicWindow(for: selectedScreen, with: vm)
             }
 
             if let window = window {

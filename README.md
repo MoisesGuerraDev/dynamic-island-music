@@ -48,7 +48,7 @@ Sin telemetría. Todo se guarda en tu equipo. Detalles en [SECURITY.md](SECURITY
 ```bash
 git clone https://github.com/MoisesGuerraDev/dynamic-island-music.git
 cd dynamic-island-music
-xcodebuild -project DynamicIslandMusic.xcodeproj -scheme boringNotch -configuration Release \
+xcodebuild -project DynamicIslandMusic.xcodeproj -scheme DynamicIslandMusic -configuration Release \
   -derivedDataPath build -destination 'platform=macOS' \
   CODE_SIGN_IDENTITY="-" ENABLE_HARDENED_RUNTIME=NO DEVELOPMENT_TEAM="" CODE_SIGN_STYLE=Manual \
   -skipMacroValidation -skipPackagePluginValidation build

@@ -113,7 +113,9 @@ const TABS = [
     id: 'estilo', icon: 'eye', name: 'Estilo',
     build: () => [
       sec('Apariencia', [
-        SEL('glowStyle', 'Brillo del borde', [['glass', 'Liquid Glass'], ['soft', 'Sutil'], ['strong', 'Fuerte'], ['off', 'Apagado']]),
+        SEL('borderStyle', 'Contorno de la isla', [['none', 'Sin borde'], ['open', 'Solo abierta'], ['always', 'Siempre']], 'Sin borde: isla negra lisa y solo se ve el brillo de color alrededor'),
+        T('colorsDance', 'Los colores bailan con la música', 'El brillo de color late al ritmo de la canción (un pulso simulado con el tempo de cada tema)'),
+        SEL('glowStyle', 'Brillo alrededor', [['glass', 'Liquid Glass'], ['soft', 'Sutil'], ['strong', 'Fuerte'], ['off', 'Apagado']]),
         RNG('panelOpacity', 'Fondo: de vidrio a negro total', 30, 100, 1, '%', '100 % es negro total; bájalo para ver más vidrio. Windows no puede difuminar lo que hay detrás de la isla.'),
         RNG('glowIntensity', 'Intensidad del color de la carátula', 0, 100, 1, '%', 'La luz de color que sale de la carátula y sigue al mouse'),
         SEL('glowColorMode', 'Color del brillo', [['cover', 'Según la carátula'], ['custom', 'Un color fijo']], null, { rr: true }),

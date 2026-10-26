@@ -67,6 +67,8 @@ export const DEFAULTS = {
   // Style
   glowStyle: 'glass', // off | soft | strong | glass
   panelOpacity: 100, // 100 = all black, lower = more glass
+  colorsDance: true, // the colored light pulses with a simulated beat of the song
+  borderStyle: 'none', // none | open | always: thin outline of the island
   glowIntensity: 80, // strength of the colored light from the cover
   glowColorMode: 'cover', // cover | custom
   glowColor: '#ff8a3d',

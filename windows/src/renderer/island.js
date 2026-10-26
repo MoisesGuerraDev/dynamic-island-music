@@ -11,6 +11,7 @@ import { startAmbient } from './ambient.js';
 import { paletteFromImage, paletteFromHex, DEFAULT_PALETTE } from './colors.js';
 import { playPomodoroSound } from './sounds.js';
 import { openWidth } from '../shared/layout.js';
+import { bpmFor, pulseAt } from '../shared/pulse.js';
 import { formatDuration, parseDuration } from '../shared/time.js';
 
 let dim;
@@ -63,11 +64,55 @@ function applyStyle() {
   stage.classList.toggle('no-bounce', !s.hoverBounce);
   stage.classList.toggle('flat', !s.liquidButtons);
   stage.classList.toggle('no-shadow', !s.windowShadow);
+  for (const g of ['off', 'soft', 'glass', 'strong']) stage.classList.toggle(`glow-${g}`, (['off', 'soft', 'strong', 'glass'].includes(s.glowStyle) ? s.glowStyle : 'glass') === g);
+  for (const m of ['none', 'open', 'always']) stage.classList.toggle(`rim-${m}`, (s.borderStyle || 'none') === m);
   root.style.setProperty('--top', `${s.topOffset}px`);
   root.style.setProperty('--gi', String(Math.max(0, Math.min(1.25, s.glowIntensity / 100))));
   root.style.setProperty('--pa', String(Math.max(0.3, Math.min(1, s.panelOpacity / 100))));
   setLensEnabled(s.liquidButtons);
   updatePalette();
+  syncDance();
+}
+
+// ---------- Colors that dance with the music ----------
+
+const IDLE_PULSE = 0.15;
+let danceRaf = 0;
+let lastFrame = 0;
+
+function setPulse(v) {
+  $('#stage').style.setProperty('--pulse', v.toFixed(3));
+}
+
+function danceWanted() {
+  const m = S.music;
+  if (!S.set.colorsDance || !m || !m.session || !m.playing) return false;
+  return S.open || $('#pill').classList.contains('glow');
+}
+
+function danceLoop(ts) {
+  danceRaf = 0;
+  if (!danceWanted()) {
+    setPulse(IDLE_PULSE);
+    return;
+  }
+  if (ts - lastFrame >= 33) {
+    lastFrame = ts;
+    const m = S.music;
+    setPulse(pulseAt(musicPos(), bpmFor(m.title, m.artist)));
+  }
+  danceRaf = requestAnimationFrame(danceLoop);
+}
+
+/** Starts or stops the beat animation. Called whenever the music, the settings or the open state change. */
+function syncDance() {
+  if (danceWanted()) {
+    if (!danceRaf) danceRaf = requestAnimationFrame(danceLoop);
+  } else {
+    if (danceRaf) cancelAnimationFrame(danceRaf);
+    danceRaf = 0;
+    setPulse(IDLE_PULSE);
+  }
 }
 
 // ---------- Header ----------
@@ -116,7 +161,12 @@ function keepFocus(fn) {
 }
 
 function setWidth(px) {
-  $('#notch').style.setProperty('--w', `${Math.round(px)}px`);
+  $('#stage').style.setProperty('--w', `${Math.round(px)}px`);
+}
+
+/** The halo copies the height of the island (its width follows the same --w). */
+function syncHalo() {
+  $('#halo').style.height = `${$('#notch').offsetHeight + 8}px`;
 }
 
 function renderRow() {
@@ -378,6 +428,7 @@ function renderPill() {
   } else {
     third.hidden = true;
   }
+  syncDance();
   scheduleRect();
 }
 
@@ -499,6 +550,7 @@ function setOpenLocal(open) {
   }
   renderPill();
   syncPerf();
+  syncDance();
   scheduleRect();
 }
 
@@ -803,6 +855,7 @@ async function boot() {
     if (m.playing) S.lastPlayedAt = Date.now();
     updatePalette();
     renderRow();
+    syncDance();
   });
   dim.pomo.onState((p) => {
     S.pomo = p;
@@ -855,7 +908,10 @@ async function boot() {
   const notch = $('#notch');
   startLens(document.getElementById('stage'));
   startAmbient(notch);
-  new ResizeObserver(scheduleRect).observe(notch);
+  new ResizeObserver(() => {
+    syncHalo();
+    scheduleRect();
+  }).observe(notch);
   new ResizeObserver(scheduleRect).observe($('#pill'));
   $('#pill').addEventListener('transitionend', scheduleRect);
   notch.addEventListener('transitionend', scheduleRect);

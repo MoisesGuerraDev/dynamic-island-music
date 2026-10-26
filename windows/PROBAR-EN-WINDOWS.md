@@ -19,7 +19,7 @@ Si tu antivirus protesta por PowerShell: la app usa dos scripts pequeños (`reso
 - **Notas:** el `+` de Notas crea un archivo `.md`. En Ajustes › Notas puedes elegir tu carpeta de iCloud Drive.
 - **Portapapeles:** copia texto; debe aparecer. Copia una contraseña desde tu gestor: no debe guardarse.
 - **Lápiz** (arriba a la derecha): arrastra, cambia el tamaño, quita y agrega componentes.
-- **Ajustes** (rueda dentada): Estilo tiene un deslizador de negro a vidrio y otro para la intensidad del color. En vivo: qué se ve con la isla cerrada.
+- **Ajustes** (rueda dentada): Estilo tiene un deslizador de negro a vidrio, otro para la intensidad del color, «Los colores bailan con la música» (el brillo late al ritmo de cada canción) y el contorno de la isla (por defecto sin borde). En vivo: qué se ve con la isla cerrada.
 - **Juego (PC gamer):** abre un juego en **pantalla completa sin bordes**; la isla debe verse encima y no robar el foco. Si el juego usa pantalla completa *exclusiva* la isla se oculta a propósito (Ajustes › Modo juego); `Ctrl+Shift+Espacio` la asoma un momento.
 - Atajos: `Ctrl+Shift+N` abre/cierra, `Ctrl+Shift+P` pausa la música, `Ctrl+Shift+T` el Pomodoro, `Ctrl+Alt+Espacio` el chat.
 
@@ -34,5 +34,7 @@ Clic derecho en el icono de la bandeja › **Salir** (o Ajustes › Acerca de �
 
 ## 6. Si algo falla
 Cuéntame qué hiciste y qué pasó. Tus datos y ajustes están en `%APPDATA%\Dynamic Island Music` (Ajustes › General › Carpeta de datos). Para desinstalar: sal de la app, borra la carpeta y esa de datos.
+
+> El baile de colores usa un pulso simulado con el tempo de cada canción (no escucha el audio). Seguir el volumen real con el audio del sistema (loopback) queda pendiente.
 
 > Lo de Windows se escribió y probó solo en un Mac con música simulada: la música real (SMTC), GPU/pantalla completa, el cifrado de claves y el inicio con Windows se prueban por primera vez en tu PC.

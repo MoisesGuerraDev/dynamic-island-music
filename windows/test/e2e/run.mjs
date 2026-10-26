@@ -59,6 +59,14 @@ try {
   const rect = await page.evaluate(() => { const n = document.getElementById('notch'); return { w: n.offsetWidth, x: n.offsetLeft }; });
   check('isla abierta no gigante', rect.w <= 1100, `${rect.w}px`);
   await page.screenshot({ path: path.join(out, 'island-open.png') });
+  const samples = [];
+  for (let i = 0; i < 24; i++) {
+    samples.push(await page.evaluate(() => Number(document.getElementById('stage').style.getPropertyValue('--pulse') || 0)));
+    await page.waitForTimeout(45);
+  }
+  const lo = Math.min(...samples), hi = Math.max(...samples);
+  check('los colores laten con la música (pulso entre 0 y 1)', hi - lo > 0.25 && lo >= 0 && hi <= 1, `mín ${lo.toFixed(2)} máx ${hi.toFixed(2)}`);
+  check('sin borde por defecto (isla negra lisa)', await page.evaluate(() => getComputedStyle(document.querySelector('.rim')).display === 'none'));
 
   // Click-through: the region outside the island is not interactive while the cursor is away.
   const reported = await app.evaluate(() => globalThis.__DIM__.islands.first().rect);
@@ -120,6 +128,16 @@ try {
   });
   check('isla cerrada muestra música y Pomodoro, lados simétricos', !pill.off && pill.l > 0 && Math.abs(pill.l - pill.r) < 2, JSON.stringify(pill));
   await page.screenshot({ path: path.join(out, 'island-closed.png'), clip: { x: 0, y: 0, width: 1198, height: 120 } });
+
+  // Outline options and the dance switch.
+  await app.evaluate(() => globalThis.__DIM__.store.patch({ borderStyle: 'always' }));
+  await page.waitForTimeout(300);
+  check('contorno «Siempre» muestra el borde', await page.evaluate(() => getComputedStyle(document.querySelector('.rim')).display !== 'none'));
+  await app.evaluate(() => globalThis.__DIM__.store.patch({ borderStyle: 'none', colorsDance: false }));
+  await page.waitForTimeout(500);
+  const idle = await page.evaluate(() => Number(document.getElementById('stage').style.getPropertyValue('--pulse')));
+  check('con «bailan» apagado el brillo queda quieto', idle <= 0.2, String(idle));
+  await app.evaluate(() => globalThis.__DIM__.store.patch({ colorsDance: true }));
 
   // Settings changes reach the island.
   await app.evaluate(() => globalThis.__DIM__.store.set('glowStyle', 'strong'));

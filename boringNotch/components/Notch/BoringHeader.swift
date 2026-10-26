@@ -40,6 +40,7 @@ struct BoringHeader: View {
             HStack(spacing: 4) {
                 if vm.notchState == .open {
                     if Defaults[.settingsIconInNotch] {
+                        GlowQuickButton()
                         GlassCircleButton(symbol: layout.editing ? "checkmark" : "pencil", size: 25) {
                             withAnimation(.smooth) {
                                 if !layout.editing { BoringViewCoordinator.shared.currentView = .home }

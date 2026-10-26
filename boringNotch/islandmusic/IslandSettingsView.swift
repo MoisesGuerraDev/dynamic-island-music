@@ -5,6 +5,13 @@ import UniformTypeIdentifiers
 
 // MARK: - Window with icon tabs on top
 
+/// Lets other parts of the app open the settings window on a given tab.
+@MainActor
+final class SettingsRouter: ObservableObject {
+    static let shared = SettingsRouter()
+    @Published var requested: IslandSettingsView.Tab?
+}
+
 struct IslandSettingsView: View {
     enum Tab: String, CaseIterable, Identifiable {
         case components, general, glass, player, calendar, pomodoro, notes, ai, clipboard, performance, display, live, hud, battery, shelf, shortcuts, advanced, about
@@ -111,6 +118,11 @@ struct IslandSettingsView: View {
         .background(Color.black.ignoresSafeArea())
         .preferredColorScheme(.dark)
         .tint(.effectiveAccent)
+        .onReceive(SettingsRouter.shared.$requested) { requested in
+            guard let requested else { return }
+            tab = requested
+            SettingsRouter.shared.requested = nil
+        }
         .id(accentTrigger)
         .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("AccentColorChanged"))) { _ in
             accentTrigger = UUID()
@@ -209,7 +221,7 @@ struct ComponentsSettings: View {
 // MARK: - Brillo y vidrio
 
 /// Quiet / small / medium / large, for how far the light dances.
-private struct DancePicker: View {
+struct DancePicker: View {
     let title: String
     @Binding var motion: Bool
     @Binding var size: GlowSize
@@ -232,7 +244,7 @@ private struct DancePicker: View {
     }
 }
 
-private struct IntensityRow: View {
+struct IntensityRow: View {
     let title: String
     @Binding var value: Double
 
@@ -292,7 +304,7 @@ struct GlassSettings: View {
                     ForEach(GlowSize.allCases) { Text($0.title).tag($0) }
                 }
                 .pickerStyle(.segmented)
-                DancePicker(title: "Cuánto baila", motion: $innerMotion, size: $innerDance)
+                DancePicker(title: "Baile", motion: $innerMotion, size: $innerDance)
             } header: {
                 Text("Luz de adentro (notch abierto)")
             } footer: {
@@ -305,7 +317,7 @@ struct GlassSettings: View {
                     ForEach(GlowSize.allCases) { Text($0.title).tag($0) }
                 }
                 .pickerStyle(.segmented)
-                DancePicker(title: "Cuánto baila", motion: $glowMotion, size: $danceSize)
+                DancePicker(title: "Baile", motion: $glowMotion, size: $danceSize)
                 Picker("Borde", selection: $notchBorder) {
                     ForEach(NotchBorder.allCases) { Text($0.title).tag($0) }
                 }

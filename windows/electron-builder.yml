@@ -27,11 +27,16 @@ win:
     - target: zip
       arch: [x64]
   icon: build/icon.png
+  requestedExecutionLevel: asInvoker # never asks for administrator
 nsis:
-  oneClick: true
-  perMachine: false
-  runAfterFinish: true
-  deleteAppDataOnUninstall: false
-  artifactName: DynamicIslandMusic-Setup.${ext}
+  oneClick: true # one click, no wizard
+  perMachine: false # installs only for this user (in %LOCALAPPDATA%), so no administrator prompt
+  allowElevation: false
+  createStartMenuShortcut: true
+  createDesktopShortcut: false
   shortcutName: Dynamic Island Music
+  uninstallDisplayName: Dynamic Island Music
+  runAfterFinish: true
+  deleteAppDataOnUninstall: false # the person's notes and settings stay if they uninstall
+  artifactName: DynamicIslandMusic-Setup.${ext}
 publish: null

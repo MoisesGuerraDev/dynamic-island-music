@@ -321,6 +321,17 @@ try {
   check('al cerrar sesión en todas las IA se borra también la copia', !fs.existsSync(copyFile));
   await page.waitForTimeout(700);
 
+  // Performance: off by default, small and discreet, never blank.
+  const perfDefault = await app.evaluate(() => globalThis.__DIM__.store.get('components').find((c) => c.id === 'performance').enabled);
+  check('Rendimiento viene apagado por defecto', perfDefault === false);
+  await app.evaluate(() => { const c = globalThis.__DIM__; c.store.patch({ components: c.store.get('components').map((x) => (x.id === 'performance' ? { ...x, enabled: true } : x.id === 'camera' ? { ...x, enabled: false } : x)) }); const i = c.islands.first(); i.pins.add('toggle'); c.islands.setOpen(i, true); });
+  await page.waitForTimeout(2600);
+  const pf = await page.evaluate(() => { const e = document.querySelector('[data-perf]'); if (!e) return null; const col = e.closest('.col'); const cs = getComputedStyle(e); return { text: e.textContent.replace(/\s+/g, ' ').trim(), w: col.offsetWidth, opacity: cs.opacity, label: getComputedStyle(e.querySelector('.pf span')).fontSize, value: getComputedStyle(e.querySelector('.pf em')).fontSize, bar: e.querySelector('.pf i') ? e.querySelector('.pf i').offsetHeight : 0 }; });
+  check('Rendimiento: 130 px de ancho, letras de 9-10 px, barras de 3 px, al 38 %', pf && pf.w === 130 && pf.opacity === '0.38' && pf.label === '9px' && pf.value === '10px' && pf.bar === 3, JSON.stringify(pf));
+  check('Rendimiento: nunca en blanco (CPU, GPU «No disponible», RAM, Hz y estado)', pf && /CPU \d+%/.test(pf.text) && pf.text.includes('GPU No disponible') && /RAM [\d.]+ GB/.test(pf.text) && /Pantalla \d+ Hz/.test(pf.text) && /Estado (Normal|Ocupado|Alto)/.test(pf.text), pf && pf.text);
+  await app.evaluate(() => { const c = globalThis.__DIM__; c.store.patch({ components: c.store.get('components').map((x) => (x.id === 'performance' ? { ...x, enabled: false } : x.id === 'camera' ? { ...x, enabled: true } : x)) }); });
+  await page.waitForTimeout(400);
+
   // The island is in proportion to every screen: automatic scale from the work area (simulated sizes, nothing shown).
   const sims = [[1366, 768, 0.71], [1920, 1080, 1.0], [2560, 1440, 1.33], [3440, 1440, 1.54], [2560, 1440, 1.33]]; // the last one is 3840x2160 at 150 %
   const settle = async () => { await page.waitForTimeout(750); };
@@ -427,17 +438,23 @@ try {
     await app2.close();
   }
 }
-// First start of a new install: the welcome says only "By: MoisesGuerraDev".
+// First start of a new install: one short screen with "By: MoisesGuerraDev" and an Empezar button, nothing asked.
 {
   const fresh = fs.mkdtempSync(path.join(os.tmpdir(), 'dim-e2e-fresh-'));
   const app3 = await electron.launch({ args: [root], env: { ...process.env, DIM_TEST: '1', DIM_MOCK_MEDIA: '1', DIM_USER_DATA: fresh } });
   try {
     const p3 = await app3.firstWindow();
-    await p3.waitForSelector('#toast:not([hidden])', { state: 'attached', timeout: 15000 });
-    const txt = (await p3.textContent('#toast')).trim();
-    check('el texto de arranque dice solo «By: MoisesGuerraDev»', txt === 'By: MoisesGuerraDev', JSON.stringify(txt));
+    await p3.waitForSelector('.welcome', { state: 'attached', timeout: 15000 });
+    const w = await p3.evaluate(() => ({ title: document.querySelector('.welcome > b').textContent.trim(), button: document.querySelector('[data-act="welcome-done"]').textContent.trim(), perms: document.querySelectorAll('.welcome input[type=checkbox]:checked').length }));
+    check('primera vez: pantalla con «By: MoisesGuerraDev» y botón Empezar', w.title === 'By: MoisesGuerraDev' && w.button === 'Empezar', JSON.stringify(w));
+    const before = await app3.evaluate(() => ({ login: globalThis.__DIM__.store.get('launchAtLogin'), welcomed: globalThis.__DIM__.store.get('welcomed') }));
+    check('primera vez: no se activa nada por sí solo (ni inicio con Windows)', before.login === false && w.perms === 0, JSON.stringify(before));
+    await p3.click('[data-act="welcome-done"]');
+    await p3.waitForTimeout(500);
+    const after = await p3.evaluate(() => ({ gone: !document.querySelector('.welcome'), players: !!document.querySelector('.player, .nomusic') }));
+    check('Empezar cierra el tutorial y muestra la isla', after.gone && after.players, JSON.stringify(after));
   } catch (err) {
-    check('el texto de arranque dice solo «By: MoisesGuerraDev»', false, err.message.split('\n')[0]);
+    check('primera vez: tutorial', false, err.message.split('\n')[0]);
   } finally {
     await app3.close();
   }

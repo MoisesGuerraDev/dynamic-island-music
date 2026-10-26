@@ -23,3 +23,10 @@ Usa **Security › Report a vulnerability** en la página del repositorio en Git
 | `lrclib.net` | Letras de canciones, si las activas | Título y artista |
 
 La app no tiene telemetría ni cuentas propias.
+
+## Instalación segura
+
+- **Mac:** `install.sh` descarga la app desde las versiones de este repositorio, comprueba su suma SHA-256 y la copia a tu escritorio. No usa `sudo`, no instala servicios ni toca otros archivos. La app corre en la caja de seguridad de macOS (App Sandbox), no puede abrir puertos para recibir conexiones y solo accede a lo que le das permiso.
+- **Windows:** el instalador se instala solo para tu usuario, sin administrador; `install.ps1` comprueba la suma SHA-256 antes de ejecutarlo.
+- **Código y compilación:** todo el código está aquí y las versiones se compilan en GitHub Actions desde ese mismo código.
+- Las apps no están firmadas con certificado de pago, por eso Windows y macOS pueden mostrar un aviso la primera vez si las abres desde el navegador; no significa que haya un virus.

@@ -8,7 +8,9 @@
 #
 # Qué hace: descarga la última versión (.dmg) y su suma de verificación, comprueba que coinciden, copia la app a tu
 # escritorio y la abre. Si todavía no hay una versión publicada y estás dentro del código con Xcode, la compila (build-mac.sh).
-# Léelo antes de ejecutarlo: son pocas líneas.
+# Lo único fuera de lo común: quita la marca de cuarentena SOLO de la app que acaba de bajar de este repositorio y
+# comprobar, para que macOS no muestre el aviso de "desarrollador no identificado". No usa sudo, no instala nada más
+# y no toca ningún otro archivo. Léelo antes de ejecutarlo: son pocas líneas.
 set -euo pipefail
 
 APP_NAME="Dynamic Island Music"

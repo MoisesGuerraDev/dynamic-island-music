@@ -64,6 +64,7 @@ function applyStyle() {
   stage.classList.toggle('hide-tabs', !s.showTabs);
   stage.classList.toggle('hide-header', !s.showHeaderButtons);
   stage.classList.toggle('no-viz', !s.visualizer);
+  stage.classList.toggle('perf-discreet', !!s.perfDiscreet);
   stage.classList.toggle('no-bounce', !s.hoverBounce);
   stage.classList.toggle('no-shadow', !s.windowShadow);
   for (const g of ['off', 'soft', 'glass', 'strong']) stage.classList.toggle(`glow-${g}`, (['off', 'soft', 'strong', 'glass'].includes(s.glowStyle) ? s.glowStyle : 'glass') === g);
@@ -213,6 +214,13 @@ function renderLightPanel() {
   scheduleRect();
 }
 
+function welcomeHTML() {
+  return `<div class="welcome"><b>By: MoisesGuerraDev</b>
+    <div class="wl-tips"><span>${ic('home')}Pasa el mouse por arriba para abrirla</span><span>${ic('edit')}El lápiz ordena y cambia el tamaño</span><span>${ic('sun')}El sol cambia colores y luces</span></div>
+    <label class="wl-opt"><input type="checkbox" id="wl-login"> Abrir con Windows</label>
+    <button class="nbtn pbtn" data-act="welcome-done">Empezar</button></div>`;
+}
+
 // ---------- Row ----------
 
 function keepFocus(fn) {
@@ -266,6 +274,19 @@ function renderRow() {
     const homeW = openWidth(pages()[Math.min(S.page, pages().length - 1)] || [], S.info.cap);
     setWidth(Math.min(S.info.cap, Math.max(680, homeW)));
     renderPill();
+    scheduleRect();
+    return;
+  }
+  if (S.ui.welcome) {
+    // First start on a new PC: one short screen, nothing is asked of the person.
+    $('#row').hidden = false;
+    $('#webdock').hidden = true;
+    $('#ntabs-m').innerHTML = '';
+    $('#editbar').hidden = true;
+    $('#row').className = 'row';
+    $('#row').style.height = '';
+    $('#row').innerHTML = welcomeHTML();
+    setWidth(760);
     scheduleRect();
     return;
   }
@@ -534,17 +555,6 @@ function showToast(item) {
   }, 2400);
 }
 
-/** First start: one line of credit, nothing else. */
-function showWelcome() {
-  const t = $('#toast');
-  t.innerHTML = '<span class="tx">By: MoisesGuerraDev</span>';
-  t.hidden = false;
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => {
-    t.hidden = true;
-  }, 4500);
-}
-
 // ---------- Pointer rectangle for the main process ----------
 
 let rectTimer = null;
@@ -648,6 +658,8 @@ function setOpenLocal(open) {
     S.ui.noteAdding = S.ui.calAdding = S.ui.timeEditing = false;
     S.ui.lightsOpen = false;
     renderLightPanel();
+    S.ui.welcome = false;
+    $('#stage').classList.remove('welcoming');
     S.view = 'home';
     S.page = 0;
     stopGame();
@@ -687,6 +699,14 @@ const actions = {
     S.ui.lightsOpen = !S.ui.lightsOpen;
     dim.island.pin('lights', S.ui.lightsOpen);
     renderLightPanel();
+  },
+  'welcome-done': () => {
+    const login = $('#wl-login');
+    if (login && login.checked) dim.settings.patch({ launchAtLogin: true });
+    S.ui.welcome = false;
+    dim.island.pin('welcome', false);
+    $('#stage').classList.remove('welcoming');
+    renderRow();
   },
   'open-settings': () => dim.island.openSettings(''),
   'open-ai-settings': () => dim.island.openSettings('ia'),
@@ -977,7 +997,12 @@ async function boot() {
     render();
   });
   dim.island.onState(({ open }) => setOpenLocal(open));
-  dim.island.onWelcome(showWelcome);
+  dim.island.onWelcome(() => {
+    S.ui.welcome = true;
+    dim.island.pin('welcome', true);
+    $('#stage').classList.add('welcoming');
+    renderRow();
+  });
   dim.island.onGame((g) => {
     S.game = g;
     renderPill();

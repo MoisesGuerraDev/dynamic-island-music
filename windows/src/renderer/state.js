@@ -21,7 +21,7 @@ export const S = {
   game: { exclusive: false, busy: false },
   chat: { provider: 'claude', web: 'claude', messages: [], sending: false },
   lock: { mode: 'none', locked: false, hello: false, pinSet: false, needsPin: false, retryIn: 0 },
-  ui: { lightsOpen: false, lockMsg: '', noteAdding: false, calAdding: false, timeEditing: false, calDay: 0, camOn: false, camError: '' },
+  ui: { welcome: false, lightsOpen: false, lockMsg: '', noteAdding: false, calAdding: false, timeEditing: false, calDay: 0, camOn: false, camError: '' },
   hd: {}, // official HD covers found for small pictures, by track key
   lastPlayedAt: 0,
   rot: 0,

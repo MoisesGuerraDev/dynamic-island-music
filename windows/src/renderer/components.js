@@ -161,25 +161,31 @@ function gameMini() {
   return `<div class="mc"><div class="mch"><b>${ic('game')}Juego</b></div><button class="nbtn pbtn" data-act="open-view" data-v="game">Jugar</button><span class="chat-f">Serpiente${S.set.snakeBest ? ` · Récord ${S.set.snakeBest}` : ''}</span></div>`;
 }
 
+/** Small and quiet. A value that cannot be read says "No disponible": it is never left blank. */
 export function perfHTML() {
   const s = S.set;
   const p = S.perf;
-  const rows = [];
-  if (p) {
-    if (s.perfShowCPU) rows.push(['CPU', p.cpu, `${p.cpu}%`]);
+  const bar = (label, pct, value) => `<div class="pf"><span>${label}</span><i><b style="width:${Math.max(0, Math.min(100, pct))}%"></b></i><em>${value}</em></div>`;
+  const line = (label, value, na = false) => `<div class="pf txt"><span>${label}</span><em${na ? ' class="na"' : ''}>${value}</em></div>`;
+  let body;
+  if (!p) {
+    body = '<span class="pf-note">Midiendo…</span>';
+  } else {
+    const rows = [];
+    if (s.perfShowCPU) rows.push(bar('CPU', p.cpu, `${p.cpu}%`));
     if (s.perfShowGPU) {
-      if (p.gpu === null) rows.push(['GPU', 0, '—']);
-      else rows.push(['GPU', p.gpu, s.perfShowTemp && p.gpuTemp !== null ? `${p.gpuTemp}°` : `${p.gpu}%`]);
+      if (p.gpu === null) rows.push(line('GPU', 'No disponible', true));
+      else rows.push(bar('GPU', p.gpu, s.perfShowTemp && p.gpuTemp !== null ? `${p.gpuTemp}°` : `${p.gpu}%`));
     }
-    if (s.perfShowRAM) rows.push(['RAM', p.ramPercent, `${p.ramUsedGB.toFixed(1)} GB`]);
+    if (s.perfShowRAM) rows.push(bar('RAM', p.ramPercent, `${p.ramUsedGB.toFixed(1)} GB`));
+    if (s.perfShowRefresh) rows.push(line('Pantalla', p.hz ? `${p.hz} Hz` : 'No disponible', !p.hz));
+    if (s.perfShowStatus) {
+      const load = Math.max(p.cpu, p.ramPercent);
+      rows.push(line('Estado', load >= 90 ? 'Alto' : load >= 70 ? 'Ocupado' : 'Normal'));
+    }
+    body = rows.length ? rows.join('') : '<span class="pf-note">Nada que mostrar. Actívalo en Ajustes › Rendimiento.</span>';
   }
-  const hz = s.perfShowRefresh && p ? `<span class="pill">${p.hz} Hz</span>` : '';
-  const body = !p
-    ? '<span class="chat-f">Midiendo…</span>'
-    : rows.length
-      ? rows.map((r) => `<div class="pf"><span>${r[0]}</span><i><b style="width:${Math.max(0, Math.min(100, r[1]))}%"></b></i><em>${r[2]}</em></div>`).join('')
-      : '<span class="chat-f">Nada que mostrar. Actívalo en Ajustes › Rendimiento.</span>';
-  return `<div class="mc" data-perf><div class="mch"><b>${ic('bolt')}Rendimiento</b>${hz}</div>${body}</div>`;
+  return `<div class="mc" data-perf><div class="mch"><b>${ic('bolt')}Rendimiento</b></div>${body}</div>`;
 }
 
 export function colHTML(id) {

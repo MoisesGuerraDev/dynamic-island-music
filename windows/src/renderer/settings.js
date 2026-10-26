@@ -358,6 +358,11 @@ const TABS = [
         T('perfShowRAM', 'Memoria (RAM)'),
         T('perfShowRefresh', 'Frecuencia de la pantalla (Hz)', 'Los FPS de un juego no se pueden leer sin herramientas aparte'),
         T('perfShowTemp', 'Temperatura en °C', 'Si lo apagas, muestra porcentajes'),
+        T('perfShowStatus', 'Estado (Normal, Ocupado, Alto)', 'Según el uso de CPU y memoria'),
+      ]),
+      sec('Aspecto', [
+        T('perfDiscreet', 'Modo discreto', 'Pequeño y atenuado al 38 % hasta que el puntero pasa por encima'),
+        INFO('Cómo se mide', 'CPU y memoria del sistema, Hz de la pantalla', 'Lo que no se pueda leer (por ejemplo la tarjeta gráfica) dice «No disponible»'),
       ]),
       sec('Actualización', [
         SEL('perfInterval', 'Cada cuánto se actualiza', [[500, '0,5 segundos'], [1000, '1 segundo'], [2000, '2 segundos'], [5000, '5 segundos']], 'Solo mide mientras se está viendo', { num: true }),

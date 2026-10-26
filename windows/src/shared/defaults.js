@@ -13,7 +13,7 @@ export const COMPONENT_META = {
   clipboard: { name: 'Portapapeles', icon: 'clip', width: 210, min: 170 },
   shelf: { name: 'Bandeja', icon: 'tray', width: 210, min: 170 },
   game: { name: 'Juego', icon: 'game', width: 160, min: 130 },
-  performance: { name: 'Rendimiento', icon: 'bolt', width: 190, min: 160 },
+  performance: { name: 'Rendimiento', icon: 'bolt', width: 130, min: 110 },
 };
 
 export const MAX_COMPONENT_WIDTH = 520;
@@ -57,7 +57,7 @@ export const DEFAULTS = {
 
   // System
   welcomed: false,
-  launchAtLogin: true,
+  launchAtLogin: false, // never added to Windows startup unless the person asks (the welcome offers it)
   displayMode: 'primary', // primary | all | specific
   displayKey: '',
   openOnHover: true,
@@ -150,6 +150,8 @@ export const DEFAULTS = {
   perfShowRAM: true,
   perfShowRefresh: true,
   perfShowTemp: true,
+  perfShowStatus: true,
+  perfDiscreet: true, // small and dimmed to 38 % until the pointer is over it
   perfInterval: 1000,
   perfOnlyWhenGame: false,
 

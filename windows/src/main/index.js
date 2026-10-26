@@ -99,7 +99,10 @@ async function boot(ctx) {
     onFirstLoad: (isl) => {
       if (!store.get('welcomed') && isl === islands.first()) {
         store.set('welcomed', true);
-        setTimeout(() => isl.win.webContents.send('island:welcome'), 700);
+        setTimeout(() => {
+          islands.setOpen(isl, true);
+          isl.win.webContents.send('island:welcome');
+        }, 700);
       }
     },
   });

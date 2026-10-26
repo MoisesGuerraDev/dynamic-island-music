@@ -25,5 +25,5 @@ struct IslandShape: Shape {
 
 /// Corner radii of the notch outline.
 let islandCorners: (opened: (top: CGFloat, bottom: CGFloat), closed: (top: CGFloat, bottom: CGFloat)) = (
-    opened: (top: 20, bottom: 34), closed: (top: 9, bottom: 16)
+    opened: (top: 0, bottom: 34), closed: (top: 0, bottom: 18)
 )

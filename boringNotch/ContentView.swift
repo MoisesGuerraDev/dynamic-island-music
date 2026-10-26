@@ -29,6 +29,9 @@ struct ContentView: View {
     @Default(.glowStyle) var glowStyle
     @Default(.glassAmount) var glassAmount
     @Default(.glowIntensity) var glowIntensity
+    @Default(.notchBorder) var notchBorder
+    @Default(.glowMotion) var glowMotion
+    @State private var glowBreath = false
     @Default(.livePomodoro) var livePomodoro
     @Default(.liveControls) var liveControls
     @Default(.livePerformance) var livePerformance
@@ -67,6 +70,29 @@ struct ContentView: View {
         let first: LiveKind = livePriority == .pomodoro ? .pomodoro : .music
         let ordered = candidates.filter { $0 == first } + candidates.filter { $0 != first }
         return Array(ordered.prefix(max(1, min(3, liveMax))))
+    }
+
+    private var showBorder: Bool {
+        switch notchBorder {
+        case .off: false
+        case .openOnly: vm.notchState == .open
+        case .always: true
+        }
+    }
+
+    /// Glow around the notch. Closed with music it is stronger and breathes, like the red light under the mockup's notch.
+    private var glowShadowColor: Color {
+        guard glowStyle != .off && (vm.notchState == .open || musicManager.isPlaying) else { return .clear }
+        let base = glowStyle == .strong ? 0.55 : 0.34
+        let boost = vm.notchState == .closed ? 1.55 : 1.0
+        let breath = (glowMotion && musicManager.isPlaying) ? (glowBreath ? 1.2 : 0.78) : 1.0
+        return Color(nsColor: musicManager.glowColor).opacity(min(1, base * glowIntensity * boost * breath))
+    }
+
+    private var glowShadowRadius: CGFloat {
+        let base: CGFloat = glowStyle == .strong ? 24 : 15
+        let breath: CGFloat = (glowMotion && musicManager.isPlaying) ? (glowBreath ? 1.15 : 0.85) : 1
+        return base * min(1.6, max(0.8, glowIntensity)) * (vm.notchState == .closed ? 1.25 : 1) * breath
     }
 
     private var topCornerRadius: CGFloat {
@@ -164,19 +190,21 @@ struct ContentView: View {
                                     .clipShape(currentNotchShape)
                                 currentNotchShape
                                     .fill(LinearGradient(colors: [Color.white.opacity(0.09), .clear], startPoint: .top, endPoint: UnitPoint(x: 0.5, y: 0.4)))
-                                currentNotchShape
-                                    .stroke(
-                                        LinearGradient(
-                                            stops: [
-                                                .init(color: Color.white.opacity(0.7), location: 0),
-                                                .init(color: Color.white.opacity(0.08), location: 0.45),
-                                                .init(color: (glowStyle == .off ? Color.white : Color(nsColor: musicManager.glowColor)).opacity(0.75), location: 1),
-                                            ],
-                                            startPoint: .topLeading, endPoint: .bottomTrailing),
-                                        lineWidth: 1.4)
+                                if showBorder {
+                                    currentNotchShape
+                                        .stroke(
+                                            LinearGradient(
+                                                stops: [
+                                                    .init(color: Color.white.opacity(0.7), location: 0),
+                                                    .init(color: Color.white.opacity(0.08), location: 0.45),
+                                                    .init(color: (glowStyle == .off ? Color.white : Color(nsColor: musicManager.glowColor)).opacity(0.75), location: 1),
+                                                ],
+                                                startPoint: .topLeading, endPoint: .bottomTrailing),
+                                            lineWidth: 1.4)
+                                }
                             }
                             .allowsHitTesting(false)
-                        } else if glowStyle != .off && (vm.notchState == .open || musicManager.isPlaying) {
+                        } else if showBorder && glowStyle != .off && (vm.notchState == .open || musicManager.isPlaying) {
                             currentNotchShape
                                 .stroke(
                                     LinearGradient(
@@ -190,11 +218,18 @@ struct ContentView: View {
                         color: ((vm.notchState == .open || isHovering) && Defaults[.enableShadow])
                             ? .black.opacity(0.7) : .clear, radius: Defaults[.cornerRadiusScaling] ? 6 : 4
                     )
-                    .shadow(
-                        color: (glowStyle != .off && (vm.notchState == .open || musicManager.isPlaying))
-                            ? Color(nsColor: musicManager.glowColor).opacity(min(1, (glowStyle == .strong ? 0.55 : 0.32) * glowIntensity)) : .clear,
-                        radius: (glowStyle == .strong ? 22 : 12) * min(1.6, max(0.8, glowIntensity)), y: 6
-                    )
+                    .shadow(color: glowShadowColor, radius: glowShadowRadius, y: 6)
+                    .onAppear {
+                        guard glowMotion else { return }
+                        withAnimation(.easeInOut(duration: 2.6).repeatForever(autoreverses: true)) { glowBreath = true }
+                    }
+                    .onChange(of: glowMotion) { _, on in
+                        if on {
+                            withAnimation(.easeInOut(duration: 2.6).repeatForever(autoreverses: true)) { glowBreath = true }
+                        } else {
+                            withAnimation(.easeOut(duration: 0.3)) { glowBreath = false }
+                        }
+                    }
                     .padding(
                         .bottom,
                         vm.effectiveClosedNotchHeight == 0 ? 10 : 0

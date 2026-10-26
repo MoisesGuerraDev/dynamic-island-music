@@ -212,6 +212,8 @@ struct GlassSettings: View {
     @Default(.glowStyle) var glowStyle
     @Default(.glowIntensity) var glowIntensity
     @Default(.glassAmount) var glassAmount
+    @Default(.notchBorder) var notchBorder
+    @Default(.glowMotion) var glowMotion
     @Default(.liquidGlassButtons) var glassButtons
 
     var body: some View {
@@ -225,6 +227,17 @@ struct GlassSettings: View {
                 Text("Brillo")
             } footer: {
                 Text("El estilo lo eliges tú, pero el color siempre sale de la carátula de la canción que suena: si la portada es roja, el brillo es rojo.")
+            }
+            Section {
+                Picker("Borde del notch", selection: $notchBorder) {
+                    ForEach(NotchBorder.allCases) { Text($0.title).tag($0) }
+                }
+                .pickerStyle(.segmented)
+                Toggle("El brillo respira y se mueve mientras suena la música", isOn: $glowMotion)
+            } header: {
+                Text("Contorno y movimiento")
+            } footer: {
+                Text("Sin borde, el notch es negro liso como en la maqueta y solo se ve el brillo de color a su alrededor.")
             }
             Section {
                 HStack {

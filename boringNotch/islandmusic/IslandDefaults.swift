@@ -172,6 +172,10 @@ extension Defaults.Keys {
     static let glassAmount = Key<Double>("glassAmount", default: 0)
     /// Shrink the closed notch's sides to the free room in the menu bar.
     static let fitMenuBar = Key<Bool>("fitMenuBar", default: true)
+    /// Thin outline around the notch.
+    static let notchBorder = Key<NotchBorder>("notchBorder", default: .off)
+    /// The color glow breathes and drifts slowly while music plays.
+    static let glowMotion = Key<Bool>("glowMotion", default: true)
     static let manualSize = Key<Bool>("manualSize", default: false)
     static let manualOpenWidth = Key<Double>("manualOpenWidth", default: 900)
 
@@ -240,4 +244,16 @@ extension Defaults.Keys {
 
 enum LivePriority: String, Defaults.Serializable {
     case music, pomodoro
+}
+
+enum NotchBorder: String, CaseIterable, Identifiable, Defaults.Serializable {
+    case off, openOnly, always
+    var id: String { rawValue }
+    var title: String {
+        switch self {
+        case .off: "Sin borde"
+        case .openOnly: "Solo abierto"
+        case .always: "Siempre"
+        }
+    }
 }

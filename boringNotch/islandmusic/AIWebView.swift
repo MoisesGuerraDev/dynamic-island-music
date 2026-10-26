@@ -181,10 +181,10 @@ final class AIWebStore: NSObject, WKNavigationDelegate, WKUIDelegate, Observable
             var line = ""
             switch step {
             case "write":
-                backup.customPassphrase = ""
+                // Written with a fixed password (not saved anywhere) so another program can open it in the cross-platform test.
                 if let c = HTTPCookie(properties: [.name: "dimsession", .value: "abc123", .domain: "chatgpt.com", .path: "/", .secure: "TRUE",
                                                     .expires: Date().addingTimeInterval(86400)]) { await store.setCookie(c) }
-                line = "wrote \((try? await backup.write(to: folder)) ?? -1)"
+                line = "wrote \((try? await backup.write(to: folder, passphrase: "prueba-123")) ?? -1)"
             case "delete":
                 for c in await store.allCookies() where c.name == "dimsession" { await store.deleteCookie(c) }
                 line = "deleted; remaining=\(await store.allCookies().filter { $0.name == "dimsession" }.count)"

@@ -146,7 +146,7 @@ final class AISessionBackup: ObservableObject {
     }
 
     /// Writes the encrypted file into a folder. Returns how many cookies it holds.
-    func write(to folder: URL) async throws -> Int {
+    func write(to folder: URL, passphrase override: String? = nil) async throws -> Int {
         let cookies = await WKWebsiteDataStore.default().httpCookieStore.allCookies().filter { Self.isAIDomain($0.domain) }
         let items: [[String: Any]] = cookies.map { cookie in
             var item: [String: Any] = ["name": cookie.name, "value": cookie.value, "domain": cookie.domain, "path": cookie.path,
@@ -158,7 +158,7 @@ final class AISessionBackup: ObservableObject {
         let plain = try JSONSerialization.data(withJSONObject: items)
         var salt = Data(count: 16)
         _ = salt.withUnsafeMutableBytes { SecRandomCopyBytes(kSecRandomDefault, 16, $0.baseAddress!) }
-        let sealed = try AES.GCM.seal(plain, using: Self.key(passphrase: effectivePassphrase, salt: salt))
+        let sealed = try AES.GCM.seal(plain, using: Self.key(passphrase: override ?? effectivePassphrase, salt: salt))
         guard let combined = sealed.combined else { throw CocoaError(.coderInvalidValue) }
         try (Self.magic + salt + combined).write(to: folder.appendingPathComponent(Self.fileName), options: .atomic)
         return items.count

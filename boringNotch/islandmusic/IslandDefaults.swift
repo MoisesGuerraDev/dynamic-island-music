@@ -93,13 +93,14 @@ enum GlowStyle: String, CaseIterable, Identifiable, Defaults.Serializable {
 }
 
 enum AIProvider: String, CaseIterable, Identifiable, Defaults.Serializable {
-    case claude, openai, gemini, ollama
+    case claude, openai, gemini, deepseek, ollama
     var id: String { rawValue }
     var title: String {
         switch self {
         case .claude: "Claude"
         case .openai: "ChatGPT"
         case .gemini: "Gemini"
+        case .deepseek: "DeepSeek"
         case .ollama: "Ollama (local)"
         }
     }
@@ -108,6 +109,7 @@ enum AIProvider: String, CaseIterable, Identifiable, Defaults.Serializable {
         case .claude: "C"
         case .openai: "G"
         case .gemini: "Ge"
+        case .deepseek: "D"
         case .ollama: "O"
         }
     }
@@ -116,6 +118,7 @@ enum AIProvider: String, CaseIterable, Identifiable, Defaults.Serializable {
         case .claude: Color(red: 0.85, green: 0.47, blue: 0.34)
         case .openai: Color(red: 0.06, green: 0.64, blue: 0.5)
         case .gemini: Color(red: 0.26, green: 0.52, blue: 0.96)
+        case .deepseek: Color(red: 0.3, green: 0.42, blue: 0.95)
         case .ollama: Color(white: 0.55)
         }
     }
@@ -124,10 +127,32 @@ enum AIProvider: String, CaseIterable, Identifiable, Defaults.Serializable {
         case .claude: "claude-haiku-5-5"
         case .openai: "gpt-4o-mini"
         case .gemini: "gemini-2.0-flash"
+        case .deepseek: "deepseek-chat"
         case .ollama: "llama3.2"
         }
     }
     var needsKey: Bool { self != .ollama }
+
+    /// Official web app. The person signs in there with their own account (also with Google), no API key needed.
+    var webURL: URL? {
+        switch self {
+        case .claude: URL(string: "https://claude.ai/new")
+        case .openai: URL(string: "https://chatgpt.com/")
+        case .gemini: URL(string: "https://gemini.google.com/app")
+        case .deepseek: URL(string: "https://chat.deepseek.com/")
+        case .ollama: nil
+        }
+    }
+
+    var accountHint: String {
+        switch self {
+        case .claude: "Inicia sesión con tu cuenta de Claude (correo o Google)."
+        case .openai: "Inicia sesión con tu cuenta de ChatGPT (correo, Google o Apple)."
+        case .gemini: "Inicia sesión con tu cuenta de Google."
+        case .deepseek: "Inicia sesión con tu cuenta de DeepSeek (correo o Google)."
+        case .ollama: ""
+        }
+    }
 }
 
 // MARK: - Keys
@@ -137,6 +162,8 @@ extension Defaults.Keys {
     static let islandComponents = Key<[ComponentConfig]>("islandComponents", default: IslandComponent.defaultConfigs)
     /// Size of the open notch content. 1.0 is the design size; the default is smaller and minimal.
     static let uiScale = Key<Double>("uiScale", default: 1.0)
+    /// Horizontal offset of the island from the screen center, only for Macs without a notch (with a notch it stays over it).
+    static let islandOffsetX = Key<Double>("islandOffsetX", default: 0)
     static let manualSize = Key<Bool>("manualSize", default: false)
     static let manualOpenWidth = Key<Double>("manualOpenWidth", default: 900)
 
@@ -167,7 +194,9 @@ extension Defaults.Keys {
 
     // AI chat
     static let aiProvider = Key<AIProvider>("aiProvider", default: .claude)
-    static let aiEnabled = Key<[String: Bool]>("aiEnabled", default: ["claude": true, "openai": true, "gemini": false, "ollama": true])
+    static let aiEnabled = Key<[String: Bool]>("aiEnabled", default: ["claude": true, "openai": true, "gemini": true, "deepseek": true, "ollama": false])
+    /// Advanced: talk to the provider with an API key instead of signing in to its website.
+    static let aiUseKey = Key<[String: Bool]>("aiUseKey", default: [:])
     static let aiModels = Key<[String: String]>("aiModels", default: [:])
     static let aiSaveHistory = Key<Bool>("aiSaveHistory", default: true)
 
@@ -192,6 +221,16 @@ extension Defaults.Keys {
 
     // Live activities in the closed notch
     static let liveControls = Key<Bool>("liveControls", default: true)
-    static let liveSpectrum = Key<Bool>("liveSpectrum", default: false)
+    static let liveSpectrum = Key<Bool>("liveSpectrum", default: true)
+    static let livePerformance = Key<Bool>("livePerformance", default: false)
+    static let liveBattery = Key<Bool>("liveBattery", default: false)
+    /// How many live activities fit at once in the closed notch (1 to 3).
+    static let liveMax = Key<Int>("liveMax", default: 2)
+    /// Which activity wins when there are more than fit.
+    static let livePriority = Key<LivePriority>("livePriority", default: .music)
     static let livePomodoro = Key<Bool>("livePomodoro", default: true)
+}
+
+enum LivePriority: String, Defaults.Serializable {
+    case music, pomodoro
 }

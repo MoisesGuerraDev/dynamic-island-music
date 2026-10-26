@@ -23,6 +23,8 @@ También puedes bajar el `.dmg` desde [Releases](../../releases/latest) y arrast
 > **¿Sale un aviso de macOS?** La app no está firmada por Apple (cuesta US$99 al año y este proyecto es gratuito).
 > Con el comando de arriba no sale. Con el `.dmg`, ve a *Ajustes del Sistema › Privacidad y seguridad › Abrir de todos modos*, solo la primera vez.
 
+Paso a paso, con qué hacer si macOS muestra un aviso: [INSTALAR.md](INSTALAR.md).
+
 **Windows**: en desarrollo (carpeta `windows/`).
 
 ## Qué trae

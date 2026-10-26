@@ -69,27 +69,40 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     /// The window only covers what is needed, so it never blocks clicks in the menu bar around the notch.
     private func observeWindowSize(_ window: NSWindow, viewModel: BoringViewModel) {
-        sizeObservers[ObjectIdentifier(window)] = viewModel.$notchSize
+        sizeObservers[ObjectIdentifier(window)] = Publishers.CombineLatest(
+                viewModel.$notchSize,
+                Defaults.publisher(.islandOffsetX).map(\.newValue))
             .receive(on: RunLoop.main)
-            .sink { [weak self, weak window, weak viewModel] size in
+            .sink { [weak self, weak window, weak viewModel] size, _ in
                 guard let self, let window, let viewModel else { return }
-                self.fitWindow(window, notchWidth: size.width, viewModel: viewModel, delayShrink: true)
+                self.fitWindow(window, notchSize: size, viewModel: viewModel, delayShrink: true)
             }
     }
 
-    private func fitWindow(_ window: NSWindow, notchWidth: CGFloat, viewModel: BoringViewModel, delayShrink: Bool) {
-        let desired = min(windowSize.width, max(640, notchWidth + 2 * windowSidePadding))
-        guard abs(desired - window.frame.width) > 0.5 else { return }
+    /// Window size needed around the notch: its width plus room for the glow, and enough height for the open panel.
+    private func windowTarget(for notchSize: CGSize) -> CGSize {
+        CGSize(
+            width: min(windowSize.width, max(640, notchSize.width + 2 * windowSidePadding)),
+            height: max(windowSize.height, notchSize.height + editExtraHeight + shadowPadding))
+    }
+
+    private func fitWindow(_ window: NSWindow, notchSize: CGSize, viewModel: BoringViewModel, delayShrink: Bool) {
+        let desired = windowTarget(for: notchSize)
+        let screenNow = viewModel.screenUUID.flatMap { NSScreen.screen(withUUID: $0) } ?? window.screen ?? NSScreen.main
+        let wantedX = screenNow.map { islandCenterX(on: $0, windowWidth: desired.width) - desired.width / 2 } ?? window.frame.minX
+        guard abs(desired.width - window.frame.width) > 0.5 || abs(desired.height - window.frame.height) > 0.5
+                || abs(wantedX - window.frame.minX) > 0.5 else { return }
         let apply = { [weak window, weak viewModel] in
             guard let window, let viewModel else { return }
-            let target = min(windowSize.width, max(640, viewModel.notchSize.width + 2 * windowSidePadding))
+            let target = self.windowTarget(for: viewModel.notchSize)
             let screen = viewModel.screenUUID.flatMap { NSScreen.screen(withUUID: $0) } ?? window.screen ?? NSScreen.main
             guard let frame = screen?.frame else { return }
+            let centerX = self.islandCenterX(on: screen ?? NSScreen.main!, windowWidth: target.width)
             window.setFrame(
-                NSRect(x: frame.midX - target / 2, y: frame.maxY - windowSize.height, width: target, height: windowSize.height),
+                NSRect(x: centerX - target.width / 2, y: frame.maxY - target.height, width: target.width, height: target.height),
                 display: true)
         }
-        if delayShrink && desired < window.frame.width {
+        if delayShrink && (desired.width < window.frame.width || desired.height < window.frame.height) {
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.55, execute: apply)
         } else {
             apply()
@@ -223,10 +236,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         guard let uuid = screen.displayUUID else { return }
         
         let screenFrame = screen.frame
-        let notchHeight = openNotchSize.height
-        let notchWidth = openNotchSize.width
+        // Only a small zone around the closed notch reacts to a dragged file, so moving a file across the top of
+        // the screen does not open the shelf by accident.
+        let closedSize = getClosedNotchSize(screenUUID: uuid)
+        let notchHeight = closedSize.height + 20
+        let notchWidth = closedSize.width + 110
         
-        // Create notch region at the top-center of the screen where an open notch would occupy
+        // Create notch region at the top-center of the screen, right around the closed notch
         let notchRegion = CGRect(
             x: screenFrame.midX - notchWidth / 2,
             y: screenFrame.maxY - notchHeight,
@@ -292,6 +308,16 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         return window
     }
 
+    /// Center of the island: over the camera notch when there is one, otherwise the middle of the screen plus the
+    /// offset chosen in Settings (kept inside the screen).
+    private func islandCenterX(on screen: NSScreen, windowWidth: CGFloat) -> CGFloat {
+        let frame = screen.frame
+        guard screen.safeAreaInsets.top == 0 else { return frame.midX }
+        let room = max(0, frame.width / 2 - windowWidth / 2)
+        let offset = max(-room, min(room, CGFloat(Defaults[.islandOffsetX])))
+        return frame.midX + offset
+    }
+
     @MainActor
     private func positionWindow(_ window: NSWindow, on screen: NSScreen, changeAlpha: Bool = false) {
         if changeAlpha {
@@ -301,7 +327,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let screenFrame = screen.frame
         window.setFrameOrigin(
             NSPoint(
-                x: screenFrame.origin.x + (screenFrame.width / 2) - window.frame.width / 2,
+                x: islandCenterX(on: screen, windowWidth: window.frame.width) - window.frame.width / 2,
                 y: screenFrame.origin.y + screenFrame.height - window.frame.height
             ))
         window.alphaValue = 1

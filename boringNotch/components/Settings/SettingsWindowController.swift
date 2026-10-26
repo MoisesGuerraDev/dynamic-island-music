@@ -42,8 +42,9 @@ class SettingsWindowController: NSWindowController {
         
         window.title = "\(AppInfo.name) — Ajustes"
         window.titlebarAppearsTransparent = true
-        window.isOpaque = false
-        window.backgroundColor = .clear
+        window.isOpaque = true
+        window.backgroundColor = .black
+        window.appearance = NSAppearance(named: .darkAqua)
         window.titleVisibility = .visible
         window.toolbarStyle = .unified
         window.isMovableByWindowBackground = true

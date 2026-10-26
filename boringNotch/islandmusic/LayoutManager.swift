@@ -89,8 +89,15 @@ final class LayoutManager: ObservableObject {
     func openSize(for screenUUID: String?, view: NotchViews) -> CGSize {
         let cap = capacity(for: screenUUID)
         let width = view == .home ? openWidth(for: screenUUID) : min(cap, max(680, openWidth(for: screenUUID)))
-        let height = 40 + Self.designHeight * scale + 7 + (editing && view == .home ? 34 : 0)
-        return CGSize(width: width, height: height)
+        var height = 40 + Self.designHeight * scale + 7 + (editing && view == .home ? 34 : 0)
+        var finalWidth = width
+        if view == .chat {
+            // The web chat needs room to read and write; the key-based chat is a bit shorter.
+            let web = AIChatManager.shared.usesWeb(AIChatManager.shared.provider)
+            height = web ? 440 : 300
+            finalWidth = min(cap, 720)
+        }
+        return CGSize(width: finalWidth, height: height)
     }
 
     func usage(for screenUUID: String?) -> Double {

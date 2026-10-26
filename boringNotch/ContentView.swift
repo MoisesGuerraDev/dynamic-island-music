@@ -30,7 +30,10 @@ struct ContentView: View {
     @Default(.glassNotch) var glassNotch
     @Default(.livePomodoro) var livePomodoro
     @Default(.liveControls) var liveControls
-    @Default(.liveSpectrum) var liveSpectrum
+    @Default(.livePerformance) var livePerformance
+    @Default(.liveBattery) var liveBattery
+    @Default(.liveMax) var liveMax
+    @Default(.livePriority) var livePriority
     @State private var hoverTask: Task<Void, Never>?
     @State private var isHovering: Bool = false
     @State private var anyDropDebounceTask: Task<Void, Never>?
@@ -51,32 +54,19 @@ struct ContentView: View {
     private let extendedHoverPadding: CGFloat = 30
     private let zeroHeightHoverPadding: CGFloat = 10
 
-    private var pomodoroClosedActive: Bool {
-        vm.notchState == .closed && !vm.hideOnClosed && pomodoro.isRunning && livePomodoro && !coordinator.sneakPeek.show
+    /// What the closed notch shows at its sides, following the settings: which activities are on, how many fit
+    /// at once and which one wins when there are more.
+    private var closedKinds: [LiveKind] {
+        guard vm.notchState == .closed, !vm.hideOnClosed else { return [] }
+        var candidates: [LiveKind] = []
+        if coordinator.musicLiveActivityEnabled && (musicManager.isPlaying || !musicManager.isPlayerIdle) { candidates.append(.music) }
+        if livePomodoro && pomodoro.isRunning { candidates.append(.pomodoro) }
+        if livePerformance { candidates.append(.performance) }
+        if liveBattery && batteryModel.isCharging { candidates.append(.battery) }
+        let first: LiveKind = livePriority == .pomodoro ? .pomodoro : .music
+        let ordered = candidates.filter { $0 == first } + candidates.filter { $0 != first }
+        return Array(ordered.prefix(max(1, min(3, liveMax))))
     }
-
-    private var musicClosedActive: Bool {
-        vm.notchState == .closed && !vm.hideOnClosed && coordinator.musicLiveActivityEnabled
-            && (musicManager.isPlaying || !musicManager.isPlayerIdle)
-            && !(pomodoro.isRunning && livePomodoro)
-    }
-
-    /// Closed notch with a live activity: hovering shows its buttons (previous / play / next, or reset / pause / skip)
-    /// instead of opening the whole panel; a click opens it.
-    private var closedControlsActive: Bool {
-        liveControls && (pomodoroClosedActive || musicClosedActive)
-    }
-
-    private var closedControlsShown: Bool { closedControlsActive && isHovering }
-
-    /// Width of each side of the closed notch next to the camera cutout (cover on the left, spectrum or buttons on the right).
-    private var closedEar: CGFloat {
-        let side = max(0, vm.effectiveClosedNotchHeight - 12)
-        return closedControlsShown ? ClosedMusicControls.width(side: side) : side
-    }
-
-    /// Same for the timer: time and phase on the left, a badge (or the buttons) on the right.
-    private var pomodoroEar: CGFloat { closedControlsShown ? 86 : 54 }
 
     private var topCornerRadius: CGFloat {
         vm.notchState == .open ? islandCorners.opened.top : islandCorners.closed.top
@@ -96,15 +86,8 @@ struct ContentView: View {
             && vm.notchState == .closed && Defaults[.showPowerStatusNotifications]
         {
             chinWidth = 640
-        } else if vm.notchState == .closed && !vm.hideOnClosed && pomodoro.isRunning && livePomodoro
-            && !coordinator.sneakPeek.show
-        {
-            chinWidth += 2 * pomodoroEar + 20
-        } else if (!coordinator.expandingView.show || coordinator.expandingView.type == .music)
-            && vm.notchState == .closed && (musicManager.isPlaying || !musicManager.isPlayerIdle)
-            && coordinator.musicLiveActivityEnabled && !vm.hideOnClosed
-        {
-            chinWidth += 2 * closedEar + 20
+        } else if !closedKinds.isEmpty && !coordinator.sneakPeek.show {
+            chinWidth += ClosedActivityView.extraWidth(kinds: closedKinds, side: max(0, vm.effectiveClosedNotchHeight - 12))
         } else if !coordinator.expandingView.show && vm.notchState == .closed
             && (!musicManager.isPlaying && musicManager.isPlayerIdle) && Defaults[.showNotHumanFace]
             && !vm.hideOnClosed
@@ -339,6 +322,11 @@ struct ContentView: View {
         .animation(.smooth, value: gestureProgress)
         .background(dragDetector)
         .environmentObject(vm)
+        .onChange(of: vm.isHoveringClosedControls) { _, over in
+            if !over && isHovering && vm.notchState == .closed && Defaults[.openNotchOnHover] {
+                scheduleHoverOpen()
+            }
+        }
         .onChange(of: vm.anyDropZoneTargeting) { _, isTargeted in
             anyDropDebounceTask?.cancel()
 
@@ -412,11 +400,8 @@ struct ContentView: View {
                       } else if coordinator.sneakPeek.show && Defaults[.inlineHUD] && (coordinator.sneakPeek.type != .music) && (coordinator.sneakPeek.type != .battery) && vm.notchState == .closed {
                           InlineHUD(type: $coordinator.sneakPeek.type, value: $coordinator.sneakPeek.value, icon: $coordinator.sneakPeek.icon, hoverAnimation: $isHovering, gestureProgress: $gestureProgress)
                               .transition(.opacity)
-                      } else if vm.notchState == .closed && !vm.hideOnClosed && pomodoro.isRunning && livePomodoro && !coordinator.sneakPeek.show {
-                          PomodoroLiveActivity()
-                              .frame(alignment: .center)
-                      } else if (!coordinator.expandingView.show || coordinator.expandingView.type == .music) && vm.notchState == .closed && (musicManager.isPlaying || !musicManager.isPlayerIdle) && coordinator.musicLiveActivityEnabled && !vm.hideOnClosed {
-                          MusicLiveActivity()
+                      } else if !closedKinds.isEmpty && (!coordinator.sneakPeek.show || coordinator.sneakPeek.type == .music) && (!coordinator.expandingView.show || coordinator.expandingView.type == .music) {
+                          ClosedActivityView(kinds: closedKinds, albumArtNamespace: albumArtNamespace)
                               .frame(alignment: .center)
                       } else if !coordinator.expandingView.show && vm.notchState == .closed && (!musicManager.isPlaying && musicManager.isPlayerIdle) && Defaults[.showNotHumanFace] && !vm.hideOnClosed  {
                           BoringFaceAnimation()
@@ -525,141 +510,6 @@ struct ContentView: View {
     }
 
     @ViewBuilder
-    func MusicLiveActivity() -> some View {
-        HStack {
-            Image(nsImage: musicManager.albumArt)
-                .resizable()
-                .clipped()
-                .clipShape(
-                    RoundedRectangle(
-                        cornerRadius: MusicPlayerImageSizes.cornerRadiusInset.closed)
-                )
-                .matchedGeometryEffect(id: "albumArt", in: albumArtNamespace)
-                .frame(
-                    width: max(0, vm.effectiveClosedNotchHeight - 12),
-                    height: max(0, vm.effectiveClosedNotchHeight - 12)
-                )
-                // Same width as the controls on the right, so the middle stays centered on the camera cutout.
-                .frame(width: closedEar, alignment: .leading)
-
-            Rectangle()
-                .fill(.black)
-                .overlay(
-                    HStack(alignment: .top) {
-                        if coordinator.expandingView.show
-                            && coordinator.expandingView.type == .music
-                        {
-                            MarqueeText(
-                                .constant(musicManager.songTitle),
-                                textColor: Defaults[.coloredSpectrogram]
-                                    ? Color(nsColor: musicManager.glowColor) : Color.gray,
-                                minDuration: 0.4,
-                                frameWidth: 100
-                            )
-                            .opacity(
-                                (coordinator.expandingView.show
-                                    && Defaults[.sneakPeekStyles] == .inline)
-                                    ? 1 : 0
-                            )
-                            Spacer(minLength: vm.closedNotchSize.width)
-                            // Song Artist
-                            Text(musicManager.artistName)
-                                .lineLimit(1)
-                                .truncationMode(.tail)
-                                .foregroundStyle(
-                                    Defaults[.coloredSpectrogram]
-                                        ? Color(nsColor: musicManager.glowColor)
-                                        : Color.gray
-                                )
-                                .opacity(
-                                    (coordinator.expandingView.show
-                                        && coordinator.expandingView.type == .music
-                                        && Defaults[.sneakPeekStyles] == .inline)
-                                        ? 1 : 0
-                                )
-                        }
-                    }
-                )
-                .frame(
-                    width: (coordinator.expandingView.show
-                        && coordinator.expandingView.type == .music
-                        && Defaults[.sneakPeekStyles] == .inline)
-                        ? 380
-                        : vm.closedNotchSize.width
-                            + -cornerRadiusInsets.closed.top
-                )
-
-            HStack {
-                if closedControlsShown {
-                    ClosedMusicControls(side: max(0, vm.effectiveClosedNotchHeight - 12))
-                } else if !liveSpectrum {
-                    Color.clear
-                } else if useMusicVisualizer {
-                    Rectangle()
-                        .fill(
-                            Defaults[.coloredSpectrogram]
-                                ? Color(nsColor: musicManager.glowColor).gradient
-                                : Color.gray.gradient
-                        )
-                        .frame(width: 50, alignment: .center)
-                        .matchedGeometryEffect(id: "spectrum", in: albumArtNamespace)
-                        .mask {
-                            AudioSpectrumView(isPlaying: $musicManager.isPlaying)
-                                .frame(width: 16, height: 12)
-                        }
-                } else {
-                    LottieAnimationContainer()
-                        .frame(maxWidth: .infinity, maxHeight: .infinity)
-                }
-            }
-            .frame(
-                width: closedControlsShown
-                    ? closedEar
-                    : max(
-                        0,
-                        vm.effectiveClosedNotchHeight - 12
-                            + gestureProgress / 2
-                    ),
-                height: max(
-                    0,
-                    vm.effectiveClosedNotchHeight - 12
-                ),
-                alignment: closedControlsShown ? .trailing : .center
-            )
-        }
-        .frame(
-            height: vm.effectiveClosedNotchHeight,
-            alignment: .center
-        )
-        .animation(.spring(response: 0.35, dampingFraction: 0.8), value: closedControlsShown)
-    }
-
-    /// Timer in the closed notch: time and phase on the left, a small badge on the right that turns into
-    /// reset / pause / skip buttons when the pointer is over the notch.
-    @ViewBuilder
-    func PomodoroLiveActivity() -> some View {
-        HStack {
-            PomodoroClosedInfo(compact: !closedControlsShown)
-                .frame(width: pomodoroEar, alignment: .leading)
-
-            Rectangle()
-                .fill(.black)
-                .frame(width: vm.closedNotchSize.width - cornerRadiusInsets.closed.top)
-
-            Group {
-                if closedControlsShown {
-                    PomodoroClosedControls()
-                } else {
-                    PomodoroClosedBadge()
-                }
-            }
-            .frame(width: pomodoroEar, alignment: .trailing)
-        }
-        .frame(height: vm.effectiveClosedNotchHeight, alignment: .center)
-        .animation(.spring(response: 0.35, dampingFraction: 0.8), value: closedControlsShown)
-    }
-
-    @ViewBuilder
     var dragDetector: some View {
         if Defaults[.boringShelf] && vm.notchState == .closed {
             Color.clear
@@ -683,6 +533,24 @@ struct ContentView: View {
 
     // MARK: - Hover Management
 
+    /// Opens the notch once the pointer has rested on it, unless it is over the buttons at the sides.
+    private func scheduleHoverOpen() {
+        hoverTask?.cancel()
+        hoverTask = Task {
+            try? await Task.sleep(for: .seconds(Defaults[.minimumHoverDuration]))
+            guard !Task.isCancelled else { return }
+
+            await MainActor.run {
+                guard self.vm.notchState == .closed,
+                      self.isHovering,
+                      !self.vm.isHoveringClosedControls,
+                      !self.coordinator.sneakPeek.show else { return }
+
+                self.doOpen()
+            }
+        }
+    }
+
     private func handleHover(_ hovering: Bool) {
         hoverTask?.cancel()
         
@@ -697,22 +565,9 @@ struct ContentView: View {
             
             guard vm.notchState == .closed,
                   !coordinator.sneakPeek.show,
-                  !closedControlsActive,
                   Defaults[.openNotchOnHover] else { return }
-            
-            hoverTask = Task {
-                try? await Task.sleep(for: .seconds(Defaults[.minimumHoverDuration]))
-                guard !Task.isCancelled else { return }
-                
-                await MainActor.run {
-                    guard self.vm.notchState == .closed,
-                          self.isHovering,
-                          !self.vm.isHoveringClosedControls,
-                          !self.coordinator.sneakPeek.show else { return }
-                    
-                    self.doOpen()
-                }
-            }
+
+            scheduleHoverOpen()
         } else {
             hoverTask = Task {
                 try? await Task.sleep(for: .milliseconds(100))

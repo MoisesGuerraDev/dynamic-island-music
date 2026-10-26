@@ -39,7 +39,6 @@ struct PomodoroClosedBadge: View {
 /// Reset, pause / resume and skip, shown while the pointer is over the closed notch.
 struct PomodoroClosedControls: View {
     @ObservedObject var pomo = PomodoroManager.shared
-    @EnvironmentObject var vm: BoringViewModel
 
     var body: some View {
         HStack(spacing: 6) {
@@ -47,8 +46,6 @@ struct PomodoroClosedControls: View {
             PomoMiniButton(symbol: pomo.isRunning ? "pause.fill" : "play.fill") { pomo.toggle() }
             PomoMiniButton(symbol: "forward.end.fill") { pomo.skip() }
         }
-        .onHover { vm.isHoveringClosedControls = $0 }
-        .onDisappear { vm.isHoveringClosedControls = false }
     }
 
     private struct PomoMiniButton: View {

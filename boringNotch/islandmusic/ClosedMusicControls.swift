@@ -4,7 +4,6 @@ import SwiftUI
 struct ClosedMusicControls: View {
     let side: CGFloat
     @ObservedObject var music = MusicManager.shared
-    @EnvironmentObject var vm: BoringViewModel
 
     static func width(side: CGFloat) -> CGFloat { 3 * side + 8 }
 
@@ -14,8 +13,6 @@ struct ClosedMusicControls: View {
             ControlButton(symbol: music.isPlaying ? "pause.fill" : "play.fill", side: side) { MusicManager.shared.togglePlay() }
             ControlButton(symbol: "forward.fill", side: side) { MusicManager.shared.nextTrack() }
         }
-        .onHover { vm.isHoveringClosedControls = $0 }
-        .onDisappear { vm.isHoveringClosedControls = false }
     }
 
     private struct ControlButton: View {
@@ -30,7 +27,7 @@ struct ClosedMusicControls: View {
                     .font(.system(size: side * 0.5, weight: .bold))
                     .foregroundStyle(.white.opacity(hovering ? 1 : 0.78))
                     .frame(width: side, height: side)
-                    .background(Circle().fill(Color.white.opacity(hovering ? 0.16 : 0)))
+                    .background(Circle().fill(Color.white.opacity(hovering ? 0.22 : 0.12)))
                     .contentShape(Circle())
             }
             .buttonStyle(.plain)

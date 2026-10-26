@@ -54,9 +54,30 @@ struct AlbumArtView: View {
 
     private func artwork(cornerRadius: CGFloat) -> some View {
         GeometryReader { geo in
-            Image(nsImage: musicManager.albumArt)
-                .resizable()
-                .scaledToFill()
+            // Wide thumbnails (YouTube) are shown whole over a blurred copy of themselves, not cropped and stretched.
+            let img = musicManager.albumArt
+            let ratio = img.size.height > 0 ? img.size.width / img.size.height : 1
+            ZStack {
+                if abs(ratio - 1) > 0.08 {
+                    Image(nsImage: img)
+                        .resizable()
+                        .scaledToFill()
+                        .frame(width: geo.size.width, height: geo.size.width)
+                        .blur(radius: 16)
+                        .opacity(0.9)
+                    Image(nsImage: img)
+                        .resizable()
+                        .interpolation(.high)
+                        .scaledToFit()
+                        .frame(width: geo.size.width, height: geo.size.width)
+                } else {
+                    Image(nsImage: img)
+                        .resizable()
+                        .interpolation(.high)
+                        .scaledToFill()
+                        .frame(width: geo.size.width, height: geo.size.width)
+                }
+            }
                 .frame(width: geo.size.width, height: geo.size.width)
                 .clipped()
                 .cornerRadius(cornerRadius, antialiased: true)

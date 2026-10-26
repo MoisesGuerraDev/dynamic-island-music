@@ -108,7 +108,8 @@ struct IslandSettingsView: View {
         .formStyle(.grouped)
         .scrollContentBackground(.hidden)
         .frame(width: 780, height: 660)
-        .background(VisualEffectView(material: .hudWindow, blendingMode: .behindWindow).ignoresSafeArea())
+        .background(Color.black.ignoresSafeArea())
+        .preferredColorScheme(.dark)
         .tint(.effectiveAccent)
         .id(accentTrigger)
         .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("AccentColorChanged"))) { _ in
@@ -119,8 +120,35 @@ struct IslandSettingsView: View {
 
 // MARK: - Components
 
+enum ComponentPreset: String, CaseIterable, Identifiable {
+    case all, musicPomodoro, musicPomodoroNotes
+    var id: String { rawValue }
+
+    var title: String {
+        switch self {
+        case .all: "Los 5 de siempre"
+        case .musicPomodoro: "Solo música y Pomodoro"
+        case .musicPomodoroNotes: "Música, Pomodoro y notas"
+        }
+    }
+
+    var components: Set<IslandComponent> {
+        switch self {
+        case .all: [.player, .calendar, .notes, .pomodoro, .camera]
+        case .musicPomodoro: [.player, .pomodoro]
+        case .musicPomodoroNotes: [.player, .notes, .pomodoro]
+        }
+    }
+}
+
 struct ComponentsSettings: View {
     @ObservedObject var layout = LayoutManager.shared
+
+    private var currentSet: Set<IslandComponent> { Set(layout.configs.filter { $0.enabled }.map { $0.id }) }
+
+    private func apply(_ set: Set<IslandComponent>) {
+        for c in IslandComponent.allCases { layout.setEnabled(c, set.contains(c)) }
+    }
 
     var body: some View {
         let usage = layout.usage(for: NSScreen.main?.displayUUID)
@@ -128,6 +156,17 @@ struct ComponentsSettings: View {
             Text("Componentes del notch").font(.title3.bold())
             Text("Enciende, apaga, ordena y cambia el tamaño. Lo que no cabe en tu pantalla pasa a otra página, nunca se aprieta. También puedes editar directo en el notch con el lápiz.")
                 .font(.callout).foregroundStyle(.secondary)
+
+            VStack(alignment: .leading, spacing: 6) {
+                Text("QUÉ MOSTRAR").font(.system(size: 11, design: .monospaced)).foregroundStyle(.secondary)
+                HStack(spacing: 8) {
+                    ForEach(ComponentPreset.allCases) { preset in
+                        Button(preset.title) { apply(preset.components) }
+                            .buttonStyle(.bordered)
+                            .tint(currentSet == preset.components ? Color.accentColor : Color.gray)
+                    }
+                }
+            }
 
             HStack {
                 ProgressView(value: min(usage, 100), total: 100).tint(usage > 100 ? .orange : .accentColor)
@@ -339,6 +378,7 @@ struct AISettings: View {
     @ObservedObject var chat = AIChatManager.shared
     @Default(.aiProvider) var provider
     @Default(.aiEnabled) var enabled
+    @Default(.aiUseKey) var useKey
     @Default(.aiSaveHistory) var saveHistory
     @State private var keys: [String: String] = [:]
     @State private var models: [String: String] = [:]
@@ -351,23 +391,34 @@ struct AISettings: View {
                 }
                 .onChange(of: provider) { _, p in chat.provider = p }
             } footer: {
-                Text("Es la que sale en el botón junto al calendario. Dentro del chat puedes cambiar de IA.")
+                Text("Es la que sale en el botón junto al calendario. Dentro del chat puedes cambiar de IA. Cada una se abre con tu cuenta, igual que en el navegador: no hace falta ninguna clave.")
             }
 
             ForEach(AIProvider.allCases) { p in
                 Section {
                     Toggle("Disponible en el chat", isOn: Binding(
-                        get: { enabled[p.rawValue] ?? false },
+                        get: { enabled[p.rawValue] ?? (p != .ollama) },
                         set: { var e = enabled; e[p.rawValue] = $0; enabled = e }))
-                    TextField("Modelo", text: Binding(
-                        get: { models[p.rawValue] ?? chat.model(for: p) },
-                        set: { models[p.rawValue] = $0; chat.setModel($0, for: p) }))
-                    if p.needsKey {
-                        SecureField("Clave de API", text: Binding(
-                            get: { keys[p.rawValue] ?? "" },
-                            set: { keys[p.rawValue] = $0; KeychainStore.set($0, for: p.rawValue) }))
-                    } else {
-                        Text("Ollama corre en tu Mac (localhost:11434). No necesita clave ni internet.").font(.footnote).foregroundStyle(.secondary)
+                    if p.webURL != nil {
+                        Text(p.accountHint + " También puedes entrar con Google.").font(.footnote).foregroundStyle(.secondary)
+                        Toggle("Usar mi clave de API en vez de iniciar sesión (avanzado)", isOn: Binding(
+                            get: { useKey[p.rawValue] ?? false },
+                            set: {
+                                var u = useKey; u[p.rawValue] = $0; useKey = u
+                                NotificationCenter.default.post(name: .islandLayoutChanged, object: nil)
+                            }))
+                    }
+                    if p.webURL == nil || (useKey[p.rawValue] ?? false) {
+                        TextField("Modelo", text: Binding(
+                            get: { models[p.rawValue] ?? chat.model(for: p) },
+                            set: { models[p.rawValue] = $0; chat.setModel($0, for: p) }))
+                        if p.needsKey {
+                            SecureField("Clave de API", text: Binding(
+                                get: { keys[p.rawValue] ?? "" },
+                                set: { keys[p.rawValue] = $0; KeychainStore.set($0, for: p.rawValue) }))
+                        } else {
+                            Text("Ollama corre en tu Mac (localhost:11434). No necesita clave ni internet.").font(.footnote).foregroundStyle(.secondary)
+                        }
                     }
                 } header: {
                     Text(p.title)
@@ -375,12 +426,13 @@ struct AISettings: View {
             }
 
             Section {
-                Toggle("Guardar el historial del chat en este Mac", isOn: $saveHistory)
+                Button("Cerrar sesión en todas las IA", role: .destructive) { AIWebStore.shared.clearSessions() }
+                Toggle("Guardar el historial del chat con clave en este Mac", isOn: $saveHistory)
                 Button("Borrar el historial ahora", role: .destructive) { chat.clear() }
             } header: {
                 Text("Privacidad")
             } footer: {
-                Text("Cada persona pone su propia clave de API y paga solo lo que use a su proveedor; esta app no cobra ni recibe nada. La clave se guarda en el Llavero de macOS y los mensajes van directo de tu Mac al proveedor, sin servidor intermedio. No se usa tu suscripción de ChatGPT ni de Claude: eso lo prohíben sus términos en apps de terceros.")
+                Text("Inicias sesión en la página oficial de cada IA, dentro del notch. Tu contraseña no pasa por esta app y la sesión queda guardada solo en tu Mac. Si el inicio de sesión no avanza, usa el botón de la brújula para abrirlo en tu navegador.")
             }
         }
         .onAppear {
@@ -463,6 +515,7 @@ struct PerformanceSettings: View {
 // MARK: - Screen and computer
 
 struct DisplaySettings: View {
+    @Default(.islandOffsetX) var offsetX
     @Default(.manualSize) var manual
     @Default(.manualOpenWidth) var manualWidth
     @Default(.uiScale) var scale
@@ -492,6 +545,20 @@ struct DisplaySettings: View {
                     LabeledContent("Ancho máximo abierto") { Text("\(Int(s.capacity)) pt") }
                 } header: {
                     Text(s.name)
+                }
+            }
+
+            if NSScreen.main?.safeAreaInsets.top == 0 {
+                Section {
+                    HStack {
+                        Text("Izquierda / derecha")
+                        Slider(value: $offsetX, in: -600...600, step: 10)
+                        Button("Centrar") { offsetX = 0 }
+                    }
+                } header: {
+                    Text("Posición de la isla")
+                } footer: {
+                    Text("Tu Mac no tiene notch, así que la isla aparece arriba y al centro. Si prefieres otro lugar, muévela aquí. En un Mac con notch siempre queda sobre el notch.")
                 }
             }
 
@@ -531,18 +598,45 @@ struct DisplaySettings: View {
 
 struct LiveSettings: View {
     @ObservedObject var coordinator = BoringViewCoordinator.shared
+    @Default(.liveMax) var liveMax
+    @Default(.livePriority) var livePriority
 
     var body: some View {
         Form {
             Section {
                 Toggle("Música sonando", isOn: $coordinator.musicLiveActivityEnabled)
-                Defaults.Toggle("Con música, el mouse sobre el notch muestra anterior, pausa y siguiente (clic para abrir)", key: .liveControls)
-                Defaults.Toggle("Ondas de sonido a la derecha del notch", key: .liveSpectrum)
                 Defaults.Toggle("Pomodoro en marcha", key: .livePomodoro)
+                Defaults.Toggle("Rendimiento (uso del procesador)", key: .livePerformance)
+                Defaults.Toggle("Batería cargando", key: .liveBattery)
             } header: {
                 Text("Qué se muestra con el notch cerrado")
             } footer: {
-                Text("Si hay música y Pomodoro a la vez, se muestra el Pomodoro: el tiempo y la fase a la izquierda y una insignia a la derecha. Al pasar el mouse aparecen los botones. Cuando termina el Pomodoro, el notch se abre un momento y suena el aviso (se configura en la pestaña Pomodoro).")
+                Text("La música va a la izquierda del notch y lo demás a la derecha, siempre con los dos lados iguales. Cuando termina el Pomodoro, el notch se abre un momento y suena el aviso (se configura en la pestaña Pomodoro).")
+            }
+
+            Section {
+                Picker("Máximo a la vez", selection: $liveMax) {
+                    Text("1").tag(1)
+                    Text("2").tag(2)
+                    Text("3").tag(3)
+                }
+                .pickerStyle(.segmented)
+                Picker("Si hay más, gana", selection: $livePriority) {
+                    Text("Música").tag(LivePriority.music)
+                    Text("Pomodoro").tag(LivePriority.pomodoro)
+                }
+                .pickerStyle(.segmented)
+            } header: {
+                Text("Cuántas caben")
+            } footer: {
+                Text("La app elige sola: si usas música y Pomodoro a la vez, salen los dos.")
+            }
+
+            Section {
+                Defaults.Toggle("Ondas junto a la carátula", key: .liveSpectrum)
+                Defaults.Toggle("Pasar el mouse por los lados muestra botones (el centro abre el panel)", key: .liveControls)
+            } header: {
+                Text("Detalles")
             }
         }
     }

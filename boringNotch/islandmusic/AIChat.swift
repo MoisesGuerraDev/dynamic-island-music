@@ -61,7 +61,10 @@ final class AIChatManager: ObservableObject {
     @Published var isSending = false
     @Published var errorText: String?
     @Published var provider: AIProvider = Defaults[.aiProvider] {
-        didSet { Defaults[.aiProvider] = provider }
+        didSet {
+            Defaults[.aiProvider] = provider
+            NotificationCenter.default.post(name: .islandLayoutChanged, object: nil)
+        }
     }
 
     private init() { loadHistory() }
@@ -70,7 +73,7 @@ final class AIChatManager: ObservableObject {
 
     var enabledProviders: [AIProvider] {
         let on = Defaults[.aiEnabled]
-        let list = AIProvider.allCases.filter { on[$0.rawValue] ?? false }
+        let list = AIProvider.allCases.filter { on[$0.rawValue] ?? ($0 != .ollama) }
         return list.isEmpty ? [provider] : list
     }
 
@@ -89,8 +92,13 @@ final class AIChatManager: ObservableObject {
 
     var defaultButtonProvider: AIProvider {
         let on = Defaults[.aiEnabled]
-        if on[provider.rawValue] ?? false { return provider }
-        return AIProvider.allCases.first { on[$0.rawValue] ?? false } ?? provider
+        if on[provider.rawValue] ?? (provider != .ollama) { return provider }
+        return AIProvider.allCases.first { on[$0.rawValue] ?? ($0 != .ollama) } ?? provider
+    }
+
+    /// True when the chat is the provider's own website (signed in with the person's account) instead of an API call.
+    func usesWeb(_ p: AIProvider) -> Bool {
+        p.webURL != nil && !(Defaults[.aiUseKey][p.rawValue] ?? false)
     }
 
     // MARK: Sending
@@ -137,8 +145,9 @@ final class AIChatManager: ObservableObject {
             req.setValue(key, forHTTPHeaderField: "x-api-key")
             req.setValue("2023-06-01", forHTTPHeaderField: "anthropic-version")
             body = ["model": model, "max_tokens": 1024, "messages": history.map { ["role": role($0), "content": $0.text] }]
-        case .openai:
-            req = URLRequest(url: URL(string: "https://api.openai.com/v1/chat/completions")!)
+        case .openai, .deepseek:
+            let endpoint = provider == .deepseek ? "https://api.deepseek.com/chat/completions" : "https://api.openai.com/v1/chat/completions"
+            req = URLRequest(url: URL(string: endpoint)!)
             req.setValue("Bearer \(key)", forHTTPHeaderField: "Authorization")
             body = ["model": model, "messages": history.map { ["role": role($0), "content": $0.text] }]
         case .gemini:
@@ -172,7 +181,7 @@ final class AIChatManager: ObservableObject {
             let parts = (json["content"] as? [[String: Any]]) ?? []
             let text = parts.compactMap { $0["text"] as? String }.joined()
             if !text.isEmpty { return text }
-        case .openai:
+        case .openai, .deepseek:
             if let c = (json["choices"] as? [[String: Any]])?.first,
                let m = c["message"] as? [String: Any], let t = m["content"] as? String { return t }
         case .gemini:
@@ -242,15 +251,20 @@ struct ChatTabView: View {
                 .padding(3)
                 .islandGlass(Capsule(), interactive: false)
                 Spacer()
-                Text("Modelo: \(chat.model(for: chat.provider))")
-                    .font(.system(size: 10.5))
-                    .foregroundStyle(.gray)
-                Button("Borrar") { chat.clear() }
-                    .buttonStyle(.plain)
-                    .font(.system(size: 11))
-                    .foregroundStyle(.gray)
+                if !chat.usesWeb(chat.provider) {
+                    Text("Modelo: \(chat.model(for: chat.provider))")
+                        .font(.system(size: 10.5))
+                        .foregroundStyle(.gray)
+                    Button("Borrar") { chat.clear() }
+                        .buttonStyle(.plain)
+                        .font(.system(size: 11))
+                        .foregroundStyle(.gray)
+                }
             }
 
+            if chat.usesWeb(chat.provider) {
+                AIWebPane(provider: chat.provider)
+            } else {
             ScrollViewReader { proxy in
                 ScrollView {
                     VStack(spacing: 6) {
@@ -302,9 +316,10 @@ struct ChatTabView: View {
             }
             Text(chat.provider == .ollama
                  ? "Tu mensaje se queda en tu Mac: Ollama corre en local."
-                 : "Tu cuenta, tu clave: el mensaje va directo de tu Mac a \(chat.provider.title).")
+                 : "Tu clave, tu cuenta: el mensaje va directo de tu Mac a \(chat.provider.title).")
                 .font(.system(size: 10.5))
                 .foregroundStyle(.gray)
+            }
         }
         .padding(.top, 4)
         .onAppear {
@@ -335,7 +350,9 @@ struct ChatComponentView: View {
                     .padding(.horizontal, 7).padding(.vertical, 3)
                     .background(chat.provider.color.opacity(0.35), in: Capsule())
             }
-            Text(chat.messages.last?.text ?? "Pregúntale lo que quieras a tu IA favorita.")
+            Text(chat.usesWeb(chat.provider)
+                 ? "Inicia sesión con tu cuenta y chatea con \(chat.provider.title) sin salir del notch."
+                 : (chat.messages.last?.text ?? "Pregúntale lo que quieras a tu IA favorita."))
                 .font(.system(size: 11.5))
                 .foregroundStyle(.white.opacity(0.85))
                 .lineLimit(4)

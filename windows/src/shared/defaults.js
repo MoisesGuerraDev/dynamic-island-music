@@ -4,11 +4,11 @@
 export const COMPONENTS = ['player', 'calendar', 'notes', 'pomodoro', 'camera', 'chat', 'clipboard', 'shelf', 'game', 'performance'];
 
 export const COMPONENT_META = {
-  player: { name: 'Reproductor', icon: 'screen', width: 300, min: 280 },
-  calendar: { name: 'Calendario', icon: 'cal', width: 190, min: 170 },
-  notes: { name: 'Notas', icon: 'note', width: 180, min: 150 },
-  pomodoro: { name: 'Temporizador', icon: 'clock', width: 170, min: 160 },
-  camera: { name: 'Cámara', icon: 'cam', width: 130, min: 110 },
+  player: { name: 'Reproductor', icon: 'screen', width: 312, min: 290 },
+  calendar: { name: 'Calendario', icon: 'cal', width: 222, min: 190 },
+  notes: { name: 'Notas', icon: 'note', width: 178, min: 150 },
+  pomodoro: { name: 'Temporizador', icon: 'clock', width: 159, min: 140 },
+  camera: { name: 'Cámara', icon: 'cam', width: 178, min: 110 },
   chat: { name: 'Chat de IA', icon: 'spark', width: 220, min: 190 },
   clipboard: { name: 'Portapapeles', icon: 'clip', width: 210, min: 170 },
   shelf: { name: 'Bandeja', icon: 'tray', width: 210, min: 170 },
@@ -17,7 +17,7 @@ export const COMPONENT_META = {
 };
 
 export const MAX_COMPONENT_WIDTH = 520;
-export const SIDE_PADDING = 18; // each side of the open island, as in the mockup (padding: 12px 18px)
+export const SIDE_PADDING = 14; // each side of the open island (the Mac island: 1077 = 1049 of components + 2 x 14)
 
 export function defaultComponents() {
   const on = new Set(['player', 'calendar', 'notes', 'pomodoro', 'camera']);
@@ -52,7 +52,8 @@ export const DEFAULTS = {
   manualOpenWidth: 900,
   rememberPerDisplay: true,
   layoutsByDisplay: {},
-  topOffset: 10,
+  topOffset: 12,
+  uiSize: 'm', // s 0.75 | m 1.0 | l 1.2: size of the island
 
   // System
   welcomed: false,
@@ -79,13 +80,13 @@ export const DEFAULTS = {
   colorMode: 'auto', // auto (the two main colors of the cover) | rainbow | custom
   colorA: '#FF9500',
   colorB: '#FF2D55',
-  liquidButtons: true,
+  liquidButtons: false, // extra refraction (lens) on the buttons; the plain glass is always on
   hoverBounce: true,
   showTabs: true,
   showHeaderButtons: true,
   separators: true,
   batteryPill: true,
-  windowShadow: true,
+  windowShadow: false, // plain black, no heavy shadow: only the colored light around it
 
   // Player
   preferredPlayer: 'auto', // auto | spotify | apple | browser

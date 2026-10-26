@@ -1,6 +1,6 @@
 // Everything the island page knows. The main process owns the real data and pushes changes here.
 import { COMPONENT_META, AI_META, AI_PROVIDERS, DEFAULTS, WEB_AI, WEB_AI_META, normalizeComponents } from '../shared/defaults.js';
-import { paginate } from '../shared/layout.js';
+import { paginate, MIN_UI } from '../shared/layout.js';
 
 export const S = {
   set: JSON.parse(JSON.stringify(DEFAULTS)),
@@ -45,8 +45,9 @@ export function activeComps() {
   return comps().filter((c) => c.enabled);
 }
 
+/** Components that do not fit at the smallest size (0.75) go to another page; up to that they just shrink. */
 export function pages() {
-  return paginate(activeComps(), S.info.cap);
+  return paginate(activeComps(), S.info.cap / MIN_UI);
 }
 
 export function metaOf(id) {

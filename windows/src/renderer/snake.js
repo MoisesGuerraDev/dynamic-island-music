@@ -1,6 +1,6 @@
 // Snake. The rules are plain functions so they can be tested without a screen.
 
-export const GRID = { w: 42, h: 10, cell: 15 };
+export const GRID = { w: 42, h: 10, cell: 12 };
 
 export function newGame(rand = Math.random) {
   const snake = [{ x: 6, y: 5 }, { x: 5, y: 5 }, { x: 4, y: 5 }];

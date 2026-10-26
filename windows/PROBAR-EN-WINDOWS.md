@@ -18,6 +18,7 @@ Si tu antivirus protesta por PowerShell: la app usa dos scripts pequeños (`reso
 - **Pomodoro:** toca el tiempo y escribe `25`, `1:30` o `1:30:00`. Al terminar suena y avisa.
 - **Notas:** el `+` de Notas crea un archivo `.md`. En Ajustes › Notas puedes elegir tu carpeta de iCloud Drive.
 - **Portapapeles:** copia texto; debe aparecer. Copia una contraseña desde tu gestor: no debe guardarse.
+- **Tamaño:** la isla abierta mide 1077 × 187 px (como la de Mac). En Ajustes › Estilo puedes elegir Chico 0.75, Mediano 1.0 o Grande 1.2; en una pantalla angosta se achica sola, nunca más del 75 % del ancho.
 - **Lápiz** (arriba a la derecha): arrastra, cambia el tamaño, quita y agrega componentes.
 - **Ajustes** (rueda dentada): Estilo tiene un deslizador de negro a vidrio, otro para la intensidad del color, «Los colores bailan con la música» (el brillo late al ritmo de cada canción) y el contorno de la isla (por defecto sin borde). En vivo: qué se ve con la isla cerrada.
 - **Bloqueo del chat de IA** (Ajustes › IA): por defecto pide Windows Hello (huella, cara o PIN de Windows) si tu PC lo tiene. Si no lo tiene, elige «Windows Hello o PIN de la app» y crea un PIN de 4 a 8 dígitos. «Volver a pedirlo»: siempre, a los 15 minutos (por defecto), a la hora o solo al abrir la app; también al bloquear o suspender Windows. No borra tu sesión guardada.

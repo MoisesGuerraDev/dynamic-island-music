@@ -11,7 +11,7 @@ import { startAmbient } from './ambient.js';
 import { paletteFromImage, paletteFromHex, customPalette, DEFAULT_PALETTE } from './colors.js';
 import { lightsHTML, bindLights, throttledPatcher, DANCE_AMP, SIZE_IN, SIZE_OUT } from './lightui.js';
 import { playPomodoroSound } from './sounds.js';
-import { openWidth } from '../shared/layout.js';
+import { openWidth, uiScaleFor } from '../shared/layout.js';
 import { bpmFor, pulseAt } from '../shared/pulse.js';
 import { formatDuration, parseDuration } from '../shared/time.js';
 
@@ -65,7 +65,6 @@ function applyStyle() {
   stage.classList.toggle('hide-header', !s.showHeaderButtons);
   stage.classList.toggle('no-viz', !s.visualizer);
   stage.classList.toggle('no-bounce', !s.hoverBounce);
-  stage.classList.toggle('flat', !s.liquidButtons);
   stage.classList.toggle('no-shadow', !s.windowShadow);
   for (const g of ['off', 'soft', 'glass', 'strong']) stage.classList.toggle(`glow-${g}`, (['off', 'soft', 'strong', 'glass'].includes(s.glowStyle) ? s.glowStyle : 'glass') === g);
   for (const m of ['none', 'open', 'always']) stage.classList.toggle(`rim-${m}`, (s.borderStyle || 'none') === m);
@@ -238,7 +237,10 @@ function keepFocus(fn) {
 }
 
 function setWidth(px) {
-  $('#stage').style.setProperty('--w', `${Math.round(px)}px`);
+  const st = $('#stage').style;
+  st.setProperty('--w', `${Math.round(px)}px`);
+  // The island keeps its size (1077 x 187 at 100 %); on a narrow screen it is drawn smaller, never over 75 % of the width.
+  st.setProperty('--ui', uiScaleFor(px, S.info.cap, S.set.uiSize).toFixed(3));
 }
 
 /** The halo copies the height of the island (its width follows the same --w). */
@@ -271,7 +273,7 @@ function renderRow() {
     const row = $('#row');
     stopGame();
     row.className = `row${S.set.separators ? ' seps' : ''}`;
-    row.style.height = S.view === 'chat' ? '214px' : '';
+    row.style.height = S.view === 'chat' ? '188px' : '';
     $('#ntabs-m').innerHTML = '';
     $('#editbar').hidden = true;
     const cap = S.info.cap;
@@ -490,15 +492,15 @@ function renderPill() {
   lastLiveSig = `${keys.join()}|${S.rot}|${max}|${show}`;
 
   let html = '<span class="idle"></span>';
-  let w = 150;
+  let w = 92;
   const two = shown.slice(0, 2);
   if (two.length === 1) {
     const p = liveParts(two[0]);
     html = `<div class="lside">${p.l}</div><div class="rside">${p.r}</div>`;
-    w = 260;
+    w = 176;
   } else if (two.length === 2) {
     html = `<div class="lside">${liveParts(two[0]).c}</div><div class="rside">${liveParts(two[1]).c}</div>`;
-    w = 440;
+    w = 236;
   }
   if (extra > 0 || (shown.length > 2 && !s.liveThirdBelow)) html += `<span class="more" title="Las demás rotan cada ${s.liveRotate} segundos">+${Math.max(extra, shown.length - 2)}</span>`;
   pill.innerHTML = html;
@@ -550,14 +552,18 @@ let rectTimer = null;
 function reportRect() {
   const notch = $('#notch');
   const pill = $('#pill');
+  const ui = Number(getComputedStyle($('#stage')).getPropertyValue('--ui')) || 1;
   let r = { x: 0, y: 0, w: 0, h: 0 };
   if (S.open) {
-    r = { x: notch.offsetLeft, y: notch.offsetTop, w: notch.offsetWidth, h: notch.offsetHeight };
+    // The island is drawn scaled from its top center; offsets ignore transforms, so apply the scale here.
+    const cx = notch.offsetLeft + notch.offsetWidth / 2;
+    r = { x: cx - (notch.offsetWidth * ui) / 2, y: notch.offsetTop, w: notch.offsetWidth * ui, h: notch.offsetHeight * ui };
     const lp = $('#lightpanel');
     if (!lp.hidden) {
       // The panel hangs below the island: that part must be clickable too.
-      const x1 = Math.min(r.x, notch.offsetLeft + lp.offsetLeft), y1 = Math.min(r.y, notch.offsetTop + lp.offsetTop);
-      const x2 = Math.max(r.x + r.w, notch.offsetLeft + lp.offsetLeft + lp.offsetWidth), y2 = Math.max(r.y + r.h, notch.offsetTop + lp.offsetTop + lp.offsetHeight);
+      const b = lp.getBoundingClientRect();
+      const x1 = Math.min(r.x, b.left), y1 = Math.min(r.y, b.top);
+      const x2 = Math.max(r.x + r.w, b.right), y2 = Math.max(r.y + r.h, b.bottom);
       r = { x: x1, y: y1, w: x2 - x1, h: y2 - y1 };
     }
   } else if (!pill.classList.contains('off')) {

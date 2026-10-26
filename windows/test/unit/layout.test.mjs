@@ -1,36 +1,47 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { capWidth, paginate, openWidth, usage, moveOnto, clampWidth } from '../../src/shared/layout.js';
+import { capWidth, paginate, openWidth, usage, moveOnto, clampWidth, uiScaleFor, MIN_UI } from '../../src/shared/layout.js';
 import { defaultComponents, normalizeComponents, normalizeSettings, COMPONENT_META, DEFAULTS } from '../../src/shared/defaults.js';
 
 const active = (ids) => defaultComponents().filter((c) => ids.includes(c.id)).map((c) => ({ ...c, enabled: true }));
 
-test('capWidth is 72 % of the screen and never above 1300', () => {
-  assert.equal(capWidth(1470), 1058);
-  assert.equal(capWidth(1920), 1300);
-  assert.equal(capWidth(3440), 1300);
-  assert.equal(capWidth(1366), 984);
+test('capWidth is 75 % of the screen', () => {
+  assert.equal(capWidth(1920), 1440);
+  assert.equal(capWidth(3440), 2580);
+  assert.equal(capWidth(1366), 1025);
   assert.equal(capWidth(1920, true, 900), 900);
 });
 
-test('the five default components fit one page on a 1920 screen', () => {
+test('the five default components make an island of 1077 px, like the Mac', () => {
   const act = defaultComponents().filter((c) => c.enabled);
-  const pages = paginate(act, capWidth(1920));
+  assert.deepEqual(act.map((c) => c.width), [312, 222, 178, 159, 178]);
+  const pages = paginate(act, capWidth(1920) / MIN_UI);
   assert.equal(pages.length, 1);
-  assert.equal(openWidth(pages[0], 1300), 1006);
+  assert.equal(openWidth(pages[0], 1440), 1077);
 });
 
-test('components that do not fit go to another page instead of being squeezed', () => {
-  const act = defaultComponents().filter((c) => c.enabled);
-  const pages = paginate(act, capWidth(1366)); // cap 984: room 948 < 970
-  assert.equal(pages.length, 2);
-  assert.deepEqual(pages.flat().map((c) => c.id), act.map((c) => c.id));
-  for (const p of pages) assert.ok(p.reduce((s, c) => s + c.width, 0) <= 984 - 36);
+test('the island keeps its size (Mediano 1.0) and shrinks only when the screen is too narrow, never under 0.75', () => {
+  assert.equal(uiScaleFor(1077, capWidth(1920), 'm'), 1);
+  assert.equal(uiScaleFor(1077, capWidth(1920), 'l'), 1.2);
+  assert.equal(uiScaleFor(1077, capWidth(1920), 's'), 0.75);
+  const narrow = uiScaleFor(1077, capWidth(1366), 'm');
+  assert.ok(narrow < 1 && narrow > 0.9, String(narrow));
+  assert.ok(1077 * narrow <= capWidth(1366) + 0.5, 'never wider than 75 % of the screen');
+  assert.equal(uiScaleFor(1077, 500, 'm'), 0.75);
+  assert.equal(uiScaleFor(1077, 5000, 'x'), 1, 'unknown size falls back to Mediano');
+});
+
+test('components that do not fit even at the smallest size go to another page instead of being squeezed', () => {
+  const many = defaultComponents().map((c) => ({ ...c, enabled: true }));
+  const pages = paginate(many, capWidth(1366) / MIN_UI);
+  assert.ok(pages.length >= 2);
+  assert.deepEqual(pages.flat().map((c) => c.id), many.map((c) => c.id));
+  for (const p of pages) assert.ok(p.reduce((s, c) => s + c.width, 0) <= capWidth(1366) / MIN_UI - 28);
 });
 
 test('usage can go over 100 %', () => {
   const act = active(['player', 'calendar', 'notes', 'pomodoro', 'camera', 'chat', 'clipboard']);
-  assert.ok(usage(act, 1058) > 100);
+  assert.ok(usage(act, 1103) > 100);
   assert.equal(usage([], 1000), 0);
 });
 
@@ -52,7 +63,7 @@ test('normalizeComponents repairs lists from old or damaged settings', () => {
   assert.equal(fixed.length, 10);
   assert.equal(fixed[0].id, 'player');
   assert.equal(fixed[0].enabled, true);
-  assert.equal(fixed[0].width, 300);
+  assert.equal(fixed[0].width, 312);
   assert.equal(new Set(fixed.map((c) => c.id)).size, 10);
 });
 

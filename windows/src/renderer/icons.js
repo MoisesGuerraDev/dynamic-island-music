@@ -37,11 +37,12 @@ export const P = {
   power: '<path d="M12 3v8M7 6.5a8 8 0 1 0 10 0"/>',
 };
 
+// Player glyphs: thin outlines (1.8 px stroke) like the rest of the icons, never heavy filled shapes.
 export const FILL = {
-  prev: '<path d="M18 6v12l-8-6zM7 6h2v12H7z"/>',
-  next: '<path d="M6 6v12l8-6zM15 6h2v12h-2z"/>',
-  play: '<path d="M8 5.5v13l11-6.5z"/>',
-  pause: '<path d="M7 5h4v14H7zM13 5h4v14h-4z"/>',
+  prev: '<path d="M7 6v12M18 6.5v11l-8.5-5.5z"/>',
+  next: '<path d="M17 6v12M6 6.5v11l8.5-5.5z"/>',
+  play: '<path d="M8.5 5.5v13l10.5-6.5z"/>',
+  pause: '<rect x="7" y="5.5" width="3.6" height="13" rx="1.2"/><rect x="13.4" y="5.5" width="3.6" height="13" rx="1.2"/>',
 };
 
 export function ic(name) {
@@ -49,7 +50,7 @@ export function ic(name) {
 }
 
 export function fi(name) {
-  return `<svg viewBox="0 0 24 24" aria-hidden="true">${FILL[name] || ''}</svg>`;
+  return `<svg class="st" viewBox="0 0 24 24" aria-hidden="true">${FILL[name] || ''}</svg>`;
 }
 
 const BADGE = {

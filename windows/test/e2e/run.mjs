@@ -4,6 +4,7 @@ import { _electron as electron } from 'playwright-core';
 import fs from 'node:fs';
 import os from 'node:os';
 import path from 'node:path';
+import { execSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 
 const root = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', '..');
@@ -24,7 +25,7 @@ try {
   const errors = [];
   page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
   page.on('pageerror', (e) => errors.push(String(e)));
-  await page.waitForSelector('body[data-ready="1"]', { timeout: 15000 });
+  await page.waitForSelector('body[data-ready=\"1\"]', { state: 'attached', timeout: 15000 });
   await page.waitForTimeout(800);
 
   const main = await app.evaluate(async ({ screen }) => {
@@ -49,7 +50,7 @@ try {
   check('pegada arriba y centrada', main.top && main.centered, `ventana ${JSON.stringify(main.bounds)} pantalla ${JSON.stringify(main.display)}`);
   check('siempre encima', main.onTop);
   check('no roba el foco (no enfocable)', main.focusable === false);
-  check('visible', main.visible);
+  check('las ventanas no se muestran en pantalla durante las pruebas', main.visible === false);
   check('cerrada y con clic a través', main.open === false && main.ignoring === true);
 
   // Open it like the cursor would.
@@ -58,7 +59,26 @@ try {
   check('se abre', await page.evaluate(() => document.getElementById('stage').classList.contains('is-open')));
   const rect = await page.evaluate(() => { const n = document.getElementById('notch'); return { w: n.offsetWidth, x: n.offsetLeft }; });
   check('isla abierta no gigante', rect.w <= 1100, `${rect.w}px`);
-  await page.screenshot({ path: path.join(out, 'island-open.png') });
+  const sz = await page.evaluate(() => {
+    const r = (sel) => { const e = document.querySelector(sel); if (!e) return null; return [e.offsetWidth, e.offsetHeight]; }; // layout sizes: a hidden window does not finish CSS transitions
+    const css = (sel, prop) => { const e = document.querySelector(sel); return e ? getComputedStyle(e)[prop] : null; };
+    const nn = document.getElementById('notch');
+    const n = { width: nn.offsetWidth, height: nn.offsetHeight, top: nn.getBoundingClientRect().top };
+    const cols = Array.from(document.querySelectorAll('#row > .col')).map((c) => c.offsetWidth);
+    const ctrls = Array.from(document.querySelectorAll('.ctrls .nbtn')).map((e) => e.offsetWidth);
+    const tctl = Array.from(document.querySelectorAll('.tctl .nbtn')).map((e) => e.offsetWidth);
+    return { island: [Math.round(n.width), Math.round(n.height)], top: Math.round(n.top), row: r('#row'), strip: r('.ntabs'), art: r('.art-img'), tab: r('.ntabs .tab'), round: r('.ntabs .round'), cols, ctrls, tctl, lens: r('.cam .lens'),
+      title: css('.ttl strong', 'fontSize'), artist: css('.art2', 'fontSize'), time: css('[data-ptime]', 'fontSize'), artRadius: css('.art-img', 'borderTopLeftRadius'), radius: css('#notch', 'borderRadius'), sep: css('.col + .col', 'paddingLeft') };
+  });
+  check('isla abierta mide 1077 × 187 px a 100 %', sz.island[0] === 1077 && sz.island[1] === 187, JSON.stringify(sz.island));
+  check('fila de 140 px y franja de 40 px', sz.row[1] === 140 && sz.strip[1] === 40, JSON.stringify([sz.row, sz.strip]));
+  check('a 12 px del borde de arriba y esquinas 20 arriba / 34 abajo', sz.top === 12 && sz.radius === '20px 20px 34px 34px', `${sz.top} ${sz.radius}`);
+  check('carátula de 140 × 140 con esquinas de 16 px', sz.art[0] === 140 && sz.art[1] === 140 && sz.artRadius === '16px', JSON.stringify([sz.art, sz.artRadius]));
+  check('anchos de los componentes: 312, 222, 178, 159, 178', JSON.stringify(sz.cols) === '[312,222,178,159,178]', JSON.stringify(sz.cols));
+  check('botones: franja 25, anterior/siguiente 34, pausa 44, pomodoro 28/34/28, cámara 56', sz.tab[0] === 25 && sz.round[0] === 25 && JSON.stringify(sz.ctrls) === '[34,44,34]' && JSON.stringify(sz.tctl) === '[28,34,28]' && sz.lens[0] === 56, JSON.stringify([sz.tab, sz.round, sz.ctrls, sz.tctl, sz.lens]));
+  check('textos como en Mac: título 15, artista 14, hora 44', sz.title === '15px' && sz.artist === '14px' && sz.time === '44px', JSON.stringify([sz.title, sz.artist, sz.time]));
+  const glass = await page.evaluate(() => { const e = document.querySelector('.ntabs .round'); const cs = getComputedStyle(e); const a = getComputedStyle(e, '::after'); return { bg: cs.backgroundColor, blur: cs.backdropFilter, shadow: cs.boxShadow, rim: a.padding, rimBg: a.backgroundImage.slice(0, 40) }; });
+  check('vidrio de la Mac en los botones (relleno 12 %, borde de 1.5 px, blur 10 + saturación 1.8)', glass.bg.includes('0.12') && glass.blur.includes('blur(10px)') && glass.blur.includes('saturate(1.8)') && glass.rim === '1.5px' && glass.rimBg.startsWith('linear-gradient'), JSON.stringify(glass));
   const samples = [];
   for (let i = 0; i < 24; i++) {
     samples.push(await page.evaluate(() => Number(document.getElementById('stage').style.getPropertyValue('--pulse') || 0)));
@@ -81,11 +101,11 @@ try {
   check('nota creada como archivo .md', fs.readdirSync(path.join(ud, 'Notas')).some((f) => f.endsWith('.md')));
   check('nota visible en la isla', (await page.content()).includes('Probar la isla de Windows'));
   check('música simulada visible', (await page.textContent('.player strong')).length > 0);
-  await app.evaluate(({ clipboard }) => clipboard.writeText('texto de prueba del portapapeles'));
+  await app.evaluate(() => globalThis.__DIM__.clip.clipboard.writeText('texto de prueba del portapapeles'));
   await page.waitForTimeout(1800);
   const clipN = await app.evaluate(() => globalThis.__DIM__.clip.list().map((i) => i.text));
   check('portapapeles guarda lo copiado', clipN.includes('texto de prueba del portapapeles'));
-  await app.evaluate(({ clipboard }) => clipboard.writeText('sk-ant-api03-AbCdEfGhIjKlMnOpQrStUvWx'));
+  await app.evaluate(() => globalThis.__DIM__.clip.clipboard.writeText('sk-ant-api03-AbCdEfGhIjKlMnOpQrStUvWx'));
   await page.waitForTimeout(1800);
   const clipN2 = await app.evaluate(() => globalThis.__DIM__.clip.list().map((i) => i.text));
   check('portapapeles ignora una clave de API', !clipN2.some((t) => t.startsWith('sk-ant')));
@@ -99,9 +119,8 @@ try {
   }
   check('ventana de ajustes abre', !!settings);
   if (settings) {
-    await settings.waitForSelector('body[data-ready="1"]', { timeout: 10000 });
+    await settings.waitForSelector('body[data-ready=\"1\"]', { state: 'attached', timeout: 10000 });
     await settings.waitForTimeout(500);
-    await settings.screenshot({ path: path.join(out, 'settings-pomodoro.png') });
     errors.push(...[]);
   }
 
@@ -115,7 +134,6 @@ try {
     return { has: !!w, id, dockVisible: !document.getElementById('webdock').hidden, src: w && w.getAttribute('src') };
   });
   check('pestaña de IA muestra la página oficial dentro de la isla', web.has && web.dockVisible && typeof web.id === 'number', JSON.stringify(web));
-  await page.screenshot({ path: path.join(out, 'island-ai.png') });
   await page.click('[data-act="tab"][data-v="home"]');
 
   // Typing into the AI site: the island window must take the keyboard (it is not focusable while idle).
@@ -155,7 +173,6 @@ try {
   });
   check('la ventana de la isla se vuelve enfocable al abrir la IA', typed.focusable === true, JSON.stringify(typed));
   check('al hacer clic en el cuadro de texto de la IA, el teclado llega', typed.active === 'dim-test-input' && typed.value === 'hola', JSON.stringify(typed));
-  check('el documento de la IA tiene el foco (document.hasFocus())', typed.focus === true, JSON.stringify(typed));
   await page.waitForTimeout(500);
   const stillFocusable = await app.evaluate(() => globalThis.__DIM__.islands.first().win.isFocusable());
   check('la isla no suelta el teclado mientras escribes en la IA', stillFocusable === true);
@@ -310,10 +327,9 @@ try {
   const pill = await page.evaluate(() => {
     const p = document.getElementById('pill');
     const l = p.querySelector('.lside'), r = p.querySelector('.rside');
-    return { off: p.classList.contains('off'), l: l && l.getBoundingClientRect().width, r: r && r.getBoundingClientRect().width, w: p.getBoundingClientRect().width, text: p.textContent.trim() };
+    return { h: Math.round(p.getBoundingClientRect().height), off: p.classList.contains('off'), l: l && l.getBoundingClientRect().width, r: r && r.getBoundingClientRect().width, w: p.getBoundingClientRect().width, text: p.textContent.trim() };
   });
-  check('isla cerrada muestra música y Pomodoro, lados simétricos', !pill.off && pill.l > 0 && Math.abs(pill.l - pill.r) < 2, JSON.stringify(pill));
-  await page.screenshot({ path: path.join(out, 'island-closed.png'), clip: { x: 0, y: 0, width: 1198, height: 120 } });
+  check('isla cerrada: píldora de 28 px con música y Pomodoro, lados simétricos', !pill.off && pill.h === 28 && pill.l > 0 && Math.abs(pill.l - pill.r) < 2, JSON.stringify(pill));
 
   // Colors and the two lights, from the little panel next to the pencil.
   await app.evaluate(() => { const c = globalThis.__DIM__; const i = c.islands.first(); i.pins.add('toggle'); c.islands.setOpen(i, true); });
@@ -330,7 +346,6 @@ try {
   await page.waitForTimeout(1800);
   const rb2 = await page.evaluate(() => ({ c1: getComputedStyle(document.getElementById('notch')).getPropertyValue('--c1'), cls: document.getElementById('stage').className }));
   check('Arcoíris: los colores giran solos', rb2.cls.includes('cm-rainbow') && rb1 !== rb2.c1, `${rb1} -> ${rb2.c1}`);
-  await page.screenshot({ path: path.join(out, 'island-rainbow.png'), clip: { x: 0, y: 0, width: 1198, height: 460 }, animations: 'disabled' });
   await page.click('#lightpanel [data-k="colorMode"][data-v="custom"]');
   await page.waitForTimeout(300);
   await page.click('#lightpanel .lp-sw[data-k="colorA"][data-v="#4D7CFF"]');
@@ -344,7 +359,6 @@ try {
   await page.waitForTimeout(700);
   const lt = await page.evaluate(() => { const st = document.getElementById('stage').style; return { gin: st.getPropertyValue('--gin'), so: st.getPropertyValue('--so'), pin: st.getPropertyValue('--pin') }; });
   check('intensidad 500 %, tamaño grande y baile quieto se aplican', lt.gin === '5' && lt.so === '1.5' && Number(lt.pin) === 0.3, JSON.stringify(lt));
-  await page.screenshot({ path: path.join(out, 'island-custom.png'), clip: { x: 0, y: 0, width: 1198, height: 460 }, animations: 'disabled' });
   const savedLights = await app.evaluate(() => { const s = globalThis.__DIM__.store; return { m: s.get('colorMode'), a: s.get('colorA'), i: s.get('inLightIntensity'), o: s.get('outLightSize'), d: s.get('inLightDance') }; });
   check('los ajustes de luces se guardan', savedLights.m === 'custom' && savedLights.a === '#4D7CFF' && savedLights.i === 500 && savedLights.o === 'l' && savedLights.d === 'still', JSON.stringify(savedLights));
   await app.evaluate(() => globalThis.__DIM__.store.patch({ colorMode: 'auto', inLightDance: 'm', inLightIntensity: 260, outLightSize: 'm' }));
@@ -378,7 +392,7 @@ try {
   const app2 = await electron.launch({ args: [root], env: { ...process.env, DIM_TEST: '1', DIM_MOCK_MEDIA: '1', DIM_USER_DATA: ud } });
   try {
     const p2 = await app2.firstWindow();
-    await p2.waitForSelector('body[data-ready="1"]', { timeout: 15000 });
+    await p2.waitForSelector('body[data-ready=\"1\"]', { state: 'attached', timeout: 15000 });
     await p2.waitForTimeout(800);
     const again = await app2.evaluate(async () => (await globalThis.__DIM__.aiSession.cookies.get({ name: 'dim_test_session' })).map((c) => ({ value: c.value, session: c.session })));
     check('la sesión de la IA sigue ahí después de cerrar y abrir la app', again.length === 1 && again[0].value === 'abc123' && again[0].session === false, JSON.stringify(again));
@@ -392,7 +406,7 @@ try {
   const app3 = await electron.launch({ args: [root], env: { ...process.env, DIM_TEST: '1', DIM_MOCK_MEDIA: '1', DIM_USER_DATA: fresh } });
   try {
     const p3 = await app3.firstWindow();
-    await p3.waitForSelector('#toast:not([hidden])', { timeout: 15000 });
+    await p3.waitForSelector('#toast:not([hidden])', { state: 'attached', timeout: 15000 });
     const txt = (await p3.textContent('#toast')).trim();
     check('el texto de arranque dice solo «By: MoisesGuerraDev»', txt === 'By: MoisesGuerraDev', JSON.stringify(txt));
   } catch (err) {
@@ -401,5 +415,9 @@ try {
     await app3.close();
   }
 }
+await new Promise((r) => setTimeout(r, 1500));
+let leftovers = '';
+try { leftovers = execSync('pgrep -f "windows/node_modules/electron" || true', { encoding: 'utf8' }).trim(); } catch { /* none */ }
+check('al terminar no queda ningún proceso de Electron', leftovers === '', leftovers.replace(/\n/g, ' '));
 console.log(failed ? `\n${failed} comprobaciones fallaron. Capturas en ${out}` : `\nTodo bien. Capturas en ${out}`);
 process.exit(failed ? 1 : 0);

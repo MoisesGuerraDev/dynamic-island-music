@@ -1,4 +1,4 @@
-import { BrowserWindow, screen, session, shell } from 'electron';
+import { app, BrowserWindow, screen, session, shell } from 'electron';
 import os from 'node:os';
 import { capWidth, displayKey } from '../shared/layout.js';
 import { AI_PARTITION } from '../shared/cookies.js';
@@ -8,7 +8,9 @@ import { fileURLToPath } from 'node:url';
 const AI_GUEST_PRELOAD = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'preload', 'ai-guest.cjs');
 
 const PAD_X = 70; // room for the glow and shadow at each side of the island
-const WIN_H = 480; // tall enough for the open island, its edit bar and the glow
+const WIN_H = 560; // tall enough for the island at its biggest size, its edit bar, the lights panel and the glow
+// In automated tests no window is ever shown (nothing appears on the person's screen) and nothing takes the keyboard.
+const HEADLESS = process.env.DIM_TEST === '1' && process.env.DIM_SHOW !== '1' && !app.isPackaged;
 
 const inRect = (r, p) => !!r && p.x >= r.x && p.x <= r.x + r.w && p.y >= r.y && p.y <= r.y + r.h;
 const grow = (r, m) => (r ? { x: r.x - m, y: r.y - m, w: r.w + 2 * m, h: r.h + 2 * m } : null);
@@ -156,7 +158,7 @@ export class IslandManager {
       for (const [id, v] of this.islands) if (v === isl) this.islands.delete(id);
     });
     win.once('ready-to-show', () => {
-      if (!this.game.exclusive && !this.hiddenByUser) win.showInactive();
+      if (!this.game.exclusive && !this.hiddenByUser && !HEADLESS) win.showInactive();
     });
     win.webContents.once('did-finish-load', () => this.onFirstLoad?.(isl));
     win.loadFile(`${this.rendererDir}/island.html`);
@@ -239,6 +241,7 @@ export class IslandManager {
   }
 
   #revealAll() {
+    if (HEADLESS) return;
     for (const i of this.all()) if (!i.win.isVisible()) i.win.showInactive();
   }
 
@@ -251,8 +254,10 @@ export class IslandManager {
     const win = isl.win;
     if (on) {
       win.setFocusable(true);
-      win.focus();
-      win.webContents.focus();
+      if (!HEADLESS) {
+        win.focus();
+        win.webContents.focus();
+      }
       isl.focused = true;
       isl.pins.add('input');
     } else {
@@ -349,8 +354,10 @@ export class IslandManager {
   openSettings(tab) {
     if (this.settingsWin && !this.settingsWin.isDestroyed()) {
       if (this.settingsWin.isMinimized()) this.settingsWin.restore();
-      this.settingsWin.show();
-      this.settingsWin.focus();
+      if (!HEADLESS) {
+        this.settingsWin.show();
+        this.settingsWin.focus();
+      }
       if (tab) this.settingsWin.webContents.send('settings:goto', tab);
       return;
     }
@@ -377,7 +384,9 @@ export class IslandManager {
     });
     this.settingsWin = win;
     lockDown(win.webContents);
-    win.once('ready-to-show', () => win.show());
+    win.once('ready-to-show', () => {
+      if (!HEADLESS) win.show();
+    });
     win.on('closed', () => {
       this.settingsWin = null;
     });

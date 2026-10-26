@@ -5,9 +5,20 @@
 
 import { SIDE_PADDING, COMPONENT_META, MAX_COMPONENT_WIDTH } from './defaults.js';
 
+/** The open island is never wider than 75 % of the screen. */
 export function capWidth(screenWidth, manual = false, manualWidth = 900) {
-  if (manual) return Math.max(560, Math.min(2400, Math.round(manualWidth)));
-  return Math.min(Math.round(screenWidth * 0.72), 1300);
+  if (manual) return Math.max(560, Math.min(4000, Math.round(manualWidth)));
+  return Math.round(screenWidth * 0.75);
+}
+
+export const UI_SIZES = { s: 0.75, m: 1, l: 1.2 };
+export const MIN_UI = 0.75;
+export const MIN_ISLAND = 480;
+
+/** Scale the island is drawn at: the size the person chose, reduced if the screen is too narrow for it (never below 0.75). */
+export function uiScaleFor(contentWidth, cap, size = 'm') {
+  const want = UI_SIZES[size] ?? 1;
+  return Math.max(MIN_UI, Math.min(want, cap / Math.max(1, contentWidth)));
 }
 
 /** Splits the enabled components into pages that fit inside `cap`. */
@@ -32,7 +43,7 @@ export function paginate(active, cap) {
 /** Width the open island needs for a page. */
 export function openWidth(page, cap) {
   const sum = page.reduce((s, c) => s + c.width, 0) + 2 * SIDE_PADDING;
-  return Math.max(560, Math.min(cap, sum));
+  return Math.max(MIN_ISLAND, sum);
 }
 
 /** Share of the cap used by all enabled components, in percent (can pass 100). */

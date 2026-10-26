@@ -1,6 +1,6 @@
 // Edit mode: drag to reorder, pull the corner to resize, minus to remove, add from the bar, pages when it does not fit.
 import { S, bus, comps, activeComps, metaOf, pages } from './state.js';
-import { clampWidth, moveOnto, usage } from '../shared/layout.js';
+import { clampWidth, moveOnto, usage, UI_SIZES } from '../shared/layout.js';
 import { ic } from './icons.js';
 
 const dim = () => window.dim;
@@ -19,7 +19,7 @@ export function setComps(list) {
 
 export function editBarHTML() {
   const off = comps().filter((c) => !c.enabled);
-  const u = usage(activeComps(), S.info.cap);
+  const u = usage(activeComps(), S.info.cap / (UI_SIZES[S.set.uiSize] ?? 1));
   const np = pages().length;
   const adds = off.length
     ? off.map((c) => `<button class="nbtn pbtn add" data-act="add-comp" data-k="${c.id}">${ic('plus')}${metaOf(c.id).name}</button>`).join('')
@@ -30,7 +30,7 @@ export function editBarHTML() {
 }
 
 function refreshUse(list) {
-  const u = usage(list.filter((c) => c.enabled), S.info.cap);
+  const u = usage(list.filter((c) => c.enabled), S.info.cap / (UI_SIZES[S.set.uiSize] ?? 1));
   const el = document.querySelector('#editbar [data-use]');
   if (!el) return;
   el.classList.toggle('over', u > 100);

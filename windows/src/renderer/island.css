@@ -406,7 +406,7 @@ button.ct:hover { background: rgba(255, 255, 255, .14); }
 /* AI with your own account: the official site inside the island */
 .webdock { display: flex; flex-direction: column; gap: 8px; }
 .webdock[hidden] { display: none; }
-.aiw { display: block; width: 100%; height: 262px; border-radius: 16px; overflow: hidden; background: #000; border: 1px solid rgba(255, 255, 255, .12); }
+.aiw { display: block; width: 100%; height: 200px; border-radius: 16px; overflow: hidden; background: #000; border: 1px solid rgba(255, 255, 255, .12); }
 
 /* Lock in front of the AI chat */
 .lockbox { width: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; text-align: center; }
@@ -439,3 +439,131 @@ button.ct:hover { background: rgba(255, 255, 255, .14); }
 .lp-wheel { width: 30px; height: 26px; padding: 0; border: 1px solid rgba(255, 255, 255, .25); border-radius: 8px; background: transparent; cursor: pointer; }
 .lp-btn { all: unset; cursor: pointer; padding: 3px 10px; border-radius: 8px; background: rgba(255, 255, 255, .12); font-size: 12px; }
 .lp-btn:hover { background: rgba(255, 255, 255, .22); }
+
+/* =====================================================================================================
+   Compact layout, like the Mac island: 1077 x 187 px open (40 px strip + 140 px row + 7 px), at 100 %.
+   Black and plain: no frame, no heavy shadow. The size control (Chico 0.75 / Mediano 1 / Grande 1.2) sets --ui.
+   ===================================================================================================== */
+:root { --top: 12px; --dsa: 0; --ui: 1; }
+.notch { padding: 0 14px 7px; border-radius: 20px 20px 34px 34px; transform-origin: 50% 0; transform: scale(calc(var(--ui) * .42), calc(var(--ui) * .14)); }
+.is-open .notch { transform: scale(var(--ui)); }
+.rim, .amb { border-radius: 20px 20px 34px 34px; }
+.halo { border-radius: 24px 24px 38px 38px; transform-origin: 50% 0; transform: scale(calc((1 + .05 * var(--pout)) * var(--ui))); }
+.gcard { top: calc(var(--top) + 36px); }
+
+/* Strip of 40 px: tabs on the left, battery / sun / pencil / gear / close on the right, 25 px glass circles */
+.ntabs { height: 40px; margin-bottom: 0; }
+.ntabs > div { gap: 6px; }
+.ntabs .tab, .ntabs .round { width: 25px; height: 25px; border-radius: 50%; }
+.ntabs .tab svg { width: 14px; height: 14px; }
+.ntabs .round svg { width: 13px; height: 13px; }
+.ntabs .pill { height: 25px; padding: 0 9px; border-radius: 13px; font-size: 11px; gap: 5px; }
+.bat { width: 17px; height: 8px; border-width: 1.3px; }
+.dot { width: 7px; height: 7px; }
+
+/* Row of components: 140 px, 1 px separators, 14 px between content and separator */
+.row { height: 140px; }
+.col { padding: 0 14px; }
+.col:first-child { padding-left: 0; } .col:last-child { padding-right: 0; }
+.seps .col + .col::before { top: 8px; bottom: 8px; }
+
+/* Player: cover 140 x 140 with 16 px corners, texts as on the Mac */
+.player { gap: 14px; }
+.art { width: 140px; height: 140px; }
+.art-img { border-radius: 16px; }
+.art-img .note svg { width: 48px; height: 48px; }
+.badge { width: 24px; height: 24px; border-radius: 8px; right: -5px; bottom: -5px; }
+.badge svg { width: 13px; height: 13px; }
+.meta { gap: 1px; }
+.ttl strong { font-size: 15px; font-weight: 600; }
+.viz { height: 12px; }
+.art2 { font-size: 14px; }
+.bar { margin-top: 8px; }
+.times { margin-top: 4px; font-size: 10px; }
+.ctrls { margin-top: 4px; padding: 0 2px; }
+.nomusic { font-size: 12px; } .nomusic b { font-size: 14px; }
+
+/* Calendar, notes, timer, camera */
+.cal { padding-top: 2px; gap: 8px; }
+.cal-head { font-size: 13px; }
+.days b { font-size: 13px; padding: 2px 6px; }
+.cal-empty { font-size: 12px; }
+.plus, .notch .aib { width: 30px; height: 30px; }
+.plus { border-radius: 10px; }
+.notch .aib { font-size: 12px; }
+.cal-btns { gap: 5px; }
+.notes { padding-top: 4px; gap: 5px; }
+.notes h4 { font-size: 12.5px; }
+.todo { font-size: 12px; }
+.timer { gap: 4px; }
+.focus { font-size: 11px; padding: 3px 8px; }
+.cam .lens { width: 56px; height: 56px; }
+.cam video { width: 92px; height: 92px; }
+.cam { gap: 6px; font-size: 12px; }
+.mc { gap: 6px; padding-top: 4px; }
+.mch { font-size: 12.5px; }
+.mcb { font-size: 12px; -webkit-line-clamp: 3; }
+.pf { font-size: 11px; }
+.clip-l { max-height: 92px; }
+.file, .ft { }
+.ft { width: 48px; height: 56px; }
+.tray .drop { padding: 8px; } .drop i { width: 36px; height: 36px; }
+.lp-panel { top: 44px; }
+.editbar { margin-top: 4px; padding: 5px 10px; }
+
+/* Closed island: compact symmetric pill of 28 px, cover on the left and waves / timer on the right */
+.pill-closed { height: 28px; border-radius: 14px; padding: 0 10px; font-size: 11px; border: 0; scale: var(--ui); }
+.is-open .pill-closed { scale: calc(1.4 * var(--ui)) calc(.5 * var(--ui)); }
+.pill-closed .mart { width: 18px; height: 18px; border-radius: 6px; }
+.pill-closed b.mono, .pill-closed .fps, .gcard b.mono, .gcard .fps { font-size: 12px; }
+.pill-closed .viz { height: 10px; }
+.pill-closed .ci2 svg, .gcard .ci2 svg { width: 14px; height: 14px; }
+.pill-closed .more { top: 2px; right: -30px; }
+
+/* =====================================================================================================
+   Glass buttons: the same look as the Mac (mockGlass + GlassHover) on EVERY button.
+   Fill white 12 %, gradient rim 1.5 px (white 80 % top left, almost nothing in the middle, 42 % bottom right),
+   soft inner glow, top reflection, soft shadow, blur 10 px saturate 1.8. On hover it grows to 1.1 with a spring
+   and a white glow follows the pointer (--mx / --my, 70 %). Pressed: 0.94.
+   ===================================================================================================== */
+.notch .tab, .notch .round, .notch .pill, .notch .nbtn, .notch .plus, .notch .cam .lens, .notch .lp-btn, .notch .lp-seg button, .notch .pv button {
+  position: relative; isolation: isolate;
+  background: linear-gradient(180deg, rgba(255, 255, 255, .12), rgba(255, 255, 255, 0) 50%), rgba(255, 255, 255, .12);
+  border: 0;
+  box-shadow: inset 0 0 14px rgba(255, 255, 255, .1), 0 8px 22px rgba(0, 0, 0, .38);
+  -webkit-backdrop-filter: blur(10px) saturate(1.8); backdrop-filter: blur(10px) saturate(1.8);
+  transition: transform .34s cubic-bezier(.34, 1.56, .64, 1), background .2s;
+  color: #fff;
+}
+.notch .tab::after, .notch .round::after, .notch .pill::after, .notch .nbtn::after, .notch .plus::after, .notch .cam .lens::after, .notch .lp-btn::after, .notch .lp-seg button::after, .notch .pv button::after {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; padding: 1.5px; pointer-events: none; z-index: 1;
+  background: linear-gradient(135deg, rgba(255, 255, 255, .8), rgba(255, 255, 255, .06) 45%, rgba(255, 255, 255, .42));
+  -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude;
+}
+.notch .tab::before, .notch .round::before, .notch .pill::before, .notch .nbtn::before, .notch .plus::before, .notch .cam .lens::before, .notch .lp-btn::before, .notch .lp-seg button::before, .notch .pv button::before {
+  content: ""; position: absolute; inset: 0; border-radius: inherit; z-index: -1; opacity: 0; transition: opacity .2s; pointer-events: none;
+  background: radial-gradient(circle at var(--mx, 50%) var(--my, 30%), rgba(255, 255, 255, .7), rgba(255, 255, 255, 0) 62%);
+}
+.notch .tab:hover, .notch .round:hover, .notch .nbtn:hover, .notch .plus:hover, .notch .cam .lens:hover, .notch .lp-btn:hover, .notch .lp-seg button:hover, .notch .pv button:hover { transform: scale(1.1); background: linear-gradient(180deg, rgba(255, 255, 255, .16), rgba(255, 255, 255, 0) 50%), rgba(255, 255, 255, .14); }
+.notch .tab:hover::before, .notch .round:hover::before, .notch .nbtn:hover::before, .notch .plus:hover::before, .notch .cam .lens:hover::before, .notch .lp-btn:hover::before, .notch .lp-seg button:hover::before, .notch .pv button:hover::before { opacity: 1; }
+.notch .tab:active, .notch .round:active, .notch .nbtn:active, .notch .plus:active, .notch .cam .lens:active, .notch .lp-btn:active, .notch .lp-seg button:active { transform: scale(.94); }
+.notch .tab.on, .notch .lp-seg button[aria-pressed="true"], .notch .pv button[aria-pressed="true"] { background: linear-gradient(180deg, rgba(255, 255, 255, .2), rgba(255, 255, 255, .04) 55%), rgba(255, 255, 255, .22); }
+.notch .tab:hover svg, .notch .round:hover svg, .notch .nbtn:hover svg, .notch .plus:hover svg { filter: none; }
+.no-bounce .notch .tab:hover, .no-bounce .notch .round:hover, .no-bounce .notch .nbtn:hover, .no-bounce .notch .plus:hover { transform: none; }
+.flat .notch .tab, .flat .notch .round, .flat .notch .pill, .flat .notch .nbtn, .flat .notch .plus, .flat .notch .cam .lens { box-shadow: none; -webkit-backdrop-filter: none; backdrop-filter: none; }
+.notch .aib { background: color-mix(in srgb, var(--ac) 55%, rgba(255, 255, 255, .1)); }
+
+/* Sizes: strip circles 25, previous / next 34, play / pause 44, timer 28 / 34 / 28, camera 56 */
+.notch .ctrls .nbtn { width: 34px; height: 34px; }
+.notch .ctrls .nbtn.big { width: 44px; height: 44px; }
+.notch .tctl .nbtn { width: 28px; height: 28px; background: linear-gradient(180deg, rgba(255, 255, 255, .12), rgba(255, 255, 255, 0) 50%), rgba(255, 255, 255, .12); }
+.notch .tctl .nbtn:nth-child(2) { width: 34px; height: 34px; }
+.nbtn svg { width: 17px; height: 17px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.nbtn.big svg { width: 20px; height: 20px; }
+.tctl .nbtn svg { width: 14px; height: 14px; }
+.tctl .nbtn:nth-child(2) svg { width: 16px; height: 16px; }
+.notch .pbtn { height: 28px; padding: 0 12px; font-size: 12px; border-radius: 14px; }
+.notch .pbtn.add { padding: 0 10px; }
+.notch .pv button { border-radius: 11px; }
+.lp-seg { background: rgba(255, 255, 255, .06); }
+.lp-seg button { border-radius: 8px; }

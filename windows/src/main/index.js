@@ -24,6 +24,23 @@ import { PinVault } from './pin.js';
 import { SessionBackup } from './sessionbackup.js';
 import { HdCover } from './hdcover.js';
 
+// Automated tests never touch the real clipboard of the person: they use this in-memory one.
+function fakeClipboard() {
+  let text = '';
+  return {
+    readText: async () => text,
+    writeText: async (t) => {
+      text = String(t);
+    },
+    has: async () => false,
+    read: async () => [],
+    write: async () => {},
+    clear: () => {
+      text = '';
+    },
+  };
+}
+
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(here, '..', '..');
 const isTest = process.env.DIM_TEST === '1' && !app.isPackaged;
@@ -47,6 +64,7 @@ function resourcePath(...parts) {
 
 function start() {
   const ctx = {};
+  app.dock?.hide(); // no Dock icon, not even for a moment
 
   app.on('second-instance', () => ctx.islands?.openSettings());
   app.on('window-all-closed', () => {
@@ -92,7 +110,7 @@ async function boot(ctx) {
   const notes = new Notes({ store, defaultFolder: path.join(userData, 'Notas'), trash: (p) => shell.trashItem(p) });
   const clip = new ClipboardHistory({
     store,
-    clipboard,
+    clipboard: isTest ? fakeClipboard() : clipboard,
     nativeImage,
     ClipboardItem,
     file: path.join(userData, 'clipboard.json'),
@@ -148,7 +166,7 @@ async function boot(ctx) {
   });
 
   const iconPath = path.join(root, 'assets', 'tray.png');
-  ctx.tray = new AppTray({ iconPath, store, handlers: actions, getPomodoro: () => pomodoro.snapshot() });
+  ctx.tray = isTest ? { update() {}, destroy() {} } : new AppTray({ iconPath, store, handlers: actions, getPomodoro: () => pomodoro.snapshot() });
 
   // --- Security: nothing from the web may open, load or ask for powers ---
   session.defaultSession.setPermissionRequestHandler((wc, permission, cb, details) => {
@@ -176,7 +194,7 @@ async function boot(ctx) {
     ctx.tray.update();
   });
   pomodoro.on('finished', (e) => {
-    if (store.get('pomoNotify') && Notification.isSupported()) {
+    if (store.get('pomoNotify') && Notification.isSupported() && !isTest) {
       new Notification({
         title: e.finishedFocus ? 'Concentración terminada' : 'Descanso terminado',
         body: e.finishedFocus ? 'Toca un descanso.' : 'Vuelve a concentrarte.',
@@ -229,7 +247,7 @@ async function boot(ctx) {
     if (has('preferredPlayer')) media.poll();
     if (has('launchAtLogin')) applyAutostart();
     if (has('shortcutToggle', 'shortcutPlayer', 'shortcutPomodoro', 'shortcutChat', 'shortcutPeek')) {
-      everyone('app:shortcutStatus', ctx.shortcuts.apply());
+      everyone('app:shortcutStatus', isTest ? {} : ctx.shortcuts.apply());
     }
     if (has('clipPersist', 'clipMax', 'clipAutoDeleteDays', 'clipEnabled')) clip.settingsChanged();
     if (has('clipPaused')) {
@@ -272,7 +290,7 @@ async function boot(ctx) {
 
   // --- Go ---
   islands.start();
-  ctx.shortcuts.apply();
+  if (!isTest) ctx.shortcuts.apply(); // tests must not take global hotkeys from the person
   notes.start();
   clip.start();
   media.setActive(mediaWanted());

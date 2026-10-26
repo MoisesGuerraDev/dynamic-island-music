@@ -130,11 +130,12 @@ const TABS = [
     id: 'estilo', icon: 'eye', name: 'Estilo',
     build: () => [
       sec('Apariencia', [
+        SEL('uiSize', 'Tamaño de la isla', [['s', 'Chico (75 %)'], ['m', 'Mediano (100 %)'], ['l', 'Grande (120 %)']], 'Mediano mide 1077 × 187 px. En pantallas angostas se hace más chica sola: nunca pasa del 75 % del ancho.'),
         SEL('borderStyle', 'Contorno de la isla', [['none', 'Sin borde'], ['open', 'Solo abierta'], ['always', 'Siempre']], 'Sin borde: isla negra lisa y solo se ve el brillo de color alrededor'),
         T('colorsDance', 'Los colores bailan con la música', 'El brillo de color late al ritmo de la canción (un pulso simulado con el tempo de cada tema)'),
         SEL('glowStyle', 'Brillo alrededor (apagado = sin luz de afuera)', [['glass', 'Liquid Glass'], ['soft', 'Sutil'], ['strong', 'Fuerte'], ['off', 'Apagado']]),
         RNG('panelOpacity', 'Fondo: de vidrio a negro total', 30, 100, 1, '%', '100 % es negro total; bájalo para ver más vidrio. Windows no puede difuminar lo que hay detrás de la isla.'),
-        T('liquidButtons', 'Botones con Liquid Glass', 'Refracción y reflejo en los botones. Apágalo si tu PC va justo de gráficos.'),
+        T('liquidButtons', 'Refracción extra en los botones (experimental)', 'Los botones ya tienen el vidrio de la Mac. Esto añade una lente de refracción; gasta más gráficos.'),
         T('hoverBounce', 'Rebote al pasar el mouse', 'Los botones crecen un poco bajo el cursor'),
       ]),
       sec('Colores y luces', [

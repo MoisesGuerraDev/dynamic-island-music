@@ -12,7 +12,7 @@ const WEB_AI = {
 
 /** Wires every call a page can make. A call from anything that is not one of our own windows is ignored. */
 export function registerIpc(ctx) {
-  const { store, islands, media, pomodoro, notes, clip, ai, perf, system, calendar, shelf, shortcuts, secrets, aiSession, aiLock, sessionBackup } = ctx;
+  const { store, islands, media, pomodoro, notes, clip, ai, perf, system, calendar, shelf, shortcuts, secrets, aiSession, aiLock, sessionBackup, hdCover } = ctx;
 
   const trusted = (sender) => !!islands.find(sender) || (islands.settingsWin && !islands.settingsWin.isDestroyed() && islands.settingsWin.webContents === sender);
   const handle = (channel, fn) =>
@@ -62,6 +62,7 @@ export function registerIpc(ctx) {
 
   // --- Music ---
   handle('music:get', () => media.getState());
+  handle('music:hdCover', (_e, track) => hdCover.find({ title: String(track?.title ?? ''), artist: String(track?.artist ?? '') }));
   handle('music:control', (_e, cmd, arg) => media.control(String(cmd), arg));
 
   // --- Pomodoro ---

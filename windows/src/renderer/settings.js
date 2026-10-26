@@ -4,6 +4,7 @@ import { capWidth, moveOnto, usage } from '../shared/layout.js';
 import { formatDuration, parseDuration } from '../shared/time.js';
 import { ic } from './icons.js';
 import { esc, $, $$ } from './util.js';
+import { lightsHTML, bindLights, throttledPatcher } from './lightui.js';
 
 let dim;
 const ctx = { session: { folder: '', isDefault: true, exists: false, savedAt: null, ownPassword: false }, lock: { mode: 'none', hello: false, pinSet: false, needsPin: false }, set: {}, info: null, notes: null, keys: {}, shortcuts: {}, enc: true, app: null, events: [], clip: { items: [] }, shelf: [] };
@@ -131,14 +132,14 @@ const TABS = [
       sec('Apariencia', [
         SEL('borderStyle', 'Contorno de la isla', [['none', 'Sin borde'], ['open', 'Solo abierta'], ['always', 'Siempre']], 'Sin borde: isla negra lisa y solo se ve el brillo de color alrededor'),
         T('colorsDance', 'Los colores bailan con la música', 'El brillo de color late al ritmo de la canción (un pulso simulado con el tempo de cada tema)'),
-        SEL('glowStyle', 'Brillo alrededor', [['glass', 'Liquid Glass'], ['soft', 'Sutil'], ['strong', 'Fuerte'], ['off', 'Apagado']]),
+        SEL('glowStyle', 'Brillo alrededor (apagado = sin luz de afuera)', [['glass', 'Liquid Glass'], ['soft', 'Sutil'], ['strong', 'Fuerte'], ['off', 'Apagado']]),
         RNG('panelOpacity', 'Fondo: de vidrio a negro total', 30, 100, 1, '%', '100 % es negro total; bájalo para ver más vidrio. Windows no puede difuminar lo que hay detrás de la isla.'),
-        RNG('glowIntensity', 'Intensidad del color de la carátula', 0, 100, 1, '%', 'La luz de color que sale de la carátula y sigue al mouse'),
-        SEL('glowColorMode', 'Color del brillo', [['cover', 'Según la carátula'], ['custom', 'Un color fijo']], null, { rr: true }),
-        { t: 'color', k: 'glowColor', label: 'Color fijo', when: (s) => s.glowColorMode === 'custom' },
         T('liquidButtons', 'Botones con Liquid Glass', 'Refracción y reflejo en los botones. Apágalo si tu PC va justo de gráficos.'),
         T('hoverBounce', 'Rebote al pasar el mouse', 'Los botones crecen un poco bajo el cursor'),
       ]),
+      sec('Colores y luces', [
+        HTML(() => lightsHTML(ctx.set), (root) => bindLights(root, { patch: lightsPatch, getSet: () => ctx.set, redraw: render })),
+      ], 'La luz de adentro es la de la isla abierta; la de afuera, la de la isla cerrada y el halo. Intensidad por encima de 100 % suma más luz. Los mismos controles están en el botón del sol junto al lápiz.'),
       sec('General', [
         T('showTabs', 'Mostrar siempre las pestañas'),
         T('showHeaderButtons', 'Mostrar botones de ajustes y cerrar'),
@@ -157,6 +158,7 @@ const TABS = [
       ]),
       sec('Aspecto', [
         T('coverColors', 'Colores según la carátula'),
+        T('coverHD', 'Carátulas en HD desde Apple', 'Si la imagen del reproductor es chica (como en los videos del navegador), busca la portada oficial en iTunes. Envía el título y el artista a Apple.'),
         T('visualizer', 'Visualizador de audio'),
         T('liveMusic', 'Actividad en vivo con la isla cerrada'),
         SEL('hideMusicAfterPause', 'Ocultar la música tras pausarla', [[10, '10 segundos'], [30, '30 segundos'], [120, '2 minutos'], [86400, 'Nunca']], null, { num: true }),
@@ -255,7 +257,8 @@ const TABS = [
         SEL('aiOpenMode', 'Forma de usarla', [['web', 'Con tu cuenta (iniciar sesión dentro de la isla)'], ['mini', 'Con tu clave de API (mini chat)']], 'Con tu cuenta no hace falta ninguna clave: abres la página oficial dentro de la isla e inicias sesión, también con Google.', { rr: true }),
       ]),
       sec('Bloqueo del chat de IA', [
-        SEL('aiLock', 'Pedir confirmación para abrir el chat', [['auto', 'Automático: Windows Hello si está disponible'], ['secure', 'Windows Hello o PIN de la app'], ['none', 'Sin bloqueo']], 'Se vuelve a bloquear cada vez que se cierra la isla. Solo tapa el chat: no borra tu sesión guardada.', { rr: true }),
+        SEL('aiLock', 'Pedir confirmación para abrir el chat', [['auto', 'Automático: Windows Hello si está disponible'], ['secure', 'Windows Hello o PIN de la app'], ['none', 'Sin bloqueo']], 'Solo tapa el chat: no borra tu sesión guardada.', { rr: true }),
+        { ...SEL('aiLockRelock', 'Volver a pedirlo', [['always', 'Siempre (cada vez que se cierra la isla)'], ['15', 'A los 15 minutos'], ['60', 'A la hora'], ['app', 'Solo al abrir la app']], 'También se vuelve a pedir al bloquear o suspender Windows. No usa ningún almacén que muestre avisos del sistema.'), when: (s) => s.aiLock !== 'none' },
         INFO('Windows Hello', () => (ctx.lock.hello ? 'Disponible (huella, cara o PIN de Windows)' : 'No disponible en este equipo'), () => (ctx.lock.hello ? '' : 'Sin Windows Hello se usa el PIN de la app, si eliges «Windows Hello o PIN de la app».'), () => (ctx.lock.hello ? 'ok' : 'warn')),
         { ...T('aiLockPreferPin', 'Usar el PIN de la app en vez de Windows Hello', null, { rr: true }), when: (s) => s.aiLock !== 'none' },
         { ...HTML(pinHTML), when: (s) => s.aiLock !== 'none' },
@@ -646,6 +649,12 @@ document.addEventListener('input', (e) => {
     livePatch(el.dataset.k, Number(el.value));
   }
 });
+
+const lightsSend = throttledPatcher((o) => dim.settings.patch(o));
+function lightsPatch(o) {
+  Object.assign(ctx.set, o);
+  lightsSend(o);
+}
 
 const pendingLive = {};
 let liveTimer = null;

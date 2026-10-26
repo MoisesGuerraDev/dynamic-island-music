@@ -2,6 +2,8 @@
 @property --c1 { syntax: '<color>'; inherits: true; initial-value: #ff8a3d; }
 @property --c2 { syntax: '<color>'; inherits: true; initial-value: #e0294a; }
 @property --c3 { syntax: '<color>'; inherits: true; initial-value: #6b2f1a; }
+@property --rot { syntax: '<angle>'; inherits: true; initial-value: 0deg; }
+@keyframes rot { to { --rot: 360deg; } }
 
 :root {
   --c1: #ff8a3d; --c2: #e0294a; --c3: #6b2f1a;
@@ -10,7 +12,7 @@
   --mono: ui-monospace, "Cascadia Mono", "SF Mono", Menlo, Consolas, monospace;
   --top: 10px;
   --pa: .78;
-  --pulse: .15; --gi: .8; --dsa: .7;
+  --pulse: .15; --dsa: .7; --rot: 0deg;
   color-scheme: dark;
   transition: --c1 .7s ease, --c2 .7s ease, --c3 .7s ease;
 }
@@ -20,18 +22,30 @@ body { color: var(--fg); font: 15px/1.5 var(--ui); -webkit-user-select: none; us
 input, textarea { -webkit-user-select: text; user-select: text; }
 button { font: inherit; }
 [hidden] { display: none !important; }
-#stage { position: fixed; inset: 0; overflow: hidden; --w: 960px; --hk: 1; }
+#stage {
+  position: fixed; inset: 0; overflow: hidden; --w: 960px; --hk: 1;
+  /* Two lights. Inside = the open island. Outside = the closed island and the halo. Intensity 40 to 500 % (1 = 100 %),
+     size, and how much each one dances (--pin and --pout come from the beat, scaled by the dance setting). */
+  --gin: 2.6; --gout: 2.6; --si: 1; --so: 1; --pin: .15; --pout: .15;
+  --xin: calc(var(--gin) * .38 * (.5 + .9 * var(--pin)));
+  --xout: calc(var(--gout) * .38 * (.5 + .9 * var(--pout)));
+}
 .glow-off { --hk: 0; } .glow-soft { --hk: .6; } .glow-glass { --hk: 1; } .glow-strong { --hk: 1.5; }
 
-/* Colored light around the island: a blurred copy of its shape behind it. It breathes with --pulse (0 to 1). */
+/* Rainbow: every color, turning slowly. */
+#stage.cm-rainbow { animation: rot 60s steps(240, end) infinite; /* 4 small steps a second: slow turning without repainting every frame */ --c1: hsl(var(--rot) 95% 58%); --c2: hsl(calc(var(--rot) + 60deg) 95% 58%); --c3: hsl(var(--rot) 60% 20%); }
+#stage.cm-rainbow.lights-idle { animation-play-state: paused; }
+
+/* Colored light around the island: blurred copies of its shape behind it (extra copies add light past full opacity). */
 .halo {
-  position: absolute; top: calc(var(--top) - 4px); left: 50%; width: calc(var(--w) + 8px); margin-left: calc(var(--w) / -2 - 4px); height: 260px;
+  position: absolute; top: calc(var(--top) - 4px * var(--so)); left: 50%; width: calc(var(--w) + 8px * var(--so)); margin-left: calc(var(--w) / -2 - 4px * var(--so)); height: 260px;
   border-radius: 34px; background: linear-gradient(90deg, var(--c1), var(--c2)); pointer-events: none; opacity: 0;
-  filter: blur(calc(26px * (.8 + .6 * var(--pulse)))); will-change: transform, opacity;
-  transform: scale(calc(1 + .05 * var(--pulse)));
-  transition: width .32s ease, margin-left .32s ease, height .3s ease, opacity .25s;
+  filter: blur(calc(26px * var(--so) * (.8 + .6 * var(--pout)))) saturate(calc(1 + .35 * clamp(0, calc(var(--xout) * var(--hk) - 1), 2)));
+  transform: scale(calc(1 + .05 * var(--pout))); will-change: transform, opacity;
+  transition: width .32s ease, margin-left .32s ease, height .3s ease;
 }
-.is-open .halo { opacity: min(1, calc(var(--gi) * var(--hk) * (.5 + .9 * var(--pulse)) * .85)); }
+.cm-rainbow .halo { background: linear-gradient(90deg, hsl(var(--rot) 95% 58%), hsl(calc(var(--rot) + 72deg) 95% 58%), hsl(calc(var(--rot) + 144deg) 95% 58%), hsl(calc(var(--rot) + 216deg) 95% 58%), hsl(calc(var(--rot) + 288deg) 95% 58%), hsl(calc(var(--rot) + 360deg) 95% 58%)); }
+.is-open .halo { opacity: clamp(0, calc(var(--xout) * var(--hk) - var(--k, 0)), 1); }
 
 /* ---------- The open island ---------- */
 .notch {
@@ -51,17 +65,27 @@ button { font: inherit; }
   -webkit-mask: linear-gradient(#000 0 0) content-box, linear-gradient(#000 0 0); -webkit-mask-composite: xor; mask-composite: exclude;
 }
 .amb { position: absolute; inset: 0; border-radius: 30px; overflow: hidden; z-index: -1; pointer-events: none; }
-.amb::before {
-  content: ""; position: absolute; left: -6%; top: -20%; width: 46%; height: 150%; filter: blur(calc(38px * (.8 + .6 * var(--pulse)))); opacity: calc(var(--gi) * (.5 + .9 * var(--pulse))); will-change: transform, opacity;
+/* Inside light: three stacked layers (the 2nd and 3rd only show past full opacity) of the cover-color blob, or five turning lights in rainbow. */
+.ll { position: absolute; inset: 0; opacity: clamp(0, calc(var(--xin) - var(--k, 0)), 1); filter: saturate(calc(1 + .35 * clamp(0, calc(var(--xin) - 1), 2))); }
+.lb {
+  position: absolute; left: -6%; top: -20%; width: 46%; height: 150%; filter: blur(calc(38px * var(--si) * (.8 + .6 * var(--pin)))); will-change: transform;
   background: radial-gradient(60% 50% at 30% 35%, var(--c1), transparent 70%), radial-gradient(55% 55% at 70% 80%, var(--c2), transparent 70%);
-  transform: translate(var(--sx, 0px), var(--sy, 0px)) scale(calc(1 + .05 * var(--pulse)));
+  transform: translate(var(--sx, 0px), var(--sy, 0px)) scale(calc((1 + .05 * var(--pin)) * var(--si)));
 }
+.rb { display: none; position: absolute; top: -18%; width: 36%; height: 136%; border-radius: 50%; filter: blur(calc(34px * var(--si) * (.8 + .6 * var(--pin)))); transform: scale(calc(1 + .05 * var(--pin))); }
+.cm-rainbow .lb { display: none; }
+.cm-rainbow .rb { display: block; }
+.rb.r0 { left: -10%; background: radial-gradient(circle, hsl(var(--rot) 95% 58%), transparent 68%); }
+.rb.r1 { left: 12%; background: radial-gradient(circle, hsl(calc(var(--rot) + 72deg) 95% 58%), transparent 68%); }
+.rb.r2 { left: 34%; background: radial-gradient(circle, hsl(calc(var(--rot) + 144deg) 95% 58%), transparent 68%); }
+.rb.r3 { left: 56%; background: radial-gradient(circle, hsl(calc(var(--rot) + 216deg) 95% 58%), transparent 68%); }
+.rb.r4 { left: 74%; background: radial-gradient(circle, hsl(calc(var(--rot) + 288deg) 95% 58%), transparent 68%); }
 .mlight {
   position: absolute; left: 0; top: 0; width: 210px; height: 210px; margin: -105px 0 0 -105px; border-radius: 50%; filter: blur(22px);
   background: radial-gradient(circle, color-mix(in srgb, var(--c1) 95%, transparent), transparent 70%); mix-blend-mode: screen;
   opacity: 0; transition: opacity .35s; transform: translate(var(--lx, 50%), var(--ly, 50%)); will-change: transform;
 }
-.notch.pointer .mlight { opacity: calc(1.05 * var(--gi, .8)); }
+.notch.pointer .mlight { opacity: min(1, calc(var(--xin) * 1.1)); }
 .notch.g-off.pointer .mlight { opacity: 0; }
 
 .notch.g-soft .rim { opacity: .55; }
@@ -341,7 +365,13 @@ button.ct:hover { background: rgba(255, 255, 255, .14); }
   border: 1px solid rgba(255, 255, 255, .12); box-shadow: 0 8px 24px -8px rgba(0, 0, 0, .6);
   transition: opacity .2s, scale .38s cubic-bezier(.2, .9, .25, 1.06), width .35s, box-shadow .4s;
 }
-.pill-closed.glow { box-shadow: 0 0 calc(26px * (.8 + .6 * var(--pulse))) color-mix(in srgb, var(--c1) clamp(0%, calc(60% * var(--gi) * (.5 + .9 * var(--pulse))), 100%), transparent), 0 8px 24px -8px rgba(0, 0, 0, .6); }
+.pill-closed.glow {
+  box-shadow:
+    0 0 calc(24px * var(--so) * (.8 + .6 * var(--pout))) color-mix(in srgb, var(--c1) clamp(0%, calc(80% * var(--xout) * var(--hk)), 100%), transparent),
+    0 0 calc(32px * var(--so) * (.8 + .6 * var(--pout))) color-mix(in srgb, var(--c2) clamp(0%, calc(80% * (var(--xout) * var(--hk) - 1)), 100%), transparent),
+    0 0 calc(44px * var(--so) * (.8 + .6 * var(--pout))) color-mix(in srgb, var(--c1) clamp(0%, calc(80% * (var(--xout) * var(--hk) - 2)), 100%), transparent),
+    0 8px 24px -8px rgba(0, 0, 0, .6);
+}
 .pill-closed.off { opacity: 0; pointer-events: none; }
 .is-open .pill-closed { opacity: 0; scale: 1.4 .5; pointer-events: none; }
 .pill-closed .lside, .pill-closed .rside { display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1 1 0; }
@@ -385,3 +415,27 @@ button.ct:hover { background: rgba(255, 255, 255, .14); }
 .lockbox .lk-ico svg { width: 22px; height: 22px; fill: none; stroke: #fff; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
 .lockbox .lockf { width: 260px; }
 .lockbox .lk-msg { min-height: 16px; color: #ffb86b; }
+
+/* Panel of lights (next to the pencil) */
+.lp-panel { position: absolute; right: 12px; top: 56px; width: 372px; max-height: 392px; overflow: auto; z-index: 20; padding: 12px 14px; border-radius: 18px; background: rgba(12, 13, 17, .97); border: 1px solid rgba(255, 255, 255, .12); box-shadow: 0 20px 50px rgba(0, 0, 0, .65); scrollbar-width: thin; scrollbar-color: rgba(255, 255, 255, .25) transparent; }
+
+
+/* Controls of the lights (panel and Settings) */
+.lp { display: flex; flex-direction: column; gap: 10px; font-size: 13px; color: #e9ebf0; }
+.lp-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.lp-row.col { flex-direction: column; align-items: stretch; gap: 6px; }
+.lp-group { display: flex; flex-direction: column; gap: 8px; padding-top: 8px; border-top: 1px solid rgba(255, 255, 255, .1); }
+.lp-group > b { font-size: 13px; font-weight: 600; }
+.lp-seg { display: inline-flex; gap: 2px; padding: 3px; border-radius: 10px; background: rgba(255, 255, 255, .08); }
+.lp-seg button { all: unset; cursor: pointer; padding: 4px 10px; border-radius: 8px; font-size: 12px; color: #a9afbc; }
+.lp-seg button[aria-pressed="true"] { background: rgba(255, 255, 255, .22); color: #fff; }
+.lp-seg button:focus-visible, .lp-sw:focus-visible, .lp-btn:focus-visible { outline: 2px solid #3b82f6; outline-offset: 1px; }
+.lp-rng { display: flex; align-items: center; gap: 8px; }
+.lp-rng input { width: 150px; accent-color: #3b82f6; }
+.lp-rng output { min-width: 46px; text-align: right; font: 600 12px ui-monospace, "Cascadia Mono", Consolas, monospace; color: #9cc2ff; }
+.lp-sws { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.lp-sw { all: unset; box-sizing: border-box; width: 22px; height: 22px; border-radius: 50%; cursor: pointer; border: 2px solid rgba(255, 255, 255, .25); }
+.lp-sw.on { border-color: #fff; box-shadow: 0 0 0 2px rgba(255, 255, 255, .25); }
+.lp-wheel { width: 30px; height: 26px; padding: 0; border: 1px solid rgba(255, 255, 255, .25); border-radius: 8px; background: transparent; cursor: pointer; }
+.lp-btn { all: unset; cursor: pointer; padding: 3px 10px; border-radius: 8px; background: rgba(255, 255, 255, .12); font-size: 12px; }
+.lp-btn:hover { background: rgba(255, 255, 255, .22); }

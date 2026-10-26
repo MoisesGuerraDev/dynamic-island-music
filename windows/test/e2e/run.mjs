@@ -126,19 +126,32 @@ try {
     const isl = c.islands.first();
     const guest = webContents.getAllWebContents().find((w) => w.getType() === 'webview');
     if (!guest) return { error: 'no hay webview' };
-    await guest.executeJavaScript(`(() => { const i = document.createElement('input'); i.id = 'dim-test-input'; i.style.cssText = 'position:fixed;top:60px;left:60px;width:260px;height:44px;z-index:2147483647;font-size:20px'; document.body.appendChild(i); })()`);
-    guest.sendInputEvent({ type: 'mouseMove', x: 150, y: 80 });
-    guest.sendInputEvent({ type: 'mouseDown', x: 150, y: 80, button: 'left', clickCount: 1 });
-    guest.sendInputEvent({ type: 'mouseUp', x: 150, y: 80, button: 'left', clickCount: 1 });
-    await new Promise((r) => setTimeout(r, 400));
-    for (const ch of 'hola') {
-      guest.sendInputEvent({ type: 'keyDown', keyCode: ch });
-      guest.sendInputEvent({ type: 'char', keyCode: ch });
-      guest.sendInputEvent({ type: 'keyUp', keyCode: ch });
+    const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+    let last = { error: 'la página no terminó de cargar' };
+    // The site may still be redirecting to its sign-in page: try again until the page holds still.
+    for (let attempt = 0; attempt < 6; attempt++) {
+      try {
+        for (let i = 0; i < 40 && guest.isLoading(); i++) await sleep(250);
+        await guest.executeJavaScript(`(() => { document.getElementById('dim-test-input')?.remove(); const i = document.createElement('input'); i.id = 'dim-test-input'; i.style.cssText = 'position:fixed;top:60px;left:60px;width:260px;height:44px;z-index:2147483647;font-size:20px'; document.body.appendChild(i); })()`);
+        guest.sendInputEvent({ type: 'mouseMove', x: 150, y: 80 });
+        guest.sendInputEvent({ type: 'mouseDown', x: 150, y: 80, button: 'left', clickCount: 1 });
+        guest.sendInputEvent({ type: 'mouseUp', x: 150, y: 80, button: 'left', clickCount: 1 });
+        await sleep(400);
+        for (const ch of 'hola') {
+          guest.sendInputEvent({ type: 'keyDown', keyCode: ch });
+          guest.sendInputEvent({ type: 'char', keyCode: ch });
+          guest.sendInputEvent({ type: 'keyUp', keyCode: ch });
+        }
+        await sleep(300);
+        const r = await guest.executeJavaScript(`({ focus: document.hasFocus(), active: document.activeElement && document.activeElement.id, value: document.getElementById('dim-test-input').value })`);
+        last = { ...r, focusable: isl.win.isFocusable(), winFocused: isl.win.isFocused(), pins: [...isl.pins] };
+        if (r.value === 'hola') return last;
+      } catch (err) {
+        last = { error: String(err && err.message ? err.message : err).slice(0, 120) };
+      }
+      await sleep(1000);
     }
-    await new Promise((r) => setTimeout(r, 300));
-    const r = await guest.executeJavaScript(`({ focus: document.hasFocus(), active: document.activeElement && document.activeElement.id, value: document.getElementById('dim-test-input').value })`);
-    return { ...r, focusable: isl.win.isFocusable(), winFocused: isl.win.isFocused(), pins: [...isl.pins] };
+    return last;
   });
   check('la ventana de la isla se vuelve enfocable al abrir la IA', typed.focusable === true, JSON.stringify(typed));
   check('al hacer clic en el cuadro de texto de la IA, el teclado llega', typed.active === 'dim-test-input' && typed.value === 'hola', JSON.stringify(typed));
@@ -184,7 +197,7 @@ try {
   const lk = (fn, ...a) => page.evaluate(([f, args]) => window.dim.ailock[f](...args), [fn, a]);
   const st0 = await lk('state');
   check('por defecto, sin Windows Hello, el chat no se bloquea', st0.locked === false && st0.mode === 'none', JSON.stringify(st0));
-  await app.evaluate(() => globalThis.__DIM__.store.patch({ aiLock: 'secure' }));
+  await app.evaluate(() => globalThis.__DIM__.store.patch({ aiLock: 'secure', aiLockRelock: 'always' }));
   await page.waitForTimeout(400);
   const st1 = await lk('state');
   check('«Windows Hello o PIN de la app» sin Hello pide un PIN y bloquea', st1.mode === 'pin' && st1.needsPin === true && st1.locked === true, JSON.stringify(st1));
@@ -224,6 +237,34 @@ try {
   check('el bloqueo no borra la sesión guardada de la IA', sess === 1);
   await app.evaluate(() => { const c = globalThis.__DIM__; c.store.patch({ aiLock: 'none' }); const i = c.islands.first(); i.pins.add('toggle'); c.islands.setOpen(i, true); });
   await page.waitForTimeout(500);
+
+  // Re-asking: by default it does not ask every time the island closes (15 minutes).
+  await app.evaluate(() => { const c = globalThis.__DIM__; c.aiLock.vault.set('2468'); c.store.patch({ aiLock: 'secure', aiLockRelock: '15' }); });
+  await page.waitForTimeout(300);
+  await lk('refresh');
+  const un = await lk('unlockPin', '2468');
+  check('con «a los 15 minutos» el PIN abre', un.ok === true || un.retryIn > 0, JSON.stringify(un));
+  if (un.ok) {
+    await app.evaluate(() => { const c = globalThis.__DIM__; const i = c.islands.first(); i.pins.clear(); c.islands.setOpen(i, false); });
+    await page.waitForTimeout(300);
+    check('al cerrar la isla NO vuelve a pedirlo (15 minutos)', (await lk('state')).locked === false);
+    await app.evaluate(() => { const c = globalThis.__DIM__; c.aiLock.forceRelock(); });
+    check('al bloquear o suspender Windows sí vuelve a pedirlo', (await lk('state')).locked === true);
+  }
+  await app.evaluate(() => { const c = globalThis.__DIM__; c.store.patch({ aiLock: 'none' }); const i = c.islands.first(); i.pins.add('toggle'); c.islands.setOpen(i, true); });
+  await page.waitForTimeout(400);
+
+  // HD cover from the Apple catalog (needs the network; skipped when offline).
+  const hd = await app.evaluate(async () => { const c = globalThis.__DIM__; const a = await c.hdCover.find({ title: 'Blinding Lights (Official Video)', artist: 'The Weeknd - Topic' }); const b = await c.hdCover.find({ title: 'zzqq xxww no existe', artist: 'nadie jamas' }); return { a: a ? a.slice(0, 22) : null, len: a ? a.length : 0, b }; });
+  if (!hd.a) console.log('• carátula HD: omitido (sin red para consultar iTunes)', JSON.stringify(hd), await app.evaluate(async () => { try { const r = await fetch('https://itunes.apple.com/search?term=Blinding%20Lights&entity=song&limit=1', { signal: AbortSignal.timeout(8000) }); return `fetch directo: ${r.status}`; } catch (e) { return `fetch directo falló: ${e && e.cause ? e.cause.code || e.cause : e}`; } }));
+  else {
+    check('carátula HD: encuentra la portada oficial por título y artista', hd.a.startsWith('data:image/') && hd.len > 20000, `${hd.a} ${hd.len} bytes`);
+    check('carátula HD: una canción inexistente no devuelve nada', hd.b === null);
+  }
+  await app.evaluate(() => { const c = globalThis.__DIM__; c.store.patch({ coverHD: false }); });
+  const off = await app.evaluate(async () => await globalThis.__DIM__.hdCover.find({ title: 'Otra Canción Distinta', artist: 'Otro' }));
+  check('carátula HD: apagada en Ajustes no consulta nada', off === null);
+  await app.evaluate(() => globalThis.__DIM__.store.patch({ coverHD: true }));
 
   // Saved sessions: encrypted copy of the AI sign-ins, saved and restored.
   const sb = (expr, arg) => app.evaluate(async (_e, [code, a]) => { const c = globalThis.__DIM__; return await new Function('c', 'a', `return (async () => { ${code} })()`)(c, a); }, [expr, arg]);
@@ -274,6 +315,42 @@ try {
   check('isla cerrada muestra música y Pomodoro, lados simétricos', !pill.off && pill.l > 0 && Math.abs(pill.l - pill.r) < 2, JSON.stringify(pill));
   await page.screenshot({ path: path.join(out, 'island-closed.png'), clip: { x: 0, y: 0, width: 1198, height: 120 } });
 
+  // Colors and the two lights, from the little panel next to the pencil.
+  await app.evaluate(() => { const c = globalThis.__DIM__; const i = c.islands.first(); i.pins.add('toggle'); c.islands.setOpen(i, true); });
+  await page.waitForTimeout(800);
+  await page.click('[data-act="lights-toggle"]');
+  await page.waitForTimeout(500);
+  const rect0 = await app.evaluate(() => globalThis.__DIM__.islands.first().rect);
+  const panelVisible = await page.evaluate(() => !document.getElementById('lightpanel').hidden);
+  check('el botón del sol abre el panel de luces', panelVisible);
+  check('la zona clicable incluye el panel que cuelga de la isla', rect0.h > 300, JSON.stringify(rect0));
+  await page.click('#lightpanel [data-k="colorMode"][data-v="rainbow"]');
+  await page.waitForTimeout(400);
+  const rb1 = await page.evaluate(() => getComputedStyle(document.getElementById('notch')).getPropertyValue('--c1'));
+  await page.waitForTimeout(1800);
+  const rb2 = await page.evaluate(() => ({ c1: getComputedStyle(document.getElementById('notch')).getPropertyValue('--c1'), cls: document.getElementById('stage').className }));
+  check('Arcoíris: los colores giran solos', rb2.cls.includes('cm-rainbow') && rb1 !== rb2.c1, `${rb1} -> ${rb2.c1}`);
+  await page.screenshot({ path: path.join(out, 'island-rainbow.png'), clip: { x: 0, y: 0, width: 1198, height: 460 }, animations: 'disabled' });
+  await page.click('#lightpanel [data-k="colorMode"][data-v="custom"]');
+  await page.waitForTimeout(300);
+  await page.click('#lightpanel .lp-sw[data-k="colorA"][data-v="#4D7CFF"]');
+  await page.click('#lightpanel .lp-sw[data-k="colorB"][data-v="#AF52DE"]');
+  await page.waitForTimeout(500);
+  const cu = await page.evaluate(() => ({ c1: document.documentElement.style.getPropertyValue('--c1'), c2: document.documentElement.style.getPropertyValue('--c2'), swatches: document.querySelectorAll('#lightpanel .lp-sw').length }));
+  check('Mis colores: 11 cuadros por color y se aplican', cu.swatches === 22 && cu.c1.toLowerCase() === '#4d7cff' && cu.c2.toLowerCase() === '#af52de', JSON.stringify(cu));
+  await page.fill('#lightpanel [data-k="inLightIntensity"]', '500');
+  await page.click('#lightpanel [data-k="outLightSize"][data-v="l"]');
+  await page.click('#lightpanel [data-k="inLightDance"][data-v="still"]');
+  await page.waitForTimeout(700);
+  const lt = await page.evaluate(() => { const st = document.getElementById('stage').style; return { gin: st.getPropertyValue('--gin'), so: st.getPropertyValue('--so'), pin: st.getPropertyValue('--pin') }; });
+  check('intensidad 500 %, tamaño grande y baile quieto se aplican', lt.gin === '5' && lt.so === '1.5' && Number(lt.pin) === 0.3, JSON.stringify(lt));
+  await page.screenshot({ path: path.join(out, 'island-custom.png'), clip: { x: 0, y: 0, width: 1198, height: 460 }, animations: 'disabled' });
+  const savedLights = await app.evaluate(() => { const s = globalThis.__DIM__.store; return { m: s.get('colorMode'), a: s.get('colorA'), i: s.get('inLightIntensity'), o: s.get('outLightSize'), d: s.get('inLightDance') }; });
+  check('los ajustes de luces se guardan', savedLights.m === 'custom' && savedLights.a === '#4D7CFF' && savedLights.i === 500 && savedLights.o === 'l' && savedLights.d === 'still', JSON.stringify(savedLights));
+  await app.evaluate(() => globalThis.__DIM__.store.patch({ colorMode: 'auto', inLightDance: 'm', inLightIntensity: 260, outLightSize: 'm' }));
+  await page.click('[data-act="lights-toggle"]');
+  await page.waitForTimeout(300);
+
   // Outline options and the dance switch.
   await app.evaluate(() => globalThis.__DIM__.store.patch({ borderStyle: 'always' }));
   await page.waitForTimeout(300);
@@ -291,6 +368,7 @@ try {
   check('sin errores en la consola de la isla', errors.length === 0, errors.join(' | ').slice(0, 300));
 } catch (err) {
   console.log('✖ fallo inesperado:', err.message);
+  console.log(String(err.stack).split('\n').filter((l) => l.includes('run.mjs')).slice(0, 3).join('\n'));
   failed++;
 } finally {
   await app.close();
@@ -306,6 +384,21 @@ try {
     check('la sesión de la IA sigue ahí después de cerrar y abrir la app', again.length === 1 && again[0].value === 'abc123' && again[0].session === false, JSON.stringify(again));
   } finally {
     await app2.close();
+  }
+}
+// First start of a new install: the welcome says only "By: MoisesGuerraDev".
+{
+  const fresh = fs.mkdtempSync(path.join(os.tmpdir(), 'dim-e2e-fresh-'));
+  const app3 = await electron.launch({ args: [root], env: { ...process.env, DIM_TEST: '1', DIM_MOCK_MEDIA: '1', DIM_USER_DATA: fresh } });
+  try {
+    const p3 = await app3.firstWindow();
+    await p3.waitForSelector('#toast:not([hidden])', { timeout: 15000 });
+    const txt = (await p3.textContent('#toast')).trim();
+    check('el texto de arranque dice solo «By: MoisesGuerraDev»', txt === 'By: MoisesGuerraDev', JSON.stringify(txt));
+  } catch (err) {
+    check('el texto de arranque dice solo «By: MoisesGuerraDev»', false, err.message.split('\n')[0]);
+  } finally {
+    await app3.close();
   }
 }
 console.log(failed ? `\n${failed} comprobaciones fallaron. Capturas en ${out}` : `\nTodo bien. Capturas en ${out}`);

@@ -69,9 +69,16 @@ export const DEFAULTS = {
   panelOpacity: 100, // 100 = all black, lower = more glass
   colorsDance: true, // the colored light pulses with a simulated beat of the song
   borderStyle: 'none', // none | open | always: thin outline of the island
-  glowIntensity: 80, // strength of the colored light from the cover
-  glowColorMode: 'cover', // cover | custom
-  glowColor: '#ff8a3d',
+  // Two lights: inside = the open island, outside = the closed island and the halo around it.
+  inLightIntensity: 260, // 40 to 500 %
+  inLightSize: 'm', // s | m | l
+  inLightDance: 'm', // still | s | m | l
+  outLightIntensity: 260,
+  outLightSize: 'm',
+  outLightDance: 'm',
+  colorMode: 'auto', // auto (the two main colors of the cover) | rainbow | custom
+  colorA: '#FF9500',
+  colorB: '#FF2D55',
   liquidButtons: true,
   hoverBounce: true,
   showTabs: true,
@@ -83,6 +90,7 @@ export const DEFAULTS = {
   // Player
   preferredPlayer: 'auto', // auto | spotify | apple | browser
   coverColors: true,
+  coverHD: true, // look for the official HD cover when the picture is small (sends title and artist to Apple)
   visualizer: true,
   hideMusicAfterPause: 30,
 
@@ -123,6 +131,7 @@ export const DEFAULTS = {
   sessionBackupAuto: true,
   aiLock: 'auto', // auto (Windows Hello if there is one) | secure (Windows Hello or the app's PIN) | none
   aiLockPreferPin: false,
+  aiLockRelock: '15', // always | 15 | 60 | app: when to ask again
 
   // Clipboard
   clipEnabled: true,

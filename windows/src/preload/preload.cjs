@@ -30,11 +30,13 @@ contextBridge.exposeInMainWorld('dim', {
     openSettings: (tab) => ipcRenderer.send('app:openSettings', tab || ''),
     onCommand: (cb) => on('cmd', cb),
     onGame: (cb) => on('sys:game', cb),
+    onWelcome: (cb) => on('island:welcome', cb),
   },
   music: {
     get: () => invoke('music:get'),
     onState: (cb) => on('music:state', cb),
     control: (cmd, arg) => invoke('music:control', cmd, arg),
+    hdCover: (track) => invoke('music:hdCover', track),
   },
   pomo: {
     get: () => invoke('pomo:get'),

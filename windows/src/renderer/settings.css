@@ -87,3 +87,23 @@ input[type=range] { accent-color: #3b82f6; width: 180px; }
 .keyrow { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
 .toast { position: fixed; right: 20px; bottom: 20px; background: #2a2f3b; border: 1px solid var(--line); border-radius: 8px; padding: 10px 16px; font-size: 13px; box-shadow: 0 10px 30px rgba(0, 0, 0, .5); }
 @media (max-width: 760px) { .win { grid-template-columns: 64px 1fr; } .stab span { display: none; } }
+
+/* Controls of the lights (panel and Settings) */
+.lp { display: flex; flex-direction: column; gap: 10px; font-size: 13px; color: #e9ebf0; }
+.lp-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.lp-row.col { flex-direction: column; align-items: stretch; gap: 6px; }
+.lp-group { display: flex; flex-direction: column; gap: 8px; padding-top: 8px; border-top: 1px solid rgba(255, 255, 255, .1); }
+.lp-group > b { font-size: 13px; font-weight: 600; }
+.lp-seg { display: inline-flex; gap: 2px; padding: 3px; border-radius: 10px; background: rgba(255, 255, 255, .08); }
+.lp-seg button { all: unset; cursor: pointer; padding: 4px 10px; border-radius: 8px; font-size: 12px; color: #a9afbc; }
+.lp-seg button[aria-pressed="true"] { background: rgba(255, 255, 255, .22); color: #fff; }
+.lp-seg button:focus-visible, .lp-sw:focus-visible, .lp-btn:focus-visible { outline: 2px solid #3b82f6; outline-offset: 1px; }
+.lp-rng { display: flex; align-items: center; gap: 8px; }
+.lp-rng input { width: 150px; accent-color: #3b82f6; }
+.lp-rng output { min-width: 46px; text-align: right; font: 600 12px ui-monospace, "Cascadia Mono", Consolas, monospace; color: #9cc2ff; }
+.lp-sws { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.lp-sw { all: unset; box-sizing: border-box; width: 22px; height: 22px; border-radius: 50%; cursor: pointer; border: 2px solid rgba(255, 255, 255, .25); }
+.lp-sw.on { border-color: #fff; box-shadow: 0 0 0 2px rgba(255, 255, 255, .25); }
+.lp-wheel { width: 30px; height: 26px; padding: 0; border: 1px solid rgba(255, 255, 255, .25); border-radius: 8px; background: transparent; cursor: pointer; }
+.lp-btn { all: unset; cursor: pointer; padding: 3px 10px; border-radius: 8px; background: rgba(255, 255, 255, .12); font-size: 12px; }
+.lp-btn:hover { background: rgba(255, 255, 255, .22); }

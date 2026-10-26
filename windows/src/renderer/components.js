@@ -1,5 +1,5 @@
 // HTML of every component of the home row. Same markup and classes as the mockup, filled with real data.
-import { S, aiMeta, quickAI, webMode, WEB_AI_META } from './state.js';
+import { S, aiMeta, quickAI, webMode, coverOf, WEB_AI_META } from './state.js';
 import { esc, addDays, dayKey, dayName, monthName } from './util.js';
 import { ic, fi, sourceBadge } from './icons.js';
 import { formatDuration, relativeAge } from '../shared/time.js';
@@ -32,7 +32,7 @@ function player() {
   if (!m.session) {
     return '<div class="nomusic"><b>Nada sonando</b><span>Pon música en Spotify, Apple Music o el navegador y aparece aquí.</span></div>';
   }
-  const art = m.cover ? `<img src="${esc(m.cover)}" alt="">` : `<span class="note">${ic('music')}</span>`;
+  const art = coverOf(m) ? `<img src="${esc(coverOf(m))}" alt="">` : `<span class="note">${ic('music')}</span>`;
   const pos = musicPos();
   const pct = m.duration > 0 ? (pos / m.duration) * 100 : 0;
   return `<div class="player${m.playing ? '' : ' paused'}">

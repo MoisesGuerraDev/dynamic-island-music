@@ -152,8 +152,10 @@ const dim = {
     openSettings: (tab) => window.open(`settings.html?tab=${tab || ''}`, '_blank'),
     onCommand: (cb) => on('cmd', cb),
     onGame: (cb) => on('sys:game', cb),
+    onWelcome: (cb) => on('island:welcome', cb),
   },
   music: {
+    hdCover: async () => null,
     get: async () => musicState(),
     onState: (cb) => on('music:state', cb),
     control: async (cmd, arg) => {

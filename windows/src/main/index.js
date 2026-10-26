@@ -22,6 +22,7 @@ import { AiSession } from './aisession.js';
 import { AiLock } from './ailock.js';
 import { PinVault } from './pin.js';
 import { SessionBackup } from './sessionbackup.js';
+import { HdCover } from './hdcover.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(here, '..', '..');
@@ -80,7 +81,7 @@ async function boot(ctx) {
     onFirstLoad: (isl) => {
       if (!store.get('welcomed') && isl === islands.first()) {
         store.set('welcomed', true);
-        setTimeout(() => islands.peek(6000, isl), 700);
+        setTimeout(() => isl.win.webContents.send('island:welcome'), 700);
       }
     },
   });
@@ -117,7 +118,9 @@ async function boot(ctx) {
   const aiLock = new AiLock({ store, vault: new PinVault(path.join(userData, 'aipin.json')), helper });
   islands.onClosed = () => aiLock.relock();
 
-  Object.assign(ctx, { sessionBackup, aiLock, aiSession, store, secrets, helper, islands, system, media, pomodoro, notes, clip, ai, perf, calendar, shelf });
+  const hdCover = new HdCover({ store });
+
+  Object.assign(ctx, { hdCover, sessionBackup, aiLock, aiSession, store, secrets, helper, islands, system, media, pomodoro, notes, clip, ai, perf, calendar, shelf });
 
   // --- Commands from shortcuts and the tray ---
   const send = (name, extra = {}) => islands.send('cmd', { name, ...extra });
@@ -233,7 +236,7 @@ async function boot(ctx) {
       everyone('clip:changed', clipPayload());
       ctx.tray.update();
     }
-    if (has('aiLock', 'aiLockPreferPin')) aiLock.settingsChanged();
+    if (has('aiLock', 'aiLockPreferPin', 'aiLockRelock')) aiLock.settingsChanged();
     if (has('perfInterval')) perf.reschedule();
     if (has('notesFolder')) notes.reload();
     if (has('gameHideExclusive', 'gameBasicOnly')) watchGame();
@@ -277,6 +280,9 @@ async function boot(ctx) {
   watchGame();
   system.refresh().then(() => everyone('system:displays', system.displays()));
   powerMonitor.on('resume', () => islands.sync());
+  // The chat locks again when Windows is locked or goes to sleep.
+  powerMonitor.on('lock-screen', () => aiLock.forceRelock());
+  powerMonitor.on('suspend', () => aiLock.forceRelock());
 
   if (isTest) globalThis.__DIM__ = ctx;
 }

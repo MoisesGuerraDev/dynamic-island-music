@@ -1,6 +1,6 @@
 // The island page: open panel, closed pill, edit mode and every tab. The main process owns the data;
 // this file draws it and sends back what the person does.
-import { S, bus, comps, activeComps, pages, metaOf, tabsAvailable, enabledAI, defaultAI, aiMeta, componentOn, webMode, defaultWebAI } from './state.js';
+import { S, bus, coverOf, comps, activeComps, pages, metaOf, tabsAvailable, enabledAI, defaultAI, aiMeta, componentOn, webMode, defaultWebAI } from './state.js';
 import { esc, $, $$, dayKey } from './util.js';
 import { ic, fi } from './icons.js';
 import { colHTML, musicPos, pomoRemaining, timeFontSize, perfHTML } from './components.js';
@@ -8,7 +8,8 @@ import { trayHTML, clipHTML, chatHTML, bindChat, gameHTML, bindGame, stopGame, f
 import { editBarHTML, bindEdit, setComps } from './edit.js';
 import { setLensEnabled, startLens } from './lens.js';
 import { startAmbient } from './ambient.js';
-import { paletteFromImage, paletteFromHex, DEFAULT_PALETTE } from './colors.js';
+import { paletteFromImage, paletteFromHex, customPalette, DEFAULT_PALETTE } from './colors.js';
+import { lightsHTML, bindLights, throttledPatcher, DANCE_AMP, SIZE_IN, SIZE_OUT } from './lightui.js';
 import { playPomodoroSound } from './sounds.js';
 import { openWidth } from '../shared/layout.js';
 import { bpmFor, pulseAt } from '../shared/pulse.js';
@@ -33,14 +34,16 @@ async function updatePalette() {
   const s = S.set;
   let key = 'default';
   let pal = DEFAULT_PALETTE;
-  if (s.glowColorMode === 'custom') {
-    key = `custom:${s.glowColor}`;
-    pal = paletteFromHex(s.glowColor);
-  } else if (s.coverColors && S.music && S.music.session && S.music.cover) {
-    key = `cover:${S.music.key}`;
+  if (s.colorMode === 'rainbow') {
+    return; // the colors turn by themselves (CSS); nothing to set
+  } else if (s.colorMode === 'custom') {
+    key = `custom:${s.colorA}:${s.colorB}`;
+    pal = customPalette(s.colorA, s.colorB);
+  } else if (s.coverColors && S.music && S.music.session && coverOf(S.music)) {
+    key = `cover:${S.music.key}:${S.hd[S.music.key] ? 'hd' : ''}`;
     if (key === paletteKey) return;
     paletteKey = key;
-    const p = await paletteFromImage(S.music.cover);
+    const p = await paletteFromImage(coverOf(S.music));
     if (p) setPalette(p);
     else setPalette(DEFAULT_PALETTE);
     return;
@@ -67,26 +70,42 @@ function applyStyle() {
   for (const g of ['off', 'soft', 'glass', 'strong']) stage.classList.toggle(`glow-${g}`, (['off', 'soft', 'strong', 'glass'].includes(s.glowStyle) ? s.glowStyle : 'glass') === g);
   for (const m of ['none', 'open', 'always']) stage.classList.toggle(`rim-${m}`, (s.borderStyle || 'none') === m);
   root.style.setProperty('--top', `${s.topOffset}px`);
-  root.style.setProperty('--gi', String(Math.max(0, Math.min(1.25, s.glowIntensity / 100))));
+  for (const m of ['auto', 'rainbow', 'custom']) stage.classList.toggle(`cm-${m}`, (s.colorMode || 'auto') === m);
+  stage.style.setProperty('--gin', String(Math.max(0.4, Math.min(5, s.inLightIntensity / 100))));
+  stage.style.setProperty('--gout', String(Math.max(0.4, Math.min(5, s.outLightIntensity / 100))));
+  stage.style.setProperty('--si', String(SIZE_IN[s.inLightSize] ?? 1));
+  stage.style.setProperty('--so', String(SIZE_OUT[s.outLightSize] ?? 1));
   root.style.setProperty('--pa', String(Math.max(0.3, Math.min(1, s.panelOpacity / 100))));
   setLensEnabled(s.liquidButtons);
+  paletteKey = s.colorMode === 'auto' ? paletteKey : '';
   updatePalette();
   syncDance();
+  syncHalo();
+  lightsIdle();
 }
 
 // ---------- Colors that dance with the music ----------
 
 const IDLE_PULSE = 0.15;
+const STILL_PULSE = 0.3; // a "still" light sits at a steady medium glow
 let danceRaf = 0;
 let lastFrame = 0;
 
-function setPulse(v) {
-  $('#stage').style.setProperty('--pulse', v.toFixed(3));
+/** base = the beat from 0 to 1; each light scales it by its own dance setting. */
+function setPulse(base) {
+  const st = $('#stage').style;
+  const on = S.set.colorsDance;
+  const amp = (k) => (on ? (DANCE_AMP[S.set[k]] ?? 1) : 0);
+  const val = (a) => (a === 0 ? STILL_PULSE : base * a);
+  st.setProperty('--pulse', base.toFixed(3)); // the cover grows 3 % with the plain beat
+  st.setProperty('--pin', val(amp('inLightDance')).toFixed(3));
+  st.setProperty('--pout', val(amp('outLightDance')).toFixed(3));
 }
 
 function danceWanted() {
   const m = S.music;
   if (!S.set.colorsDance || !m || !m.session || !m.playing) return false;
+  if (S.set.inLightDance === 'still' && S.set.outLightDance === 'still') return false;
   return S.open || $('#pill').classList.contains('glow');
 }
 
@@ -115,6 +134,39 @@ function syncDance() {
   }
 }
 
+/** The rainbow only turns while there is something to see. */
+function lightsIdle() {
+  $('#stage').classList.toggle('lights-idle', !S.open && $('#pill').classList.contains('off'));
+}
+
+// ---------- HD cover for small pictures ----------
+
+const hdTried = new Set();
+
+/** A small picture (browser videos): look for the official cover by title and artist. */
+function ensureHd(m) {
+  if (!S.set.coverHD || !m || !m.session || !m.cover || !m.title || S.hd[m.key] || hdTried.has(m.key)) return;
+  if (hdTried.size > 200) hdTried.clear();
+  hdTried.add(m.key);
+  const img = new Image();
+  img.onload = async () => {
+    if (img.naturalWidth >= 500 && img.naturalHeight >= 500) return;
+    let hd = null;
+    try {
+      hd = await dim.music.hdCover({ title: m.title, artist: m.artist });
+    } catch {
+      /* offline: keep the small one */
+    }
+    if (!hd) return;
+    S.hd[m.key] = hd;
+    paletteKey = '';
+    updatePalette();
+    renderRow();
+    renderPill();
+  };
+  img.src = m.cover;
+}
+
 // ---------- Header ----------
 
 function renderTabs() {
@@ -125,7 +177,7 @@ function renderTabs() {
   const b = S.battery;
   const pct = b ? Math.round(b.level * 100) : 0;
   const bat = S.set.batteryPill && S.hasBattery !== false && b ? `<span class="pill"><span class="bat${b.charging ? ' chg' : ''}" style="--lvl:${Math.max(8, pct)}%"></span>${pct}%</span>` : '';
-  $('#ntabs-r').innerHTML = `${bat}<button class="round" data-act="edit-toggle" aria-label="${S.editing ? 'Terminar de editar' : 'Editar componentes'}" title="${S.editing ? 'Listo' : 'Editar componentes'}">${ic(S.editing ? 'check' : 'edit')}</button><button class="round" data-act="open-settings" aria-label="Ajustes" title="Ajustes">${ic('gear')}</button><button class="round" data-act="close-island" aria-label="Cerrar la isla" title="Cerrar la isla">${ic('x')}</button>`;
+  $('#ntabs-r').innerHTML = `${bat}<button class="round" data-act="lights-toggle" aria-label="Luces y colores" title="Luces y colores">${ic('sun')}</button><button class="round" data-act="edit-toggle" aria-label="${S.editing ? 'Terminar de editar' : 'Editar componentes'}" title="${S.editing ? 'Listo' : 'Editar componentes'}">${ic(S.editing ? 'check' : 'edit')}</button><button class="round" data-act="open-settings" aria-label="Ajustes" title="Ajustes">${ic('gear')}</button><button class="round" data-act="close-island" aria-label="Cerrar la isla" title="Cerrar la isla">${ic('x')}</button>`;
 }
 
 function renderDots(n) {
@@ -135,6 +187,31 @@ function renderDots(n) {
     return;
   }
   m.innerHTML = `<span class="dots">${Array.from({ length: n }, (_, i) => `<button class="dot${i === S.page ? ' on' : ''}" data-act="dot" data-p="${i}" aria-label="Página ${i + 1}"></button>`).join('')}</span>`;
+}
+
+// ---------- Panel of lights ----------
+
+const LIGHT_KEYS = new Set(['colorMode', 'colorA', 'colorB', 'inLightIntensity', 'inLightSize', 'inLightDance', 'outLightIntensity', 'outLightSize', 'outLightDance']);
+const lightsSend = throttledPatcher((o) => dim.settings.patch(o));
+
+function renderLightPanel() {
+  const el = $('#lightpanel');
+  el.hidden = !S.ui.lightsOpen;
+  if (!S.ui.lightsOpen) {
+    scheduleRect();
+    return;
+  }
+  el.innerHTML = `<b style="font-size:14px;display:block;margin-bottom:8px">Luces y colores</b>${lightsHTML(S.set)}`;
+  bindLights(el, {
+    patch: (o) => {
+      Object.assign(S.set, o);
+      applyStyle();
+      lightsSend(o);
+    },
+    getSet: () => S.set,
+    redraw: renderLightPanel,
+  });
+  scheduleRect();
 }
 
 // ---------- Row ----------
@@ -166,7 +243,10 @@ function setWidth(px) {
 
 /** The halo copies the height of the island (its width follows the same --w). */
 function syncHalo() {
-  $('#halo').style.height = `${$('#notch').offsetHeight + 8}px`;
+  const h = `${$('#notch').offsetHeight + 8 * (Number(getComputedStyle($('#stage')).getPropertyValue('--so')) || 1)}px`;
+  document.querySelectorAll('.halo').forEach((el) => {
+    el.style.height = h;
+  });
 }
 
 function renderRow() {
@@ -371,7 +451,7 @@ function liveKeys() {
 function liveParts(k) {
   const m = S.music;
   if (k === 'mus') {
-    const mart = `<span class="mart">${m.cover ? `<img src="${esc(m.cover)}" alt="">` : ''}</span>`;
+    const mart = `<span class="mart">${coverOf(m) ? `<img src="${esc(coverOf(m))}" alt="">` : ''}</span>`;
     const viz = '<span class="viz"><i></i><i></i><i></i><i></i></span>';
     return { l: mart, r: viz, c: mart + viz };
   }
@@ -452,6 +532,17 @@ function showToast(item) {
   }, 2400);
 }
 
+/** First start: one line of credit, nothing else. */
+function showWelcome() {
+  const t = $('#toast');
+  t.innerHTML = '<span class="tx">By: MoisesGuerraDev</span>';
+  t.hidden = false;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => {
+    t.hidden = true;
+  }, 4500);
+}
+
 // ---------- Pointer rectangle for the main process ----------
 
 let rectTimer = null;
@@ -460,8 +551,16 @@ function reportRect() {
   const notch = $('#notch');
   const pill = $('#pill');
   let r = { x: 0, y: 0, w: 0, h: 0 };
-  if (S.open) r = { x: notch.offsetLeft, y: notch.offsetTop, w: notch.offsetWidth, h: notch.offsetHeight };
-  else if (!pill.classList.contains('off')) {
+  if (S.open) {
+    r = { x: notch.offsetLeft, y: notch.offsetTop, w: notch.offsetWidth, h: notch.offsetHeight };
+    const lp = $('#lightpanel');
+    if (!lp.hidden) {
+      // The panel hangs below the island: that part must be clickable too.
+      const x1 = Math.min(r.x, notch.offsetLeft + lp.offsetLeft), y1 = Math.min(r.y, notch.offsetTop + lp.offsetTop);
+      const x2 = Math.max(r.x + r.w, notch.offsetLeft + lp.offsetLeft + lp.offsetWidth), y2 = Math.max(r.y + r.h, notch.offsetTop + lp.offsetTop + lp.offsetHeight);
+      r = { x: x1, y: y1, w: x2 - x1, h: y2 - y1 };
+    }
+  } else if (!pill.classList.contains('off')) {
     const b = pill.getBoundingClientRect();
     r = { x: b.left, y: b.top, w: b.width, h: b.height };
   }
@@ -541,6 +640,8 @@ function setOpenLocal(open) {
   if (!open) {
     S.editing = false;
     S.ui.noteAdding = S.ui.calAdding = S.ui.timeEditing = false;
+    S.ui.lightsOpen = false;
+    renderLightPanel();
     S.view = 'home';
     S.page = 0;
     stopGame();
@@ -575,6 +676,11 @@ const actions = {
     dim.island.pin('edit', S.editing);
     renderTabs();
     renderRow();
+  },
+  'lights-toggle': () => {
+    S.ui.lightsOpen = !S.ui.lightsOpen;
+    dim.island.pin('lights', S.ui.lightsOpen);
+    renderLightPanel();
   },
   'open-settings': () => dim.island.openSettings(''),
   'open-ai-settings': () => dim.island.openSettings('ia'),
@@ -840,6 +946,7 @@ async function boot() {
   S.open = !!(info && info.open);
   S.music = music;
   if (music && music.playing) S.lastPlayedAt = Date.now();
+  setTimeout(() => ensureHd(S.music), 0);
   S.pomo = pomo;
   S.notes = notes;
   S.clip = clip;
@@ -852,6 +959,11 @@ async function boot() {
   dim.settings.onChange((changed) => {
     Object.assign(S.set, changed);
     paletteKey = '';
+    if (Object.keys(changed).every((k) => LIGHT_KEYS.has(k))) {
+      applyStyle(); // already shown while the control moved; nothing else to redraw
+      if (S.ui.lightsOpen && !$('#lightpanel').contains(document.activeElement)) renderLightPanel();
+      return;
+    }
     render();
   });
   dim.island.onInfo((i) => {
@@ -859,6 +971,7 @@ async function boot() {
     render();
   });
   dim.island.onState(({ open }) => setOpenLocal(open));
+  dim.island.onWelcome(showWelcome);
   dim.island.onGame((g) => {
     S.game = g;
     renderPill();
@@ -897,6 +1010,7 @@ async function boot() {
     updatePalette();
     renderRow();
     syncDance();
+    ensureHd(m);
   });
   dim.pomo.onState((p) => {
     S.pomo = p;

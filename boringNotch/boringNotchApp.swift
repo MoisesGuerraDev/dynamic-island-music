@@ -534,6 +534,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         hook("dim.debug.enable.all") { for c in IslandComponent.allCases { LayoutManager.shared.setEnabled(c, true) } }
         hook("dim.debug.reset") { LayoutManager.shared.reset() }
         hook("dim.debug.ai.probe") { AIWebStore.shared.debugProbe() }
+        hook("dim.debug.ai.setcookie") { AIWebStore.shared.debugSetSessionCookie() }
+        hook("dim.debug.cookie.set") { AIWebStore.shared.debugCookie(set: true) }
+        hook("dim.debug.cookie.dump") { AIWebStore.shared.debugCookie(set: false) }
         hook("dim.debug.ai.claude") { AIChatManager.shared.provider = .claude }
         hook("dim.debug.ai.chatgpt") { AIChatManager.shared.provider = .openai }
         hook("dim.debug.ai.gemini") { AIChatManager.shared.provider = .gemini }

@@ -1,6 +1,32 @@
 import SwiftUI
 import WebKit
 
+/// Keeps the person signed in. Many sites hand out a "session" cookie with no expiry date, which any browser forgets the
+/// moment the app quits. This gives those cookies a long expiry so the sign-in survives closing and reopening the app.
+final class SessionCookieKeeper: NSObject, WKHTTPCookieStoreObserver {
+    static let shared = SessionCookieKeeper()
+    private let lifetime: TimeInterval = 60 * 60 * 24 * 90
+
+    func start() {
+        let store = WKWebsiteDataStore.default().httpCookieStore
+        store.add(self)
+        convert(in: store)
+    }
+
+    func cookiesDidChange(in cookieStore: WKHTTPCookieStore) { convert(in: cookieStore) }
+
+    private func convert(in store: WKHTTPCookieStore) {
+        store.getAllCookies { cookies in
+            for cookie in cookies where cookie.isSessionOnly {
+                var properties = cookie.properties ?? [:]
+                properties.removeValue(forKey: .discard)
+                properties[.expires] = Date().addingTimeInterval(self.lifetime)
+                if let kept = HTTPCookie(properties: properties) { store.setCookie(kept) }
+            }
+        }
+    }
+}
+
 /// Web view that asks the notch for the keyboard the moment it is clicked, so typing works even when another app was in front.
 final class FocusWebView: WKWebView {
     override func acceptsFirstMouse(for event: NSEvent?) -> Bool { true }
@@ -97,6 +123,7 @@ final class AIWebStore: NSObject, WKNavigationDelegate, WKUIDelegate, Observable
 
     func view(for provider: AIProvider) -> WKWebView {
         if let existing = views[provider] { return existing }
+        SessionCookieKeeper.shared.start()
         let config = WKWebViewConfiguration()
         config.websiteDataStore = .default()
         config.preferences.javaScriptCanOpenWindowsAutomatically = true
@@ -115,10 +142,32 @@ final class AIWebStore: NSObject, WKNavigationDelegate, WKUIDelegate, Observable
     }
 
     #if DEBUG
+    func debugCookie(set: Bool) {
+        let store = WKWebsiteDataStore.default().httpCookieStore
+        let file = FileManager.default.temporaryDirectory.appendingPathComponent("cookie-test.txt")
+        if set {
+            SessionCookieKeeper.shared.start()
+            // A session cookie: no expiry, like the ones sign-ins use.
+            if let cookie = HTTPCookie(properties: [.name: "dimtest", .value: "1", .domain: "chatgpt.com", .path: "/", .secure: "TRUE"]) {
+                store.setCookie(cookie)
+            }
+        } else {
+            store.getAllCookies { cookies in
+                let found = cookies.first { $0.name == "dimtest" }
+                let line = found.map { "found expires=\(String(describing: $0.expiresDate)) sessionOnly=\($0.isSessionOnly)" } ?? "not found (total \(cookies.count))"
+                try? line.write(to: file, atomically: true, encoding: .utf8)
+            }
+        }
+    }
+
+    func debugSetSessionCookie() {
+        view(for: AIChatManager.shared.provider).evaluateJavaScript("document.cookie = 'dimtest=1; path=/'", completionHandler: nil)
+    }
+
     /// Test hook: writes what the current AI page shows (and whether it has keyboard focus) to a file.
     func debugProbe() {
         let web = view(for: AIChatManager.shared.provider)
-        let js = "JSON.stringify({url: location.href, title: document.title, focus: document.hasFocus(), passkeys: typeof PublicKeyCredential, active: document.activeElement ? document.activeElement.tagName + '#' + (document.activeElement.id || '') : '', typed: document.activeElement && (document.activeElement.value || document.activeElement.innerText) ? String(document.activeElement.value || document.activeElement.innerText).slice(0, 40) : '', text: (document.body ? document.body.innerText : '').replace(/\\s+/g, ' ').slice(0, 300)})"
+        let js = "JSON.stringify({url: location.href, title: document.title, focus: document.hasFocus(), passkeys: typeof PublicKeyCredential, testcookie: document.cookie.indexOf('dimtest') >= 0, active: document.activeElement ? document.activeElement.tagName + '#' + (document.activeElement.id || '') : '', typed: document.activeElement && (document.activeElement.value || document.activeElement.innerText) ? String(document.activeElement.value || document.activeElement.innerText).slice(0, 40) : '', text: (document.body ? document.body.innerText : '').replace(/\\s+/g, ' ').slice(0, 300)})"
         let panels = NSApp.windows.compactMap { $0 as? BoringNotchSkyLightWindow }
         let native = panels.map { "key=\($0.isKeyWindow) canKey=\($0.canBecomeKey) first=\(String(describing: $0.firstResponder.map { type(of: $0) })) wkInWindow=\(web.window === $0)" }.joined(separator: "; ")
         let appState = "appActive=\(NSApp.isActive) wantsKey=\(KeyboardFocus.shared.wantsKey) loading=\(web.isLoading) progress=\(Int(web.estimatedProgress * 100)) nativeURL=\(web.url?.absoluteString ?? "nil") title=\(web.title ?? "")"

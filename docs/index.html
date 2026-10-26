@@ -75,7 +75,11 @@ a{color:#9cc2ff}
     <h2>Instalar en Windows</h2>
     <p>Descarga el instalador y ábrelo. Si Windows muestra "Windows protegió tu PC", pulsa <b>Más información › Ejecutar de todas formas</b>: aparece con las apps nuevas de código abierto hasta que ganan reputación.</p>
     <p><a class="btn main" id="download-win" href="#">Descargar para Windows</a></p>
-    <p class="small" style="text-align:left">Requiere Windows 10 u 11.</p>
+    <p><b>O con una línea:</b> pega esto en PowerShell (sin administrador, sin aviso de SmartScreen).</p>
+    <pre id="cmd-win">…</pre>
+    <button class="btn copy" id="copy-win">Copiar comando</button>
+    <p class="small" style="text-align:left;margin-top:14px">También hay un <a id="download-zip" href="#">.zip portátil</a> que no instala nada: descomprime y abre.</p>
+    <p class="small" style="text-align:left">Requiere Windows 10 u 11 (64 bits). La isla flota arriba y al centro y se ve sobre los juegos a pantalla completa sin bordes.</p>
   </div>
 </section>
 
@@ -108,6 +112,10 @@ a{color:#9cc2ff}
   document.getElementById('cmd-mac').textContent=cmd;
   document.getElementById('repo').href='https://github.com/'+slug;
   document.getElementById('download-win').href=base+'DynamicIslandMusic-Setup.exe';
+  document.getElementById('download-zip').href=base+'DynamicIslandMusic-Windows-x64.zip';
+  var cmdWin="$env:DIM_REPO = '"+slug+"'; irm https://raw.githubusercontent.com/"+slug+"/main/windows/install.ps1 | iex";
+  document.getElementById('cmd-win').textContent=cmdWin;
+  document.getElementById('copy-win').onclick=function(){var b=this;if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(cmdWin).then(function(){b.textContent='Copiado';setTimeout(function(){b.textContent='Copiar comando';},1500);},function(){});}};
   var d=document.getElementById('download'),det=document.getElementById('detected');
   function show(os){
     document.getElementById('os-mac').hidden=os!=='mac';

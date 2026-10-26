@@ -12,6 +12,9 @@ import Foundation
     func isAccessibilityAuthorized(with reply: @escaping (Bool) -> Void)
     func requestAccessibilityAuthorization()
     func ensureAccessibilityAuthorization(_ promptIfNeeded: Bool, with reply: @escaping (Bool) -> Void)
+    /// Free room in the menu bar around the camera notch: reply(left, right) in points, nil when it cannot be measured.
+    func menuBarGaps(notchLeft: Double, notchRight: Double, screenLeft: Double, screenRight: Double, y: Double,
+                     with reply: @escaping (NSNumber?, NSNumber?) -> Void)
     // Keyboard backlight / CoreBrightness access (performed by the helper)
     func isKeyboardBrightnessAvailable(with reply: @escaping (Bool) -> Void)
     func currentKeyboardBrightness(with reply: @escaping (NSNumber?) -> Void)

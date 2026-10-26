@@ -568,7 +568,7 @@ struct Media: View {
     var body: some View {
         Form {
             Section {
-                Picker("Music Source", selection: $mediaController) {
+                Picker("Fuente de música", selection: $mediaController) {
                     ForEach(availableMediaControllers) { controller in
                         Text(controller.rawValue).tag(controller)
                     }
@@ -579,8 +579,9 @@ struct Media: View {
                         object: nil
                     )
                 }
+                Defaults.Toggle("Buscar la carátula en HD (envía el título y el artista a Apple)", key: .artworkHD)
             } header: {
-                Text("Media Source")
+                Text("Fuente de música")
             } footer: {
                 if MusicManager.shared.isNowPlayingDeprecated {
                     HStack {
@@ -664,7 +665,7 @@ struct Media: View {
     // Only show controller options that are available on this macOS version
     private var availableMediaControllers: [MediaControllerType] {
         if MusicManager.shared.isNowPlayingDeprecated {
-            return MediaControllerType.allCases.filter { $0 != .nowPlaying }
+            return MediaControllerType.allCases.filter { $0 != .nowPlaying && $0 != .automatic }
         } else {
             return MediaControllerType.allCases
         }

@@ -1,0 +1,37 @@
+# Windows build. Run `npm run dist` (needs Windows for the exe icon) or `npm run dist:mac` to cross-build from a Mac.
+appId: app.dynamicislandmusic.windows
+productName: Dynamic Island Music
+copyright: GPL-3.0. Basada en Boring Notch (TheBoredTeam)
+directories:
+  output: dist
+  buildResources: build
+files:
+  - src/**/*
+  - assets/**/*
+  - package.json
+  - "!**/*.map"
+asar: true
+# The PowerShell helpers must live outside the asar so powershell.exe can read them.
+extraResources:
+  - from: src/main/ps
+    to: ps
+  - from: ../LICENSE
+    to: LICENSE.txt
+  - from: ../NOTICE.md
+    to: NOTICE.md
+artifactName: DynamicIslandMusic-Windows-x64.${ext}
+win:
+  target:
+    - target: nsis
+      arch: [x64]
+    - target: zip
+      arch: [x64]
+  icon: build/icon.png
+nsis:
+  oneClick: true
+  perMachine: false
+  runAfterFinish: true
+  deleteAppDataOnUninstall: false
+  artifactName: DynamicIslandMusic-Setup.${ext}
+  shortcutName: Dynamic Island Music
+publish: null

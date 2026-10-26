@@ -101,6 +101,26 @@ final class XPCHelperClient {
         }
     }
     
+    /// Free room (left, right) in the menu bar next to the camera notch, measured by the helper; nil without permission.
+    nonisolated func menuBarGaps(notchLeft: CGFloat, notchRight: CGFloat, screenLeft: CGFloat, screenRight: CGFloat, y: CGFloat) async -> (left: CGFloat, right: CGFloat)? {
+        do {
+            let service = await MainActor.run {
+                ensureRemoteService()
+            }
+            let result: [Double]? = try await service.withContinuation { service, continuation in
+                service.menuBarGaps(notchLeft: Double(notchLeft), notchRight: Double(notchRight), screenLeft: Double(screenLeft),
+                                    screenRight: Double(screenRight), y: Double(y)) { left, right in
+                    if let left, let right { continuation.resume(returning: [left.doubleValue, right.doubleValue]) }
+                    else { continuation.resume(returning: nil) }
+                }
+            }
+            guard let result else { return nil }
+            return (CGFloat(result[0]), CGFloat(result[1]))
+        } catch {
+            return nil
+        }
+    }
+
     nonisolated func ensureAccessibilityAuthorization(promptIfNeeded: Bool) async -> Bool {
         do {
             let service = await MainActor.run {

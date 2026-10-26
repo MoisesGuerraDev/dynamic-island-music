@@ -79,6 +79,9 @@ class MusicManager: ObservableObject {
             }
             .store(in: &cancellables)
 
+        startAutoObservers()
+        startAutoProbe()
+
         // Initialize deprecation check asynchronously
         Task { @MainActor in
             do {
@@ -109,6 +112,107 @@ class MusicManager: ObservableObject {
         activeController = nil
     }
 
+    // MARK: - Automatic source
+
+    /// While in automatic mode: Apple Music or Spotify that took over from the system's Now Playing because they are playing.
+    private var autoOverride: MediaControllerType?
+    private var autoObservers: [NSObjectProtocol] = []
+
+    /// Apple Music and Spotify announce their state to everyone, so this needs no permission.
+    private func startAutoObservers() {
+        guard autoObservers.isEmpty else { return }
+        let center = DistributedNotificationCenter.default()
+        let sources: [(String, MediaControllerType)] = [
+            ("com.apple.Music.playerInfo", .appleMusic),
+            ("com.spotify.client.PlaybackStateChanged", .spotify),
+        ]
+        for (name, source) in sources {
+            let token = center.addObserver(forName: NSNotification.Name(name), object: nil, queue: .main) { [weak self] note in
+                let state = (note.userInfo?["Player State"] as? String)?.lowercased() ?? ""
+                Task { @MainActor in self?.handleAutoEvent(source, playing: state == "playing") }
+            }
+            autoObservers.append(token)
+        }
+    }
+
+    private var autoProbeTask: Task<Void, Never>?
+
+    /// The notifications above only arrive when the state changes. This also catches Apple Music or Spotify that were
+    /// already playing when the app started, while the system's Now Playing points at something paused (a video, say).
+    private func startAutoProbe() {
+        autoProbeTask?.cancel()
+        autoProbeTask = Task { [weak self] in
+            while !Task.isCancelled {
+                try? await Task.sleep(for: .seconds(3))
+                await self?.probeAutoSources()
+            }
+        }
+    }
+
+    @MainActor
+    private func probeAutoSources() async {
+        guard Defaults[.mediaController] == .automatic, !isNowPlayingDeprecated, autoOverride == nil, !isPlaying else { return }
+        let candidates: [(bundle: String, name: String, source: MediaControllerType)] = [
+            ("com.apple.Music", "Music", .appleMusic),
+            ("com.spotify.client", "Spotify", .spotify),
+        ]
+        for candidate in candidates {
+            guard !NSRunningApplication.runningApplications(withBundleIdentifier: candidate.bundle).isEmpty else { continue }
+            let state = await Task.detached { Self.playerState(of: candidate.name) }.value
+            if state == "playing" {
+                handleAutoEvent(candidate.source, playing: true)
+                return
+            }
+        }
+    }
+
+    nonisolated private static func playerState(of app: String) -> String {
+        var error: NSDictionary?
+        let script = NSAppleScript(source: "tell application \"\(app)\" to return player state as string")
+        return script?.executeAndReturnError(&error).stringValue?.lowercased() ?? ""
+    }
+
+    @MainActor
+    private func handleAutoEvent(_ source: MediaControllerType, playing: Bool) {
+        guard Defaults[.mediaController] == .automatic, !isNowPlayingDeprecated else { return }
+        if playing {
+            guard autoOverride != source else { return }
+            autoOverride = source
+            if let controller = createController(for: source) { setActiveController(controller) }
+        } else if autoOverride == source {
+            autoOverride = nil
+            if let controller = createController(for: .nowPlaying) { setActiveController(controller) }
+        }
+    }
+
+    // MARK: - HD cover
+
+    private var hdCoverTask: Task<Void, Never>?
+    private var hdCoverCache: [String: Data] = [:]
+
+    /// Browser videos only give a tiny picture. Look up the official cover and swap it in when it matches the song.
+    private func enhanceArtwork(title: String, artist: String, original: Data) {
+        guard Defaults[.artworkHD], !title.isEmpty else { return }
+        let rep = NSBitmapImageRep(data: original)
+        let side = max(rep?.pixelsWide ?? 0, rep?.pixelsHigh ?? 0)
+        guard side > 0, side < 500 else { return }
+
+        let key = "\(artist)|\(title)".lowercased()
+        hdCoverTask?.cancel()
+        hdCoverTask = Task { [weak self] in
+            let cached = await MainActor.run { self?.hdCoverCache[key] }
+            let data: Data?
+            if let cached { data = cached } else { data = await ArtworkSearch.hdCover(title: title, artist: artist) }
+            guard let data, !Task.isCancelled, let image = NSImage(data: data) else { return }
+            await MainActor.run {
+                guard let self, self.songTitle == title else { return }
+                self.hdCoverCache[key] = data
+                self.usingAppIconForArtwork = false
+                self.updateAlbumArt(newAlbumArt: image)
+            }
+        }
+    }
+
     // MARK: - Setup Methods
     private func createController(for type: MediaControllerType) -> (any MediaControllerProtocol)? {
         // Cleanup previous controller
@@ -120,7 +224,7 @@ class MusicManager: ObservableObject {
         let newController: (any MediaControllerProtocol)?
 
         switch type {
-        case .nowPlaying:
+        case .nowPlaying, .automatic:
             // Only create NowPlayingController if not deprecated on this macOS version
             if !self.isNowPlayingDeprecated {
                 newController = NowPlayingController()
@@ -155,7 +259,8 @@ class MusicManager: ObservableObject {
         print("Preferred Media Controller: \(preferredType)")
 
         // If NowPlaying is deprecated but that's the preference, use Apple Music instead
-        let controllerType = (self.isNowPlayingDeprecated && preferredType == .nowPlaying)
+        autoOverride = nil
+        let controllerType = (self.isNowPlayingDeprecated && (preferredType == .nowPlaying || preferredType == .automatic))
             ? .appleMusic
             : preferredType
 
@@ -212,6 +317,7 @@ class MusicManager: ObservableObject {
 
             if artworkChanged, let artwork = state.artwork {
                 self.updateArtwork(artwork)
+                self.enhanceArtwork(title: state.title, artist: state.artist, original: artwork)
             } else if state.artwork == nil {
                 // Try to use app icon if no artwork but track changed
                 if let appIconImage = AppIconAsNSImage(for: state.bundleIdentifier) {

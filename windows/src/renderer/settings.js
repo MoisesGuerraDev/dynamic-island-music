@@ -114,7 +114,8 @@ const TABS = [
     build: () => [
       sec('Apariencia', [
         SEL('glowStyle', 'Brillo del borde', [['glass', 'Liquid Glass'], ['soft', 'Sutil'], ['strong', 'Fuerte'], ['off', 'Apagado']]),
-        RNG('panelOpacity', 'Opacidad del fondo de la isla', 40, 100, 1, '%', 'Windows no puede difuminar lo que hay detrás de la isla: sube la opacidad si el fondo te estorba.'),
+        RNG('panelOpacity', 'Fondo: de vidrio a negro total', 30, 100, 1, '%', '100 % es negro total; bájalo para ver más vidrio. Windows no puede difuminar lo que hay detrás de la isla.'),
+        RNG('glowIntensity', 'Intensidad del color de la carátula', 0, 100, 1, '%', 'La luz de color que sale de la carátula y sigue al mouse'),
         SEL('glowColorMode', 'Color del brillo', [['cover', 'Según la carátula'], ['custom', 'Un color fijo']], null, { rr: true }),
         { t: 'color', k: 'glowColor', label: 'Color fijo', when: (s) => s.glowColorMode === 'custom' },
         T('liquidButtons', 'Botones con Liquid Glass', 'Refracción y reflejo en los botones. Apágalo si tu PC va justo de gráficos.'),
@@ -396,10 +397,8 @@ function rowHTML(r) {
     case 'color':
       return `<div class="r">${label}<input type="color" value="${esc(ctx.set[r.k])}" data-k="${r.k}" aria-label="${esc(r.label)}"></div>`;
     case 'button':
-      if (r.when && !r.when()) return '';
       return `<div class="r">${label}<button class="btn${r.danger ? ' danger' : ''}" data-do="${r.act}">${esc(r.btn)}</button></div>`;
     case 'info':
-      if (r.when && !r.when()) return '';
       return `<div class="r"><span>${esc(r.label)}${r.note ? `<small>${esc(val(r.note))}</small>` : ''}</span><span class="val ${r.cls || ''}">${esc(val(r.value))}</span></div>`;
     case 'html':
       return r.html();

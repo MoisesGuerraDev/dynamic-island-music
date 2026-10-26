@@ -486,7 +486,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             }
             playWelcomeSound()
         } else if MusicManager.shared.isNowPlayingDeprecated
-            && Defaults[.mediaController] == .nowPlaying
+            && (Defaults[.mediaController] == .nowPlaying || Defaults[.mediaController] == .automatic)
         {
             DispatchQueue.main.async {
                 self.showOnboardingWindow(step: .musicPermission)
@@ -532,6 +532,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         hook("dim.debug.settings") { SettingsWindowController.shared.showWindow() }
         hook("dim.debug.enable.all") { for c in IslandComponent.allCases { LayoutManager.shared.setEnabled(c, true) } }
         hook("dim.debug.reset") { LayoutManager.shared.reset() }
+        hook("dim.debug.gap.small") { MenuBarSpace.shared.debugForce(gap: 10) }
+        hook("dim.debug.gap.clear") { MenuBarSpace.shared.debugForce(gap: nil) }
     }
     #endif
 

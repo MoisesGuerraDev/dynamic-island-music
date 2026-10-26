@@ -40,10 +40,11 @@ export class Store extends EventEmitter {
       changed[k] = clone(v);
     }
     if (Object.keys(changed).length) {
-      if ('components' in changed || 'aiEnabled' in changed) {
+      if ('components' in changed || 'aiEnabled' in changed || 'aiWebEnabled' in changed) {
         const fixed = normalizeSettings(this.data);
         this.data.components = fixed.components;
         this.data.aiEnabled = fixed.aiEnabled;
+        this.data.aiWebEnabled = fixed.aiWebEnabled;
         if ('components' in changed) changed.components = clone(this.data.components);
         if ('aiEnabled' in changed) changed.aiEnabled = clone(this.data.aiEnabled);
       }

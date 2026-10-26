@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Menu, Notification, clipboard, nativeImage, screen, session, shell, powerMonitor } from 'electron';
+import { app, BrowserWindow, ClipboardItem, Menu, Notification, clipboard, nativeImage, screen, session, shell, powerMonitor } from 'electron';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -81,6 +81,7 @@ async function boot(ctx) {
     store,
     clipboard,
     nativeImage,
+    ClipboardItem,
     file: path.join(userData, 'clipboard.json'),
     getForeground: async () => {
       if (!helper || helper.dead) return { name: '' };

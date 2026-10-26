@@ -64,6 +64,7 @@ function applyStyle() {
   stage.classList.toggle('flat', !s.liquidButtons);
   stage.classList.toggle('no-shadow', !s.windowShadow);
   root.style.setProperty('--top', `${s.topOffset}px`);
+  root.style.setProperty('--gi', String(Math.max(0, Math.min(1.25, s.glowIntensity / 100))));
   root.style.setProperty('--pa', String(Math.max(0.3, Math.min(1, s.panelOpacity / 100))));
   setLensEnabled(s.liquidButtons);
   updatePalette();

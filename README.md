@@ -25,7 +25,13 @@ También puedes bajar el `.dmg` desde [Releases](../../releases/latest) y arrast
 
 Paso a paso, con qué hacer si macOS muestra un aviso: [INSTALAR.md](INSTALAR.md).
 
-**Windows**: en desarrollo (carpeta `windows/`).
+**Windows** (10 u 11, 64 bits). Pega esto en PowerShell (no pide administrador y SmartScreen no avisa):
+
+```powershell
+$env:DIM_REPO = 'OWNER/REPO'; irm https://raw.githubusercontent.com/OWNER/REPO/main/windows/install.ps1 | iex
+```
+
+O baja `DynamicIslandMusic-Setup.exe` desde [Releases](../../releases/latest) (si sale "Windows protegió tu PC": *Más información › Ejecutar de todas formas*), o el `.zip` portátil `DynamicIslandMusic-Windows-x64.zip`. Es una isla flotante arriba y al centro (Electron), con lo mismo que la de Mac. Guía de pruebas: [windows/PROBAR-EN-WINDOWS.md](windows/PROBAR-EN-WINDOWS.md).
 
 ## Qué trae
 
@@ -50,7 +56,9 @@ porque sus términos no lo permiten en apps de terceros.
 
 ## Compilar desde el código
 
-Necesitas Xcode 26 o más nuevo.
+**Windows:** `cd windows && npm ci && npm test && npm run dist` (en un Mac: `npm run dist:mac`, genera el instalador y el .zip sin Wine). La app se ve con `npm run start:mock` (música simulada).
+
+**Mac:** necesitas Xcode 26 o más nuevo.
 
 ```bash
 git clone https://github.com/OWNER/REPO.git

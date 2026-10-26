@@ -40,7 +40,7 @@ button { font: inherit; }
 }
 .amb { position: absolute; inset: 0; border-radius: 30px; overflow: hidden; z-index: -1; pointer-events: none; }
 .amb::before {
-  content: ""; position: absolute; left: -6%; top: -20%; width: 46%; height: 150%; filter: blur(38px); opacity: .55; transition: opacity .5s;
+  content: ""; position: absolute; left: -6%; top: -20%; width: 46%; height: 150%; filter: blur(38px); opacity: calc(.7 * var(--gi, .8)); transition: opacity .5s;
   background: radial-gradient(60% 50% at 30% 35%, var(--c1), transparent 70%), radial-gradient(55% 55% at 70% 80%, var(--c2), transparent 70%);
   transform: translate(var(--sx, 0px), var(--sy, 0px));
 }
@@ -49,7 +49,7 @@ button { font: inherit; }
   background: radial-gradient(circle, color-mix(in srgb, var(--c1) 95%, transparent), transparent 70%); mix-blend-mode: screen;
   opacity: 0; transition: opacity .35s; transform: translate(var(--lx, 50%), var(--ly, 50%)); will-change: transform;
 }
-.notch.pointer .mlight { opacity: .85; }
+.notch.pointer .mlight { opacity: calc(1.05 * var(--gi, .8)); }
 .notch.g-off.pointer .mlight { opacity: 0; }
 
 .notch.g-soft { box-shadow: 0 22px 60px -14px color-mix(in srgb, var(--c1) 60%, transparent); }
@@ -333,7 +333,9 @@ button.ct:hover { background: rgba(255, 255, 255, .14); }
 .pill-closed.glow { box-shadow: 0 10px 30px -6px color-mix(in srgb, var(--c1) 65%, transparent); }
 .pill-closed.off { opacity: 0; pointer-events: none; }
 .is-open .pill-closed { opacity: 0; scale: 1.4 .5; pointer-events: none; }
-.pill-closed .lside, .pill-closed .rside { display: flex; align-items: center; gap: 8px; min-width: 0; }
+.pill-closed .lside, .pill-closed .rside { display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1 1 0; }
+.pill-closed .lside { justify-content: flex-start; }
+.pill-closed .rside { justify-content: flex-end; }
 .pill-closed .mart { width: 22px; height: 22px; border-radius: 7px; background: radial-gradient(circle at 30% 25%, var(--c1), transparent 60%), linear-gradient(160deg, var(--c2), var(--c3)); background-size: cover; flex: none; overflow: hidden; }
 .pill-closed .mart img { width: 100%; height: 100%; object-fit: cover; display: block; }
 .pill-closed b.mono, .gcard b.mono { font: 600 14px var(--mono); }

@@ -146,7 +146,7 @@ enum AIProvider: String, CaseIterable, Identifiable, Defaults.Serializable {
 
     var accountHint: String {
         switch self {
-        case .claude: "Inicia sesión con tu cuenta de Claude (correo o Google)."
+        case .claude: "Inicia sesión con tu cuenta de Claude (te llega un código al correo, o entra con Google)."
         case .openai: "Inicia sesión con tu cuenta de ChatGPT (correo, Google o Apple)."
         case .gemini: "Inicia sesión con tu cuenta de Google."
         case .deepseek: "Inicia sesión con tu cuenta de DeepSeek (correo o Google)."
@@ -164,6 +164,14 @@ extension Defaults.Keys {
     static let uiScale = Key<Double>("uiScale", default: 1.0)
     /// Horizontal offset of the island from the screen center, only for Macs without a notch (with a notch it stays over it).
     static let islandOffsetX = Key<Double>("islandOffsetX", default: 0)
+    /// Look up the official HD cover when the player only gives a tiny picture (browser videos).
+    static let artworkHD = Key<Bool>("artworkHD", default: true)
+    /// How strong the cover color is around the notch (1 = normal).
+    static let glowIntensity = Key<Double>("glowIntensity", default: 1.4)
+    /// 0 = solid black notch, 1 = full glass.
+    static let glassAmount = Key<Double>("glassAmount", default: 0)
+    /// Shrink the closed notch's sides to the free room in the menu bar.
+    static let fitMenuBar = Key<Bool>("fitMenuBar", default: true)
     static let manualSize = Key<Bool>("manualSize", default: false)
     static let manualOpenWidth = Key<Double>("manualOpenWidth", default: 900)
 
@@ -172,7 +180,6 @@ extension Defaults.Keys {
     static let liquidGlassButtons = Key<Bool>("liquidGlassButtons", default: true)
     static let liquidGlassSystem = Key<Bool>("liquidGlassSystem", default: false)
     /// Open notch as translucent glass over the desktop (the closed notch stays black like the real one).
-    static let glassNotch = Key<Bool>("glassNotch", default: true)
 
     // Pomodoro (every duration is free, in seconds)
     static let pomoFocusSeconds = Key<Double>("pomoFocusSeconds", default: 25 * 60)

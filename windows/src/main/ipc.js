@@ -7,6 +7,7 @@ const WEB_AI = {
   claude: { url: 'https://claude.ai/new', partition: 'ai-claude' },
   openai: { url: 'https://chatgpt.com/', partition: 'ai-openai' },
   gemini: { url: 'https://gemini.google.com/app', partition: 'ai-gemini' },
+  deepseek: { url: 'https://chat.deepseek.com/', partition: 'ai-deepseek' },
 };
 
 /** Wires every call a page can make. A call from anything that is not one of our own windows is ignored. */

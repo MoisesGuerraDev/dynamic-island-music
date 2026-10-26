@@ -7,6 +7,7 @@ import WebKit
 final class AIWebStore: NSObject, WKNavigationDelegate, WKUIDelegate {
     static let shared = AIWebStore()
     private var views: [AIProvider: WKWebView] = [:]
+    private var popups: [ObjectIdentifier: NSPanel] = [:]
 
     private static let userAgent =
         "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Safari/605.1.15"
@@ -52,11 +53,35 @@ final class AIWebStore: NSObject, WKNavigationDelegate, WKUIDelegate {
 
     // MARK: Delegates
 
-    /// Pop-ups (for example the Google sign-in window) open in the same view instead of a new window.
+    /// Pop-ups (the Google sign-in window, for example) open in their own small window, like in a browser. They must be
+    /// a real child of the page that opened them: the site talks to it to finish signing in.
     func webView(_ webView: WKWebView, createWebViewWith configuration: WKWebViewConfiguration,
                  for navigationAction: WKNavigationAction, windowFeatures: WKWindowFeatures) -> WKWebView? {
-        if let url = navigationAction.request.url { webView.load(URLRequest(url: url)) }
-        return nil
+        let width = max(420, min(windowFeatures.width?.doubleValue ?? 480, 720))
+        let height = max(560, min(windowFeatures.height?.doubleValue ?? 680, 900))
+        let popup = WKWebView(frame: NSRect(x: 0, y: 0, width: width, height: height), configuration: configuration)
+        popup.customUserAgent = Self.userAgent
+        popup.navigationDelegate = self
+        popup.uiDelegate = self
+
+        let panel = NSPanel(
+            contentRect: NSRect(x: 0, y: 0, width: width, height: height),
+            styleMask: [.titled, .closable, .resizable, .utilityWindow],
+            backing: .buffered, defer: false)
+        panel.title = "Iniciar sesión"
+        panel.contentView = popup
+        panel.isReleasedWhenClosed = false
+        // Above the notch, which floats over everything.
+        panel.level = NSWindow.Level(rawValue: NSWindow.Level.mainMenu.rawValue + 8)
+        panel.hidesOnDeactivate = false
+        panel.center()
+        panel.makeKeyAndOrderFront(nil)
+        popups[ObjectIdentifier(popup)] = panel
+        return popup
+    }
+
+    func webViewDidClose(_ webView: WKWebView) {
+        if let panel = popups.removeValue(forKey: ObjectIdentifier(webView)) { panel.close() }
     }
 
     func webView(_ webView: WKWebView, decidePolicyFor navigationAction: WKNavigationAction,

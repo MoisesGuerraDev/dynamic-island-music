@@ -15,8 +15,9 @@
     "test": "node --test \"test/unit/*.test.mjs\"",
     "test:e2e": "node test/e2e/run.mjs",
     "icons": "scripts/make-icons.sh",
-    "dist": "electron-builder --win nsis --x64 --publish never",
-    "pack": "electron-builder --win --x64 --dir --publish never"
+    "dist": "electron-builder --win nsis zip --x64 --publish never",
+    "pack": "electron-builder --win dir --x64 --publish never -c.win.signAndEditExecutable=false",
+    "dist:mac": "electron-builder --win nsis zip --x64 --publish never -c.win.signAndEditExecutable=false"
   },
   "devDependencies": {
     "electron": "^45.0.0",

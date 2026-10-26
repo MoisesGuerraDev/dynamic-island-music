@@ -167,11 +167,12 @@ struct AmbientLight: View {
     @ObservedObject var pointer = PointerLight.shared
     @ObservedObject var music = MusicManager.shared
     @Default(.glowStyle) var style
+    @Default(.glowIntensity) var intensity
 
     var body: some View {
         GeometryReader { g in
             let c = Color(nsColor: music.glowColor)
-            let strength: Double = (style == .strong ? 1.0 : 0.9) * (music.isPlaying ? 1 : 0.55)
+            let strength: Double = min(1, (style == .strong ? 1.0 : 0.9) * intensity) * (music.isPlaying ? 1 : 0.6)
             let p = pointer.point
             let px = ((p?.x ?? g.size.width / 2) - g.size.width / 2) * 0.07
             let py = ((p?.y ?? g.size.height / 2) - g.size.height / 2) * 0.07
@@ -197,6 +198,7 @@ struct AmbientLight: View {
                         .transition(.opacity)
                 }
             }
+            .saturation(1 + 0.45 * max(0, intensity - 1))
             .animation(.interactiveSpring(response: 0.28, dampingFraction: 0.85), value: p)
             .animation(.smooth(duration: 0.6), value: music.glowColor)
         }

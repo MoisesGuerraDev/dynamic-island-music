@@ -210,6 +210,8 @@ struct ComponentsSettings: View {
 
 struct GlassSettings: View {
     @Default(.glowStyle) var glowStyle
+    @Default(.glowIntensity) var glowIntensity
+    @Default(.glassAmount) var glassAmount
     @Default(.liquidGlassButtons) var glassButtons
 
     var body: some View {
@@ -225,7 +227,35 @@ struct GlassSettings: View {
                 Text("El estilo lo eliges tú, pero el color siempre sale de la carátula de la canción que suena: si la portada es roja, el brillo es rojo.")
             }
             Section {
-                Defaults.Toggle("Notch de vidrio transparente", key: .glassNotch)
+                HStack {
+                    Text("Intensidad del color")
+                    Slider(value: $glowIntensity, in: 0.4...2, step: 0.05)
+                    Text("\(Int(glowIntensity * 100)) %").font(.system(.body, design: .monospaced)).frame(width: 60)
+                }
+            } header: {
+                Text("Color")
+            } footer: {
+                Text("Qué tan fuerte brilla el color de la carátula alrededor del notch y detrás de los botones.")
+            }
+            Section {
+                HStack {
+                    Text("Negro")
+                    Slider(value: $glassAmount, in: 0...1, step: 0.05)
+                    Text("Vidrio")
+                }
+                HStack {
+                    Button("Negro total") { glassAmount = 0 }
+                    Button("Vidrio suave") { glassAmount = 0.5 }
+                    Button("Todo vidrio") { glassAmount = 1 }
+                    Spacer()
+                    Text("\(Int(glassAmount * 100)) %").font(.system(.body, design: .monospaced))
+                }
+            } header: {
+                Text("Fondo del notch")
+            } footer: {
+                Text("Con 0 % el notch es negro total, como el de la maqueta. Súbelo para que se vea a través, con vidrio.")
+            }
+            Section {
                 Defaults.Toggle("Botones de vidrio", key: .liquidGlassButtons)
                 Defaults.Toggle("Usar el Liquid Glass del sistema (macOS 26)", key: .liquidGlassSystem)
             } header: {
@@ -515,6 +545,8 @@ struct PerformanceSettings: View {
 // MARK: - Screen and computer
 
 struct DisplaySettings: View {
+    @Default(.fitMenuBar) var fitMenuBar
+    @ObservedObject var menuSpace = MenuBarSpace.shared
     @Default(.islandOffsetX) var offsetX
     @Default(.manualSize) var manual
     @Default(.manualOpenWidth) var manualWidth
@@ -546,6 +578,25 @@ struct DisplaySettings: View {
                 } header: {
                     Text(s.name)
                 }
+            }
+
+            Section {
+                Defaults.Toggle("Acomodarse a los íconos de la barra de menú", key: .fitMenuBar)
+                LabeledContent("Espacio libre a la izquierda") {
+                    Text(menuSpace.left.map { "\(Int($0)) pt" } ?? "Sin medir")
+                }
+                LabeledContent("Espacio libre a la derecha") {
+                    Text(menuSpace.right.map { "\(Int($0)) pt" } ?? "Sin medir")
+                }
+                if menuSpace.left == nil {
+                    Button("Permitir leer los menús de las apps (Accesibilidad)") {
+                        XPCHelperClient.shared.requestAccessibilityAuthorization()
+                    }
+                }
+            } header: {
+                Text("Barra de menú")
+            } footer: {
+                Text("Con el notch cerrado, la isla ocupa solo el espacio libre al lado del notch para no tapar los menús ni los íconos de arriba. Cuando se mueven, se ajusta sola y se queda en el centro. Si no cabe nada, se queda del tamaño del notch. Para medir el lado izquierdo (los menús de la app que usas) macOS pide el permiso de Accesibilidad.")
             }
 
             if NSScreen.main?.safeAreaInsets.top == 0 {

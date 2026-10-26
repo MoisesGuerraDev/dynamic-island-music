@@ -43,6 +43,8 @@ extension Notification.Name {
 
 // Media controller types for selection in settings
 enum MediaControllerType: String, CaseIterable, Identifiable, Defaults.Serializable {
+    /// Follows what is playing: the system's Now Playing, but Apple Music or Spotify take over while they play.
+    case automatic = "Automático"
     case nowPlaying = "Now Playing"
     case appleMusic = "Apple Music"
     case spotify = "Spotify"
@@ -191,7 +193,7 @@ extension Defaults.Keys {
         if MusicManager.shared.isNowPlayingDeprecated {
             return .appleMusic
         } else {
-            return .nowPlaying
+            return .automatic
         }
     }
 

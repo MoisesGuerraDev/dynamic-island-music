@@ -27,7 +27,8 @@ struct ContentView: View {
     @ObservedObject var pomodoro = PomodoroManager.shared
     @ObservedObject var clipboard = ClipboardManager.shared
     @Default(.glowStyle) var glowStyle
-    @Default(.glassNotch) var glassNotch
+    @Default(.glassAmount) var glassAmount
+    @Default(.glowIntensity) var glowIntensity
     @Default(.livePomodoro) var livePomodoro
     @Default(.liveControls) var liveControls
     @Default(.livePerformance) var livePerformance
@@ -122,15 +123,16 @@ struct ContentView: View {
                     .background {
                         ZStack {
                             Color.black
-                            if glassNotch && vm.notchState == .open {
+                            if glassAmount > 0.02 && vm.notchState == .open {
                                 // Full glass: the desktop shows through, blurred, under a dark tint that is solid at the top.
                                 VisualEffectView(material: .hudWindow, blendingMode: .behindWindow)
+                                    .opacity(glassAmount)
                                     .transition(.opacity)
                                 LinearGradient(
                                     stops: [
                                         .init(color: .black, location: 0),
-                                        .init(color: .black.opacity(0.92), location: 0.2),
-                                        .init(color: .black.opacity(0.76), location: 1),
+                                        .init(color: .black.opacity(1 - 0.12 * glassAmount), location: 0.2),
+                                        .init(color: .black.opacity(1 - 0.55 * glassAmount), location: 1),
                                     ],
                                     startPoint: .top, endPoint: .bottom)
                             }
@@ -153,7 +155,7 @@ struct ContentView: View {
                             .padding(.horizontal, topCornerRadius)
                     }
                     .overlay {
-                        if glassNotch && vm.notchState == .open {
+                        if glassAmount > 0.02 && vm.notchState == .open {
                             // Liquid glass edge: soft inner glow, sheen on top and a bright rim that fades toward the cover color.
                             ZStack {
                                 currentNotchShape
@@ -178,7 +180,7 @@ struct ContentView: View {
                             currentNotchShape
                                 .stroke(
                                     LinearGradient(
-                                        colors: [.white.opacity(0.28), Color(nsColor: musicManager.glowColor).opacity(glowStyle == .strong ? 0.95 : 0.6)],
+                                        colors: [.white.opacity(0.28), Color(nsColor: musicManager.glowColor).opacity(min(1, (glowStyle == .strong ? 0.95 : 0.7) * glowIntensity))],
                                         startPoint: .top, endPoint: .bottom),
                                     lineWidth: 1)
                                 .allowsHitTesting(false)
@@ -190,8 +192,8 @@ struct ContentView: View {
                     )
                     .shadow(
                         color: (glowStyle != .off && (vm.notchState == .open || musicManager.isPlaying))
-                            ? Color(nsColor: musicManager.glowColor).opacity(glowStyle == .strong ? 0.55 : 0.3) : .clear,
-                        radius: glowStyle == .strong ? 22 : 12, y: 6
+                            ? Color(nsColor: musicManager.glowColor).opacity(min(1, (glowStyle == .strong ? 0.55 : 0.32) * glowIntensity)) : .clear,
+                        radius: (glowStyle == .strong ? 22 : 12) * min(1.6, max(0.8, glowIntensity)), y: 6
                     )
                     .padding(
                         .bottom,

@@ -34,6 +34,15 @@ export const AI_META = {
   custom: { name: 'Otra IA', letter: '+', color: '#a78bfa', model: '', needsKey: true },
 };
 
+/** AIs used by signing in with the person's own account, inside the island (no API key). */
+export const WEB_AI = ['claude', 'openai', 'gemini', 'deepseek'];
+export const WEB_AI_META = {
+  claude: { name: 'Claude', letter: 'C', color: '#d97757', url: 'https://claude.ai/new' },
+  openai: { name: 'ChatGPT', letter: 'G', color: '#10a37f', url: 'https://chatgpt.com/' },
+  gemini: { name: 'Gemini', letter: 'Ge', color: '#4285f4', url: 'https://gemini.google.com/app' },
+  deepseek: { name: 'DeepSeek', letter: 'D', color: '#4d6bfe', url: 'https://chat.deepseek.com/' },
+};
+
 export const POMO_SOUNDS = ['Campana', 'Cristal', 'Marimba', 'Pulso', 'Digital', 'Gong'];
 
 export const DEFAULTS = {
@@ -57,7 +66,8 @@ export const DEFAULTS = {
 
   // Style
   glowStyle: 'glass', // off | soft | strong | glass
-  panelOpacity: 78,
+  panelOpacity: 100, // 100 = all black, lower = more glass
+  glowIntensity: 80, // strength of the colored light from the cover
   glowColorMode: 'cover', // cover | custom
   glowColor: '#ff8a3d',
   liquidButtons: true,
@@ -104,7 +114,9 @@ export const DEFAULTS = {
   aiIncludeNowPlaying: false,
   ollamaUrl: 'http://localhost:11434',
   customBaseUrl: '',
-  aiOpenMode: 'mini', // mini | web
+  aiOpenMode: 'web', // web = sign in with your own account inside the island | mini = chat with your own API key
+  aiWebEnabled: { claude: true, openai: true, gemini: true, deepseek: true },
+  aiWebProvider: 'claude',
 
   // Clipboard
   clipEnabled: true,
@@ -165,6 +177,7 @@ export function clone(v) {
 export function normalizeSettings(raw) {
   const out = { ...clone(DEFAULTS), ...(raw && typeof raw === 'object' ? clone(raw) : {}) };
   out.aiEnabled = { ...DEFAULTS.aiEnabled, ...(out.aiEnabled || {}) };
+  out.aiWebEnabled = { ...DEFAULTS.aiWebEnabled, ...(out.aiWebEnabled || {}) };
   out.components = normalizeComponents(out.components);
   return out;
 }

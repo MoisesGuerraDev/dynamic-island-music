@@ -1,4 +1,4 @@
-import { BrowserWindow, screen, shell } from 'electron';
+import { BrowserWindow, screen, session, shell } from 'electron';
 import os from 'node:os';
 import { capWidth, displayKey } from '../shared/layout.js';
 
@@ -120,8 +120,10 @@ export class IslandManager {
         nodeIntegration: false,
         backgroundThrottling: false,
         spellcheck: false,
+        webviewTag: true, // the AI tab shows the official site of Claude, ChatGPT, Gemini or DeepSeek
       },
     });
+    guardWebviews(win.webContents);
     win.setAlwaysOnTop(true, 'screen-saver');
     try {
       win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true, skipTransformProcessType: true });
@@ -381,7 +383,7 @@ export class IslandManager {
   // --- AI sites in their own window (use your own account in the browser, no API key) ---
 
   openWeb(url, partition) {
-    if (!/^https:\/\/(claude\.ai|chatgpt\.com|gemini\.google\.com)\//.test(url)) return;
+    if (!WEB_AI_URL.test(url)) return;
     const win = new BrowserWindow({
       width: 460,
       height: 720,
@@ -396,6 +398,41 @@ export class IslandManager {
     });
     win.loadURL(url);
   }
+}
+
+const WEB_AI_URL = /^https:\/\/(claude\.ai|chatgpt\.com|gemini\.google\.com|chat\.deepseek\.com)\//;
+
+/**
+ * The AI tab embeds the official site in a <webview>. It gets its own saved session per site (so you sign in once,
+ * also with Google), no access to Node or to our API, a normal Chrome identity so sign-in pages accept it,
+ * and no permissions (camera, microphone, location...). Only the four known sites can be attached.
+ */
+function guardWebviews(host) {
+  host.on('will-attach-webview', (event, webPreferences, params) => {
+    delete webPreferences.preload;
+    delete webPreferences.preloadURL;
+    webPreferences.nodeIntegration = false;
+    webPreferences.contextIsolation = true;
+    webPreferences.sandbox = true;
+    webPreferences.webSecurity = true;
+    if (!WEB_AI_URL.test(String(params.src)) || !String(params.partition).startsWith('persist:ai-')) event.preventDefault();
+  });
+  host.on('did-attach-webview', (_event, guest) => {
+    const ses = guest.session;
+    if (!ses.__dimGuarded) {
+      ses.__dimGuarded = true;
+      ses.setPermissionRequestHandler((_wc, _permission, cb) => cb(false));
+      ses.setPermissionCheckHandler(() => false);
+      ses.setUserAgent(ses.getUserAgent().replace(/ Electron\/\S+/, '').replace(/ dynamic-island-music\/\S+/i, '').replace(/ Dynamic Island Music\/\S+/i, ''));
+    }
+    guest.setWindowOpenHandler(({ url }) => {
+      // "Continue with Google" opens a small sign-in window: allow https ones, same saved session.
+      if (/^https:\/\//i.test(url)) {
+        return { action: 'allow', overrideBrowserWindowOptions: { width: 520, height: 700, autoHideMenuBar: true, backgroundColor: '#101218', webPreferences: { sandbox: true, contextIsolation: true, nodeIntegration: false } } };
+      }
+      return { action: 'deny' };
+    });
+  });
 }
 
 /** No page of ours may navigate away or open windows: links go to the system browser. */

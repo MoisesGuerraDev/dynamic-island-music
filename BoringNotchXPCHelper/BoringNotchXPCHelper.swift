@@ -16,6 +16,43 @@ class BoringNotchXPCHelper: NSObject, BoringNotchXPCHelperProtocol {
         reply(AXIsProcessTrusted())
     }
 
+    @objc func menuBarGaps(notchLeft: Double, notchRight: Double, screenLeft: Double, screenRight: Double, y: Double,
+                           with reply: @escaping (NSNumber?, NSNumber?) -> Void) {
+        guard AXIsProcessTrusted() else { reply(nil, nil); return }
+        let system = AXUIElementCreateSystemWide()
+        AXUIElementSetMessagingTimeout(system, 0.15)
+
+        /// The menu title or status icon at this x, if there is one: its horizontal extent.
+        func item(at x: Double) -> (minX: Double, maxX: Double)? {
+            var found: AXUIElement?
+            guard AXUIElementCopyElementAtPosition(system, Float(x), Float(y), &found) == .success, let found else { return nil }
+            var role: CFTypeRef?
+            guard AXUIElementCopyAttributeValue(found, kAXRoleAttribute as CFString, &role) == .success,
+                  (role as? String) == kAXMenuBarItemRole as String else { return nil }
+            var p: CFTypeRef?, s: CFTypeRef?
+            guard AXUIElementCopyAttributeValue(found, kAXPositionAttribute as CFString, &p) == .success,
+                  AXUIElementCopyAttributeValue(found, kAXSizeAttribute as CFString, &s) == .success,
+                  let p, let s else { return nil }
+            var point = CGPoint.zero, size = CGSize.zero
+            guard AXValueGetValue(p as! AXValue, .cgPoint, &point), AXValueGetValue(s as! AXValue, .cgSize, &size) else { return nil }
+            return (Double(point.x), Double(point.x + size.width))
+        }
+
+        var rightGap = screenRight - notchRight
+        var x = notchRight + 3
+        while x < screenRight {
+            if let hit = item(at: x) { rightGap = max(0, hit.minX - notchRight); break }
+            x += 5
+        }
+        var leftGap = notchLeft - screenLeft
+        x = notchLeft - 3
+        while x > screenLeft {
+            if let hit = item(at: x) { leftGap = max(0, notchLeft - hit.maxX); break }
+            x -= 5
+        }
+        reply(NSNumber(value: leftGap), NSNumber(value: rightGap))
+    }
+
     @objc func requestAccessibilityAuthorization() {
         let options: CFDictionary = [kAXTrustedCheckOptionPrompt.takeUnretainedValue() as String: true] as CFDictionary
         _ = AXIsProcessTrustedWithOptions(options)

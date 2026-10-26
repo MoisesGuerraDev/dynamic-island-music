@@ -547,13 +547,14 @@ struct AISettings: View {
             }
 
             Section {
+                Defaults.Toggle("Pedir la huella (Touch ID) para abrir el chat de IA", key: .aiTouchID)
                 Button("Cerrar sesión en todas las IA", role: .destructive) { AIWebStore.shared.clearSessions() }
                 Toggle("Guardar el historial del chat con clave en este Mac", isOn: $saveHistory)
                 Button("Borrar el historial ahora", role: .destructive) { chat.clear() }
             } header: {
                 Text("Privacidad")
             } footer: {
-                Text("Inicias sesión en la página oficial de cada IA, dentro del notch. Tu contraseña no pasa por esta app y la sesión queda guardada solo en tu Mac. Si el inicio de sesión no avanza, usa el botón de la brújula para abrirlo en tu navegador.")
+                Text("Inicias sesión en la página oficial de cada IA, dentro del notch. Tu contraseña no pasa por esta app y la sesión queda guardada solo en tu Mac, así que lo haces una sola vez. La huella protege que nadie abra tu chat; macOS no permite las llaves de acceso dentro de una app como esta. Si el inicio de sesión no avanza, usa el botón de la brújula para abrirlo en tu navegador.")
             }
         }
         .onAppear {

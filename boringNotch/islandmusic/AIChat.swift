@@ -228,11 +228,25 @@ final class AIChatManager: ObservableObject {
 
 /// Chat tab of the notch.
 struct ChatTabView: View {
+    @ObservedObject var lock = AILock.shared
     @ObservedObject var chat = AIChatManager.shared
     @State private var draft = ""
     @FocusState private var focused: Bool
 
     var body: some View {
+        if lock.required && !lock.unlocked {
+            AILockView()
+                .onAppear {
+                    #if DEBUG
+                    lock.debugLog("lock view shown")
+                    #endif
+                }
+        } else {
+            content
+        }
+    }
+
+    private var content: some View {
         VStack(spacing: 8) {
             HStack(spacing: 8) {
                 HStack(spacing: 2) {

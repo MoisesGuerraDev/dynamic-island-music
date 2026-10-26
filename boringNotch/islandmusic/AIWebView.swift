@@ -77,11 +77,31 @@ final class AIWebStore: NSObject, WKNavigationDelegate, WKUIDelegate, Observable
                                      "anthropic.com", "claude.ai", "deepseek.com", "gstatic.com", "recaptcha.net",
                                      "cloudflare.com", "auth0.com", "github.com"]
 
+    /// Passkeys (WebAuthn) need a real browser: inside the notch Google would start the "use your phone / Bluetooth" flow and
+    /// fail with an error. Hiding them makes Google (and the AI sites) fall back to the normal password and code sign-in.
+    private static let withoutPasskeys = """
+    (function () {
+      try { Object.defineProperty(window, 'PublicKeyCredential', { value: undefined, configurable: true, writable: true }); } catch (e) {}
+      try {
+        var creds = navigator.credentials;
+        if (creds) {
+          var get = creds.get ? creds.get.bind(creds) : null;
+          var create = creds.create ? creds.create.bind(creds) : null;
+          var block = function () { return Promise.reject(new DOMException('The operation is not allowed.', 'NotAllowedError')); };
+          creds.get = function (o) { return (o && o.publicKey) ? block() : (get ? get(o) : block()); };
+          creds.create = function (o) { return (o && o.publicKey) ? block() : (create ? create(o) : block()); };
+        }
+      } catch (e) {}
+    })();
+    """
+
     func view(for provider: AIProvider) -> WKWebView {
         if let existing = views[provider] { return existing }
         let config = WKWebViewConfiguration()
         config.websiteDataStore = .default()
         config.preferences.javaScriptCanOpenWindowsAutomatically = true
+        config.userContentController.addUserScript(
+            WKUserScript(source: Self.withoutPasskeys, injectionTime: .atDocumentStart, forMainFrameOnly: false))
         let web = FocusWebView(frame: .zero, configuration: config)
         web.customUserAgent = Self.userAgent
         web.navigationDelegate = self
@@ -98,7 +118,7 @@ final class AIWebStore: NSObject, WKNavigationDelegate, WKUIDelegate, Observable
     /// Test hook: writes what the current AI page shows (and whether it has keyboard focus) to a file.
     func debugProbe() {
         let web = view(for: AIChatManager.shared.provider)
-        let js = "JSON.stringify({url: location.href, title: document.title, focus: document.hasFocus(), active: document.activeElement ? document.activeElement.tagName + '#' + (document.activeElement.id || '') : '', typed: document.activeElement && (document.activeElement.value || document.activeElement.innerText) ? String(document.activeElement.value || document.activeElement.innerText).slice(0, 40) : '', text: (document.body ? document.body.innerText : '').replace(/\\s+/g, ' ').slice(0, 300)})"
+        let js = "JSON.stringify({url: location.href, title: document.title, focus: document.hasFocus(), passkeys: typeof PublicKeyCredential, active: document.activeElement ? document.activeElement.tagName + '#' + (document.activeElement.id || '') : '', typed: document.activeElement && (document.activeElement.value || document.activeElement.innerText) ? String(document.activeElement.value || document.activeElement.innerText).slice(0, 40) : '', text: (document.body ? document.body.innerText : '').replace(/\\s+/g, ' ').slice(0, 300)})"
         let panels = NSApp.windows.compactMap { $0 as? BoringNotchSkyLightWindow }
         let native = panels.map { "key=\($0.isKeyWindow) canKey=\($0.canBecomeKey) first=\(String(describing: $0.firstResponder.map { type(of: $0) })) wkInWindow=\(web.window === $0)" }.joined(separator: "; ")
         let appState = "appActive=\(NSApp.isActive) wantsKey=\(KeyboardFocus.shared.wantsKey) loading=\(web.isLoading) progress=\(Int(web.estimatedProgress * 100)) nativeURL=\(web.url?.absoluteString ?? "nil") title=\(web.title ?? "")"

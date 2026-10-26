@@ -49,7 +49,7 @@ enum IslandComponent: String, Codable, CaseIterable, Identifiable, Defaults.Seri
         case .clipboard: 190
         case .shelf: 190
         case .game: 150
-        case .performance: 170
+        case .performance: 130
         }
     }
 
@@ -64,7 +64,7 @@ enum IslandComponent: String, Codable, CaseIterable, Identifiable, Defaults.Seri
         case .clipboard: 160
         case .shelf: 160
         case .game: 120
-        case .performance: 150
+        case .performance: 110
         }
     }
 
@@ -164,6 +164,8 @@ extension Defaults.Keys {
     static let uiScale = Key<Double>("uiScale", default: 1.0)
     /// Horizontal offset of the island from the screen center, only for Macs without a notch (with a notch it stays over it).
     static let islandOffsetX = Key<Double>("islandOffsetX", default: 0)
+    /// Rendimiento stays small and dimmed until the pointer is over it, so people looking at the screen do not read it.
+    static let perfDiscreet = Key<Bool>("perfDiscreet", default: true)
     /// Look up the official HD cover when the player only gives a tiny picture (browser videos).
     static let artworkHD = Key<Bool>("artworkHD", default: true)
     /// How strong the cover color is around the notch (1 = normal).

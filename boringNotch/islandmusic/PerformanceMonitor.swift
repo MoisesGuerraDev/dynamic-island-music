@@ -121,22 +121,24 @@ struct PerformanceComponentView: View {
     @Default(.perfShowRAM) var showRAM
     @Default(.perfShowRefresh) var showHz
     @Default(.perfShowThermal) var showThermal
+    @Default(.perfDiscreet) var discreet
+    @State private var hovering = false
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 6) {
+        VStack(alignment: .leading, spacing: discreet ? 3 : 6) {
             HStack {
-                Label("Rendimiento", systemImage: "bolt").font(.system(size: 12, weight: .semibold))
+                Label("Rendimiento", systemImage: "bolt").font(.system(size: discreet ? 10 : 12, weight: .semibold))
                 Spacer(minLength: 0)
                 if showHz {
-                    Text("\(perf.refreshHz) Hz").font(.system(size: 10, weight: .semibold, design: .monospaced))
-                        .padding(.horizontal, 7).padding(.vertical, 3).islandGlass(Capsule(), interactive: false)
+                    Text("\(perf.refreshHz) Hz").font(.system(size: discreet ? 8.5 : 10, weight: .semibold, design: .monospaced))
+                        .padding(.horizontal, 6).padding(.vertical, 2).islandGlass(Capsule(), interactive: false)
                 }
             }
             if showCPU { bar("CPU", perf.cpu, "\(Int(perf.cpu * 100))%") }
             if showGPU, let g = perf.gpu { bar("GPU", g, "\(Int(g * 100))%") }
             if showRAM { bar("RAM", perf.ramPercent, String(format: "%.1f GB", perf.ramUsedGB)) }
             if showThermal {
-                Text("Temperatura: \(perf.thermal)").font(.system(size: 10.5)).foregroundStyle(.gray)
+                Text("Temperatura: \(perf.thermal)").font(.system(size: discreet ? 9 : 10.5)).foregroundStyle(.gray)
             }
             if !showCPU && !showGPU && !showRAM && !showThermal && !showHz {
                 Text("Nada que mostrar. Actívalo en Ajustes › Rendimiento.").font(.system(size: 11)).foregroundStyle(.gray)
@@ -145,13 +147,17 @@ struct PerformanceComponentView: View {
         }
         .padding(.top, 8)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+        // Discreet: small and dim, clear only while the pointer is over it.
+        .opacity(discreet && !hovering ? 0.38 : 1)
+        .animation(.easeOut(duration: 0.2), value: hovering)
+        .onHover { hovering = $0 }
         .onAppear { perf.acquire() }
         .onDisappear { perf.release() }
     }
 
     private func bar(_ name: String, _ value: Double, _ label: String) -> some View {
         HStack(spacing: 6) {
-            Text(name).font(.system(size: 10.5, weight: .medium)).foregroundStyle(.gray).frame(width: 30, alignment: .leading)
+            Text(name).font(.system(size: discreet ? 9 : 10.5, weight: .medium)).foregroundStyle(.gray).frame(width: discreet ? 24 : 30, alignment: .leading)
             GeometryReader { g in
                 ZStack(alignment: .leading) {
                     Capsule().fill(Color.white.opacity(0.14))
@@ -159,8 +165,8 @@ struct PerformanceComponentView: View {
                         .frame(width: max(3, g.size.width * min(1, value)))
                 }
             }
-            .frame(height: 5)
-            Text(label).font(.system(size: 10.5, weight: .semibold, design: .monospaced)).frame(width: 46, alignment: .trailing)
+            .frame(height: discreet ? 3 : 5)
+            Text(label).font(.system(size: discreet ? 9 : 10.5, weight: .semibold, design: .monospaced)).frame(width: discreet ? 40 : 46, alignment: .trailing)
         }
     }
 }

@@ -635,6 +635,7 @@ struct PerformanceSettings: View {
                 Defaults.Toggle("Memoria (RAM)", key: .perfShowRAM)
                 Defaults.Toggle("Frecuencia de la pantalla (Hz)", key: .perfShowRefresh)
                 Defaults.Toggle("Estado térmico", key: .perfShowThermal)
+                Defaults.Toggle("Modo discreto: pequeño y apagado hasta que pasas el mouse", key: .perfDiscreet)
             } header: {
                 Text("Qué mostrar")
             } footer: {

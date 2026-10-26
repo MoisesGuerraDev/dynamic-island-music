@@ -550,6 +550,18 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         hook("dim.debug.ai.chatgpt") { AIChatManager.shared.provider = .openai }
         hook("dim.debug.ai.gemini") { AIChatManager.shared.provider = .gemini }
         hook("dim.debug.ai.deepseek") { AIChatManager.shared.provider = .deepseek }
+        hook("dim.debug.settings.performance") {
+            SettingsRouter.shared.requested = .performance
+            SettingsWindowController.shared.showWindow()
+        }
+        hook("dim.debug.perf.on") {
+            LayoutManager.shared.setEnabled(.camera, false)
+            LayoutManager.shared.setEnabled(.performance, true)
+        }
+        hook("dim.debug.perf.off") {
+            LayoutManager.shared.setEnabled(.performance, false)
+            LayoutManager.shared.setEnabled(.camera, true)
+        }
         hook("dim.debug.gap.small") { MenuBarSpace.shared.debugForce(gap: 10) }
         hook("dim.debug.gap.clear") { MenuBarSpace.shared.debugForce(gap: nil) }
     }

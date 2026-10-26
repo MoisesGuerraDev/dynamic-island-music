@@ -11,40 +11,18 @@
 
 ## Instalar
 
-### Mac: un comando y la app queda en tu escritorio
-
-Pega esto en la app **Terminal** (macOS 14 o más nuevo; el Liquid Glass completo necesita macOS 26):
+**Mac.** Pega esto en la app **Terminal** y pulsa Intro:
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/OWNER/REPO/main/install.sh | bash -s -- OWNER/REPO
 ```
 
-Descarga la última versión, comprueba su suma de verificación, la deja en tu **escritorio** y la abre. No usa `sudo` y **macOS no muestra ningún aviso**.
-Si prefieres Aplicaciones, agrega `--applications` al final.
+La app queda en tu escritorio y se abre sola. Sin avisos de macOS. (Necesita macOS 14 o más nuevo.)
 
-### Mac: compilarla tú desde el código (con Xcode)
+**Windows.** Baja `DynamicIslandMusic-Setup.exe` desde [Releases](../../releases/latest) y ábrelo. Se instala como cualquier programa.
+Si sale "Windows protegió tu PC": **Más información › Ejecutar de todas formas** (solo la primera vez).
 
-```bash
-git clone https://github.com/OWNER/REPO.git && cd REPO && ./build-mac.sh
-```
-
-Compila (unos 3 minutos la primera vez) y deja la app en el escritorio. Sirve aunque todavía no haya una versión publicada, y tampoco muestra avisos: la compilaste tú en tu Mac.
-
-> **¿Por qué no es un `.dmg` de doble clic?** Apple solo quita el aviso a las apps firmadas con una cuenta de desarrollador de pago (US$99 al año) y este proyecto es gratuito.
-> Los comandos de arriba evitan el aviso. Si bajas el `.dmg` desde el navegador, ve a *Ajustes del Sistema › Privacidad y seguridad › Abrir de todos modos*, solo la primera vez.
-> Paso a paso y soluciones: [INSTALAR.md](INSTALAR.md).
-
-### Windows: se instala como cualquier programa
-
-Instalador de un clic: baja `DynamicIslandMusic-Setup.exe` desde [Releases](../../releases/latest) (si sale "Windows protegió tu PC": *Más información › Ejecutar de todas formas*). Queda en el menú Inicio, con desinstalador.
-
-O con una línea en PowerShell (no pide administrador y SmartScreen no avisa):
-
-```powershell
-$env:DIM_REPO = 'OWNER/REPO'; irm https://raw.githubusercontent.com/OWNER/REPO/main/windows/install.ps1 | iex
-```
-
-También hay un `.zip` portátil (`DynamicIslandMusic-Windows-x64.zip`). Windows 10 u 11, 64 bits. Es una isla flotante arriba y al centro (Electron), con lo mismo que la de Mac. Guía de pruebas: [windows/PROBAR-EN-WINDOWS.md](windows/PROBAR-EN-WINDOWS.md).
+Más opciones y soluciones: [INSTALAR.md](INSTALAR.md).
 
 ## Qué trae
 

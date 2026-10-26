@@ -239,8 +239,8 @@ function keepFocus(fn) {
 function setWidth(px) {
   const st = $('#stage').style;
   st.setProperty('--w', `${Math.round(px)}px`);
-  // The island keeps its size (1077 x 187 at 100 %); on a narrow screen it is drawn smaller, never over 75 % of the width.
-  st.setProperty('--ui', uiScaleFor(px, S.info.cap, S.set.uiSize).toFixed(3));
+  // One uniform scale for everything: automatic from the screen (main process) times the chosen size, never over 75 % of the width.
+  st.setProperty('--ui', uiScaleFor(px, S.info.cap, S.set.uiSize, S.info.auto).toFixed(3));
 }
 
 /** The halo copies the height of the island (its width follows the same --w). */
@@ -567,8 +567,8 @@ function reportRect() {
       r = { x: x1, y: y1, w: x2 - x1, h: y2 - y1 };
     }
   } else if (!pill.classList.contains('off')) {
-    const b = pill.getBoundingClientRect();
-    r = { x: b.left, y: b.top, w: b.width, h: b.height };
+    // Layout values times the scale (a transition in progress must not change what is reported).
+    r = { x: pill.offsetLeft - (pill.offsetWidth * ui) / 2, y: pill.offsetTop, w: pill.offsetWidth * ui, h: pill.offsetHeight * ui };
   }
   dim.island.reportRect(r);
 }

@@ -1,6 +1,6 @@
 import { app, BrowserWindow, screen, session, shell } from 'electron';
 import os from 'node:os';
-import { capWidth, displayKey } from '../shared/layout.js';
+import { capWidth, displayKey, autoScale } from '../shared/layout.js';
 import { AI_PARTITION } from '../shared/cookies.js';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -8,7 +8,6 @@ import { fileURLToPath } from 'node:url';
 const AI_GUEST_PRELOAD = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'preload', 'ai-guest.cjs');
 
 const PAD_X = 70; // room for the glow and shadow at each side of the island
-const WIN_H = 560; // tall enough for the island at its biggest size, its edit bar, the lights panel and the glow
 // In automated tests no window is ever shown (nothing appears on the person's screen) and nothing takes the keyboard.
 const HEADLESS = process.env.DIM_TEST === '1' && process.env.DIM_SHOW !== '1' && !app.isPackaged;
 
@@ -36,6 +35,7 @@ export class IslandManager {
     this.settingsWin = null;
     this.onFirstLoad = onFirstLoad;
     this.hiddenByUser = false;
+    this.fake = null;
     this.onClosed = null; // called whenever an island closes (the AI chat lock locks again)
   }
 
@@ -68,11 +68,34 @@ export class IslandManager {
     return [primary];
   }
 
+  /** Size of the screen the island is drawn for. Tests can pretend to have another one (simulate). */
+  #screenSize(display) {
+    if (this.fake) return { w: this.fake.w, h: this.fake.h, workW: this.fake.w, workH: this.fake.h };
+    return { w: display.bounds.width, h: display.bounds.height, workW: display.workAreaSize.width, workH: display.workAreaSize.height };
+  }
+
+  /** Automatic scale from the work area in device-independent pixels (already includes the Windows scaling). */
+  autoFor(display) {
+    const z = this.#screenSize(display);
+    return autoScale(z.workW, z.workH);
+  }
+
   #geometry(display) {
+    const z = this.#screenSize(display);
+    const cap = capWidth(z.w, this.store.get('manualSize'), this.store.get('manualOpenWidth'));
+    const auto = autoScale(z.workW, z.workH);
+    const pad = Math.round(PAD_X * Math.max(1, auto));
+    const width = Math.min(z.w, cap + 2 * pad);
+    // Tall enough for the island at its biggest size (Grande), its edit bar, the lights panel and the glow.
+    const height = Math.min(z.h, Math.round(this.store.get('topOffset') + 470 * auto * 1.2 + 110));
     const b = display.bounds;
-    const cap = capWidth(b.width, this.store.get('manualSize'), this.store.get('manualOpenWidth'));
-    const width = Math.min(b.width, cap + 2 * PAD_X);
-    return { x: b.x + Math.round((b.width - width) / 2), y: b.y, width, height: WIN_H, cap };
+    return { x: b.x + Math.round((b.width - width) / 2), y: b.y, width, height, cap };
+  }
+
+  /** For automated tests: behave as if the screen had this size (device-independent pixels). Call with no size to go back. */
+  simulate(w, h) {
+    this.fake = w && h ? { w, h } : null;
+    this.sync();
   }
 
   /** Creates, moves or removes island windows so they match the screens and the settings. */
@@ -175,11 +198,12 @@ export class IslandManager {
     return {
       displayKey: displayKey(d),
       displayId: d.id,
-      screenWidth: d.bounds.width,
-      screenHeight: d.bounds.height,
+      screenWidth: this.#screenSize(d).w,
+      screenHeight: this.#screenSize(d).h,
+      auto: this.autoFor(d),
       cap: isl.cap,
       winWidth: isl.win.getBounds().width,
-      winHeight: WIN_H,
+      winHeight: isl.win.getBounds().height,
       topOffset: this.store.get('topOffset'),
       open: isl.open,
       hz: d.displayFrequency || 60,

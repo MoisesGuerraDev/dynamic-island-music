@@ -449,7 +449,7 @@ button.ct:hover { background: rgba(255, 255, 255, .14); }
 .is-open .notch { transform: scale(var(--ui)); }
 .rim, .amb { border-radius: 20px 20px 34px 34px; }
 .halo { border-radius: 24px 24px 38px 38px; transform-origin: 50% 0; transform: scale(calc((1 + .05 * var(--pout)) * var(--ui))); }
-.gcard { top: calc(var(--top) + 36px); }
+.gcard { top: calc(var(--top) + 34px * var(--ui)); scale: var(--ui); transform-origin: 50% 0; }
 
 /* Strip of 40 px: tabs on the left, battery / sun / pencil / gear / close on the right, 25 px glass circles */
 .ntabs { height: 40px; margin-bottom: 0; }
@@ -512,7 +512,7 @@ button.ct:hover { background: rgba(255, 255, 255, .14); }
 .editbar { margin-top: 4px; padding: 5px 10px; }
 
 /* Closed island: compact symmetric pill of 28 px, cover on the left and waves / timer on the right */
-.pill-closed { height: 28px; border-radius: 14px; padding: 0 10px; font-size: 11px; border: 0; scale: var(--ui); }
+.pill-closed { height: 28px; border-radius: 14px; padding: 0 10px; font-size: 11px; border: 0; scale: var(--ui); transform-origin: 50% 0; }
 .is-open .pill-closed { scale: calc(1.4 * var(--ui)) calc(.5 * var(--ui)); }
 .pill-closed .mart { width: 18px; height: 18px; border-radius: 6px; }
 .pill-closed b.mono, .pill-closed .fps, .gcard b.mono, .gcard .fps { font-size: 12px; }

@@ -321,13 +321,40 @@ try {
   check('al cerrar sesión en todas las IA se borra también la copia', !fs.existsSync(copyFile));
   await page.waitForTimeout(700);
 
+  // The island is in proportion to every screen: automatic scale from the work area (simulated sizes, nothing shown).
+  const sims = [[1366, 768, 0.71], [1920, 1080, 1.0], [2560, 1440, 1.33], [3440, 1440, 1.54], [2560, 1440, 1.33]]; // the last one is 3840x2160 at 150 %
+  const settle = async () => { await page.waitForTimeout(750); };
+  const rectOf = () => app.evaluate(() => { const i = globalThis.__DIM__.islands.first(); return { r: i.rect, auto: globalThis.__DIM__.islands.autoFor(i.display) }; });
+  for (const [w, h, want] of sims) {
+    await app.evaluate((_e, [a, b]) => { const c = globalThis.__DIM__; const i = c.islands.first(); i.pins.add('toggle'); c.islands.setOpen(i, true); c.islands.simulate(a, b); }, [w, h]);
+    await settle();
+    const open = await rectOf();
+    const okOpen = Math.abs(open.auto - want) < 0.01 && Math.abs(open.r.w - 1077 * want) <= 3 && Math.abs(open.r.h - 187 * want) <= 2;
+    check(`pantalla ${w}×${h}: isla abierta ${Math.round(1077 * want)} × ${Math.round(187 * want)} px (escala ${want})`, okOpen, `escala ${open.auto.toFixed(3)} · ${Math.round(open.r.w)} × ${Math.round(open.r.h)}`);
+    await app.evaluate(() => { const c = globalThis.__DIM__; const i = c.islands.first(); i.pins.clear(); c.islands.setOpen(i, false); });
+    await settle();
+    const closed = await rectOf();
+    check(`pantalla ${w}×${h}: píldora cerrada de ${Math.round(28 * want)} px de alto (28 a escala 1.0)`, Math.abs(closed.r.h - 28 * want) <= 1.5, `${closed.r.h.toFixed(1)} px`);
+  }
+  // Size selector on top of the automatic scale (1920x1080: Chico 0.75, Grande 1.2).
+  await app.evaluate((_e) => { const c = globalThis.__DIM__; c.islands.simulate(1920, 1080); const i = c.islands.first(); i.pins.add('toggle'); c.islands.setOpen(i, true); c.store.set('uiSize', 'l'); });
+  await settle();
+  const big = await rectOf();
+  check('selector Grande: escala automática × 1.2', Math.abs(big.r.w - 1077 * 1.2 * big.auto) <= 3, `${Math.round(big.r.w)} px`);
+  await app.evaluate(() => { const c = globalThis.__DIM__; c.store.set('uiSize', 's'); });
+  await settle();
+  const small = await rectOf();
+  check('selector Chico: escala automática × 0.75', Math.abs(small.r.w - 1077 * 0.75 * small.auto) <= 3, `${Math.round(small.r.w)} px`);
+  await app.evaluate(() => { const c = globalThis.__DIM__; c.store.set('uiSize', 'm'); c.islands.simulate(null, null); const i = c.islands.first(); i.pins.add('toggle'); c.islands.setOpen(i, true); });
+  await settle();
+
   // Closed island: cover on the left, timer on the right, both sides the same width.
   await app.evaluate(() => { const c = globalThis.__DIM__; const i = c.islands.first(); i.pins.clear(); c.islands.setOpen(i, false); });
   await page.waitForTimeout(1200);
   const pill = await page.evaluate(() => {
     const p = document.getElementById('pill');
     const l = p.querySelector('.lside'), r = p.querySelector('.rside');
-    return { h: Math.round(p.getBoundingClientRect().height), off: p.classList.contains('off'), l: l && l.getBoundingClientRect().width, r: r && r.getBoundingClientRect().width, w: p.getBoundingClientRect().width, text: p.textContent.trim() };
+    return { h: p.offsetHeight, off: p.classList.contains('off'), l: l && l.getBoundingClientRect().width, r: r && r.getBoundingClientRect().width, w: p.getBoundingClientRect().width, text: p.textContent.trim() };
   });
   check('isla cerrada: píldora de 28 px con música y Pomodoro, lados simétricos', !pill.off && pill.h === 28 && pill.l > 0 && Math.abs(pill.l - pill.r) < 2, JSON.stringify(pill));
 
@@ -339,7 +366,7 @@ try {
   const rect0 = await app.evaluate(() => globalThis.__DIM__.islands.first().rect);
   const panelVisible = await page.evaluate(() => !document.getElementById('lightpanel').hidden);
   check('el botón del sol abre el panel de luces', panelVisible);
-  check('la zona clicable incluye el panel que cuelga de la isla', rect0.h > 300, JSON.stringify(rect0));
+  check('la zona clicable incluye el panel que cuelga de la isla', rect0.h > 220, JSON.stringify(rect0)); // the island alone is about 190 px high at this scale
   await page.click('#lightpanel [data-k="colorMode"][data-v="rainbow"]');
   await page.waitForTimeout(400);
   const rb1 = await page.evaluate(() => getComputedStyle(document.getElementById('notch')).getPropertyValue('--c1'));

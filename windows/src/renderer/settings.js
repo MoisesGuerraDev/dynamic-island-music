@@ -130,7 +130,7 @@ const TABS = [
     id: 'estilo', icon: 'eye', name: 'Estilo',
     build: () => [
       sec('Apariencia', [
-        SEL('uiSize', 'Tamaño de la isla', [['s', 'Chico (75 %)'], ['m', 'Mediano (100 %)'], ['l', 'Grande (120 %)']], 'Mediano mide 1077 × 187 px. En pantallas angostas se hace más chica sola: nunca pasa del 75 % del ancho.'),
+        SEL('uiSize', 'Tamaño de la isla', [['s', 'Chico (75 %)'], ['m', 'Mediano (100 %)'], ['l', 'Grande (120 %)']], 'La isla ya se adapta sola al tamaño de tu pantalla; esto la hace un poco más chica o más grande. A 1920 × 1080 y Mediano mide 1077 × 187 px.'),
         SEL('borderStyle', 'Contorno de la isla', [['none', 'Sin borde'], ['open', 'Solo abierta'], ['always', 'Siempre']], 'Sin borde: isla negra lisa y solo se ve el brillo de color alrededor'),
         T('colorsDance', 'Los colores bailan con la música', 'El brillo de color late al ritmo de la canción (un pulso simulado con el tempo de cada tema)'),
         SEL('glowStyle', 'Brillo alrededor (apagado = sin luz de afuera)', [['glass', 'Liquid Glass'], ['soft', 'Sutil'], ['strong', 'Fuerte'], ['off', 'Apagado']]),

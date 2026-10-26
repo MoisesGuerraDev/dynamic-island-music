@@ -12,13 +12,23 @@ export function capWidth(screenWidth, manual = false, manualWidth = 900) {
 }
 
 export const UI_SIZES = { s: 0.75, m: 1, l: 1.2 };
-export const MIN_UI = 0.75;
 export const MIN_ISLAND = 480;
+export const BASE_W = 1077; // the Mac island at scale 1.0
+export const BASE_H = 187;
 
-/** Scale the island is drawn at: the size the person chose, reduced if the screen is too narrow for it (never below 0.75). */
-export function uiScaleFor(contentWidth, cap, size = 'm') {
-  const want = UI_SIZES[size] ?? 1;
-  return Math.max(MIN_UI, Math.min(want, cap / Math.max(1, contentWidth)));
+/**
+ * Scale that makes the island look in proportion to the screen, from the work area in device-independent pixels
+ * (it already includes the Windows scaling). 1920x1080 gives 1.0; 1366x768 gives 0.71; 3440x1440 gives 1.54.
+ */
+export function autoScale(workW, workH) {
+  const k = Math.min((workW * 0.56) / BASE_W, (workH * 0.2) / BASE_H);
+  return Math.max(0.7, Math.min(1.7, k));
+}
+
+/** Final scale of the island: the automatic one times the size the person chose, never wider than `cap` px. */
+export function uiScaleFor(contentWidth, cap, size = 'm', auto = 1) {
+  const want = auto * (UI_SIZES[size] ?? 1);
+  return Math.max(0.4, Math.min(want, cap / Math.max(1, contentWidth)));
 }
 
 /** Splits the enabled components into pages that fit inside `cap`. */

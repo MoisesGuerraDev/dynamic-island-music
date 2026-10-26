@@ -1,10 +1,10 @@
 // Everything the island page knows. The main process owns the real data and pushes changes here.
 import { COMPONENT_META, AI_META, AI_PROVIDERS, DEFAULTS, WEB_AI, WEB_AI_META, normalizeComponents } from '../shared/defaults.js';
-import { paginate, MIN_UI } from '../shared/layout.js';
+import { paginate, UI_SIZES } from '../shared/layout.js';
 
 export const S = {
   set: JSON.parse(JSON.stringify(DEFAULTS)),
-  info: { cap: 900, displayKey: '', winWidth: 1040, topOffset: 10, screenWidth: 1440 },
+  info: { cap: 900, auto: 1, displayKey: '', winWidth: 1040, topOffset: 10, screenWidth: 1440 },
   open: false,
   view: 'home', // home | tray | game | clip | chat
   page: 0,
@@ -45,9 +45,14 @@ export function activeComps() {
   return comps().filter((c) => c.enabled);
 }
 
-/** Components that do not fit at the smallest size (0.75) go to another page; up to that they just shrink. */
+/** Scale of the island before the width cap: automatic (from the screen) times the chosen size. */
+export function userScale() {
+  return (S.info.auto || 1) * (UI_SIZES[S.set.uiSize] ?? 1);
+}
+
+/** What is left of the screen width, in island units: components that do not fit go to another page. */
 export function pages() {
-  return paginate(activeComps(), S.info.cap / MIN_UI);
+  return paginate(activeComps(), S.info.cap / userScale());
 }
 
 export function metaOf(id) {

@@ -654,8 +654,8 @@ struct CustomSlider: View {
 /// The cover swells a little with the beat.
 private struct CoverBeat: ViewModifier {
     let playing: Bool
-    @Default(.glowMotion) private var motion
-    @Default(.danceSize) private var danceSize
+    @Default(.innerMotion) private var motion
+    @Default(.innerDance) private var danceSize
 
     func body(content: Content) -> some View {
         TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: !(playing && motion))) { tl in

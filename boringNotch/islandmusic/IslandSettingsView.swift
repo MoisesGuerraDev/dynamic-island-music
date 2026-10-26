@@ -208,56 +208,66 @@ struct ComponentsSettings: View {
 
 // MARK: - Brillo y vidrio
 
-private enum DanceChoice: String, CaseIterable, Identifiable {
-    case off, small, medium, large
-    var id: String { rawValue }
-    var title: String {
-        switch self {
-        case .off: "Quieto"
-        case .small: "Chico"
-        case .medium: "Mediano"
-        case .large: "Grande"
+/// Quiet / small / medium / large, for how far the light dances.
+private struct DancePicker: View {
+    let title: String
+    @Binding var motion: Bool
+    @Binding var size: GlowSize
+
+    private var choice: Binding<String> {
+        Binding(
+            get: { motion ? size.rawValue : "off" },
+            set: { value in
+                if value == "off" { motion = false }
+                else if let new = GlowSize(rawValue: value) { motion = true; size = new }
+            })
+    }
+
+    var body: some View {
+        Picker(title, selection: choice) {
+            Text("Quieto").tag("off")
+            ForEach(GlowSize.allCases) { Text($0.title).tag($0.rawValue) }
+        }
+        .pickerStyle(.segmented)
+    }
+}
+
+private struct IntensityRow: View {
+    let title: String
+    @Binding var value: Double
+
+    var body: some View {
+        HStack {
+            Text(title)
+            Slider(value: $value, in: 0.4...3, step: 0.05)
+            Text("\(Int(value * 100)) %").font(.system(.body, design: .monospaced)).frame(width: 60)
+            Button("Normal") { value = 1.8 }
         }
     }
 }
 
 struct GlassSettings: View {
     @Default(.glowStyle) var glowStyle
-    @Default(.glowIntensity) var glowIntensity
     @Default(.glowColorMode) var glowColorMode
     @Default(.glowCustomHex) var glowCustomHex
+    // Light around the closed island and the outline.
+    @Default(.glowIntensity) var glowIntensity
     @Default(.glowSpread) var glowSpread
     @Default(.danceSize) var danceSize
     @Default(.glowMotion) var glowMotion
+    // Light inside the open notch.
+    @Default(.innerIntensity) var innerIntensity
+    @Default(.innerSpread) var innerSpread
+    @Default(.innerDance) var innerDance
+    @Default(.innerMotion) var innerMotion
     @Default(.realAudioBeat) var realAudio
     @Default(.glassAmount) var glassAmount
     @Default(.notchBorder) var notchBorder
-    @Default(.liquidGlassButtons) var glassButtons
-
-    private var danceChoice: Binding<DanceChoice> {
-        Binding(
-            get: {
-                guard glowMotion else { return .off }
-                switch danceSize {
-                case .small: return .small
-                case .medium: return .medium
-                case .large: return .large
-                }
-            },
-            set: { choice in
-                switch choice {
-                case .off: glowMotion = false
-                case .small: glowMotion = true; danceSize = .small
-                case .medium: glowMotion = true; danceSize = .medium
-                case .large: glowMotion = true; danceSize = .large
-                }
-            })
-    }
 
     var body: some View {
         Form {
             Section {
-                Picker("Brillo alrededor del notch", selection: $glowStyle) {
+                Picker("Brillo", selection: $glowStyle) {
                     ForEach(GlowStyle.allCases) { Text($0.title).tag($0) }
                 }
                 .pickerStyle(.segmented)
@@ -270,45 +280,49 @@ struct GlassSettings: View {
                         get: { Color(nsColor: NSColor(hex: glowCustomHex) ?? .systemPink) },
                         set: { glowCustomHex = NSColor($0).hexString }), supportsOpacity: false)
                 }
-                HStack {
-                    Text("Intensidad")
-                    Slider(value: $glowIntensity, in: 0.4...3, step: 0.05)
-                    Text("\(Int(glowIntensity * 100)) %").font(.system(.body, design: .monospaced)).frame(width: 60)
-                    Button("Normal") { glowIntensity = 1.8 }
-                }
             } header: {
-                Text("Color del brillo")
+                Text("Color")
             } footer: {
-                Text("Por defecto toma los dos colores principales de la carátula. La intensidad es qué tan fuerte se ve el color.")
+                Text("Por defecto toma los dos colores principales de la carátula. Abajo se regula aparte la luz de adentro y la de afuera.")
             }
 
             Section {
-                Picker("Tamaño del brillo", selection: $glowSpread) {
+                IntensityRow(title: "Intensidad", value: $innerIntensity)
+                Picker("Tamaño", selection: $innerSpread) {
                     ForEach(GlowSize.allCases) { Text($0.title).tag($0) }
                 }
                 .pickerStyle(.segmented)
-                Picker("Cuánto baila", selection: danceChoice) {
-                    ForEach(DanceChoice.allCases) { Text($0.title).tag($0) }
-                }
-                .pickerStyle(.segmented)
-                Toggle("Seguir el sonido real del Mac (pide el permiso de audio del sistema)", isOn: $realAudio)
-                    .disabled(!glowMotion)
-                    .onChange(of: realAudio) { _, _ in BeatPulse.shared.applyPreference() }
+                DancePicker(title: "Cuánto baila", motion: $innerMotion, size: $innerDance)
             } header: {
-                Text("Tamaño y baile")
+                Text("Luz de adentro (notch abierto)")
             } footer: {
-                Text("Chico, mediano o grande: el tamaño de la luz y cuánto se mueve con los golpes de la música. Con \"Quieto\" no se mueve. Con el sonido real siguen exactamente los golpes; solo se mide el volumen, no se graba audio.")
+                Text("El color que se ve detrás de la carátula, el calendario y los botones cuando abres el notch.")
             }
 
             Section {
-                Picker("Borde del notch", selection: $notchBorder) {
+                IntensityRow(title: "Intensidad", value: $glowIntensity)
+                Picker("Tamaño", selection: $glowSpread) {
+                    ForEach(GlowSize.allCases) { Text($0.title).tag($0) }
+                }
+                .pickerStyle(.segmented)
+                DancePicker(title: "Cuánto baila", motion: $glowMotion, size: $danceSize)
+                Picker("Borde", selection: $notchBorder) {
                     ForEach(NotchBorder.allCases) { Text($0.title).tag($0) }
                 }
                 .pickerStyle(.segmented)
             } header: {
-                Text("Contorno")
+                Text("Luz de afuera (isla cerrada)")
             } footer: {
-                Text("Sin borde, el notch es negro liso como en la maqueta y solo se ve la luz de color a su alrededor.")
+                Text("El brillo que sale debajo del notch cerrado y late con la música. Sin borde, el notch es negro liso como en la maqueta.")
+            }
+
+            Section {
+                Toggle("Seguir el sonido real del Mac (pide el permiso de audio del sistema)", isOn: $realAudio)
+                    .onChange(of: realAudio) { _, _ in BeatPulse.shared.applyPreference() }
+            } header: {
+                Text("Ritmo")
+            } footer: {
+                Text("Por defecto el baile sigue el tiempo de la canción. Con el sonido real siguen exactamente los golpes; solo se mide el volumen, no se graba audio.")
             }
 
             Section {
@@ -335,8 +349,6 @@ struct GlassSettings: View {
                 Defaults.Toggle("Usar el Liquid Glass del sistema (macOS 26)", key: .liquidGlassSystem)
             } header: {
                 Text("Botones")
-            } footer: {
-                Text("Por defecto el vidrio es el del diseño: translúcido, con borde brillante. Si prefieres el Liquid Glass nativo de macOS 26, actívalo arriba.")
             }
         }
     }

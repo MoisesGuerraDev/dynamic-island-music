@@ -178,15 +178,15 @@ final class PointerLight: ObservableObject {
 }
 
 /// Colored light behind the components. It comes from the cover of the song, follows the mouse and, while music plays,
-/// swells with the beat. Its size and how far it dances are set in Settings.
+/// swells with the beat. Its intensity, size and how far it dances are set in Settings (the "inside" controls).
 struct AmbientLight: View {
     @ObservedObject var pointer = PointerLight.shared
     @ObservedObject var music = MusicManager.shared
     @Default(.glowStyle) var style
-    @Default(.glowIntensity) var intensity
-    @Default(.glowMotion) var motion
-    @Default(.glowSpread) var spreadSize
-    @Default(.danceSize) var danceSize
+    @Default(.innerIntensity) var intensity
+    @Default(.innerMotion) var motion
+    @Default(.innerSpread) var spreadSize
+    @Default(.innerDance) var danceSize
 
     var body: some View {
         TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: !(motion && music.isPlaying))) { tl in
@@ -199,38 +199,35 @@ struct AmbientLight: View {
         let t = date.timeIntervalSinceReferenceDate
         let playing = music.isPlaying
         let dancing = motion && playing
-        let beat = dancing ? BeatPulse.shared.sample(at: date) * danceSize.danceFactor : 0
+        let amp = danceSize.danceFactor
+        let beat = dancing ? BeatPulse.shared.sample(at: date) * amp : 0
         return GeometryReader { g in
             let c = Color(nsColor: music.glowColor)
             let c2 = Color(nsColor: music.glowColor2)
-            let spread = spreadSize.spreadFactor
-            let strength: Double = min(1, (style == .strong ? 1.0 : 0.9) * intensity * (0.8 + 0.3 * beat)) * (playing ? 1 : 0.6)
+            let spread = spreadSize.innerFactor
+            let strength: Double = min(1, (style == .strong ? 1.0 : 0.9) * intensity * (0.78 + 0.4 * beat)) * (playing ? 1 : 0.6)
             let p = pointer.point
             let px = ((p?.x ?? g.size.width / 2) - g.size.width / 2) * 0.07
             let py = ((p?.y ?? g.size.height / 2) - g.size.height / 2) * 0.07
             // Slow drift, so the light moves a little behind the glass.
-            let dx = dancing ? sin(t * 0.42) * g.size.width * 0.03 * danceSize.danceFactor : 0
-            let dy = dancing ? cos(t * 0.31) * g.size.height * 0.05 * danceSize.danceFactor : 0
-            let wA = g.size.width * (0.5 + 0.05 * beat) * spread
-            let hA = g.size.height * (1.2 + 0.15 * beat) * spread
-            let wB = g.size.width * (0.38 + 0.04 * beat) * spread
-            let hB = g.size.height * (1.0 + 0.12 * beat) * spread
+            let dx = dancing ? sin(t * 0.42) * g.size.width * 0.045 * amp : 0
+            let dy = dancing ? cos(t * 0.31) * g.size.height * 0.07 * amp : 0
             ZStack {
                 Ellipse()
-                    .fill(RadialGradient(colors: [c.opacity(strength), c.opacity(strength * 0.45), .clear], center: .center, startRadius: 0, endRadius: wA / 2))
-                    .frame(width: wA, height: hA)
-                    .blur(radius: 18 * spread)
-                    .position(x: g.size.width * 0.17 + px + dx, y: g.size.height * 0.6 + py + dy)
+                    .fill(RadialGradient(colors: [c.opacity(strength), c.opacity(strength * 0.35), .clear], center: .center, startRadius: 0, endRadius: g.size.width * 0.34))
+                    .frame(width: g.size.width * (0.8 + 0.1 * beat) * spread, height: g.size.height * (1.7 + 0.3 * beat))
+                    .blur(radius: 30)
+                    .position(x: g.size.width * 0.14 + px + dx, y: g.size.height * 0.62 + py + dy)
                 Ellipse()
-                    .fill(RadialGradient(colors: [c2.opacity(strength * 0.8), c2.opacity(strength * 0.3), .clear], center: .center, startRadius: 0, endRadius: wB / 2))
-                    .frame(width: wB, height: hB)
-                    .blur(radius: 24 * spread)
-                    .position(x: g.size.width * 0.58 + px * 1.6 - dx * 1.4, y: g.size.height * 0.7 + py * 1.6 - dy * 1.2)
+                    .fill(RadialGradient(colors: [c2.opacity(strength * 0.75), .clear], center: .center, startRadius: 0, endRadius: g.size.width * 0.25))
+                    .frame(width: g.size.width * (0.5 + 0.08 * beat) * spread, height: g.size.height * (1.3 + 0.2 * beat))
+                    .blur(radius: 40)
+                    .position(x: g.size.width * 0.5 + px * 1.6 - dx * 1.4, y: g.size.height * 0.7 + py * 1.6 - dy * 1.2)
                 if let p {
                     Circle()
-                        .fill(RadialGradient(colors: [c.opacity(0.9), .clear], center: .center, startRadius: 0, endRadius: 80 * spread))
-                        .frame(width: 180 * spread, height: 180 * spread)
-                        .blur(radius: 18 * spread)
+                        .fill(RadialGradient(colors: [c.opacity(0.95), .clear], center: .center, startRadius: 0, endRadius: 95))
+                        .frame(width: 210, height: 210)
+                        .blur(radius: 22)
                         .blendMode(.screen)
                         .position(p)
                         .transition(.opacity)
@@ -255,12 +252,22 @@ struct NotchGlow: View {
     var body: some View {
         TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: !dances)) { tl in
             let beat = dances ? BeatPulse.shared.sample(at: tl.date) * amount : 0
-            shape
-                .fill(color)
-                .opacity(min(1, opacity * (0.55 + 0.8 * min(beat, 1.4))))
-                .blur(radius: radius * (0.85 + 0.5 * beat))
-                .scaleEffect(1 + 0.04 * beat)
-                .offset(y: 6)
+            let swell = 0.55 + 0.8 * min(beat, 1.4)
+            ZStack {
+                // Soft halo.
+                shape
+                    .fill(color)
+                    .opacity(min(1, opacity * 0.55 * swell))
+                    .blur(radius: radius * (0.9 + 0.5 * beat))
+                    .scaleEffect(1 + 0.04 * beat)
+                    .offset(y: 7)
+                // Tight bright edge right under the notch.
+                shape
+                    .fill(color)
+                    .opacity(min(1, opacity * 0.9 * swell))
+                    .blur(radius: max(3, radius * 0.3))
+                    .offset(y: 3)
+            }
         }
         .allowsHitTesting(false)
     }

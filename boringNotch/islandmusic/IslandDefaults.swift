@@ -179,6 +179,11 @@ extension Defaults.Keys {
     static let notchBorder = Key<NotchBorder>("notchBorder", default: .off)
     /// The color glow breathes and drifts slowly while music plays.
     static let glowMotion = Key<Bool>("glowMotion", default: true)
+    // The light inside the open notch has its own controls (the ones above are for the light around the closed island).
+    static let innerIntensity = Key<Double>("innerIntensity", default: 1.8)
+    static let innerSpread = Key<GlowSize>("innerSpread", default: .medium)
+    static let innerDance = Key<GlowSize>("innerDance", default: .medium)
+    static let innerMotion = Key<Bool>("innerMotion", default: true)
     /// How far the colored light spreads around the notch.
     static let glowSpread = Key<GlowSize>("glowSpread", default: .medium)
     /// How much the light moves with the beat.
@@ -289,6 +294,14 @@ enum GlowSize: String, CaseIterable, Identifiable, Defaults.Serializable {
         case .small: 0.6
         case .medium: 0.85
         case .large: 1.2
+        }
+    }
+    /// Size of the light inside the open notch (medium is the look the person approved).
+    var innerFactor: CGFloat {
+        switch self {
+        case .small: 0.75
+        case .medium: 1.12
+        case .large: 1.5
         }
     }
     /// How far the beat moves the light.

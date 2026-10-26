@@ -1,9 +1,9 @@
 #!/bin/bash
 # Instala Dynamic Island Music en tu escritorio, sin aviso de macOS y sin permisos de administrador.
 #
-#   curl -fsSL https://raw.githubusercontent.com/OWNER/REPO/main/install.sh | bash -s -- OWNER/REPO
+#   curl -fsSL https://raw.githubusercontent.com/MoisesGuerraDev/dynamic-island-music/main/install.sh | bash -s -- MoisesGuerraDev/dynamic-island-music
 #
-# Opciones (después del OWNER/REPO):
+# Opciones (después del MoisesGuerraDev/dynamic-island-music):
 #   --applications   instalarla en /Applications en vez del escritorio
 #
 # Qué hace: descarga la última versión (.dmg) y su suma de verificación, comprueba que coinciden, copia la app a tu

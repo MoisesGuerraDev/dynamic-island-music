@@ -14,7 +14,7 @@
 **Mac.** Pega esto en la app **Terminal** y pulsa Intro:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/OWNER/REPO/main/install.sh | bash -s -- OWNER/REPO
+curl -fsSL https://raw.githubusercontent.com/MoisesGuerraDev/dynamic-island-music/main/install.sh | bash -s -- MoisesGuerraDev/dynamic-island-music
 ```
 
 La app queda en tu escritorio y se abre sola. Sin avisos de macOS. (Necesita macOS 14 o más nuevo.)
@@ -52,7 +52,7 @@ porque sus términos no lo permiten en apps de terceros.
 **Mac:** necesitas Xcode 26 o más nuevo.
 
 ```bash
-git clone https://github.com/OWNER/REPO.git
+git clone https://github.com/MoisesGuerraDev/dynamic-island-music.git
 cd REPO
 xcodebuild -project boringNotch.xcodeproj -scheme boringNotch -configuration Release \
   -derivedDataPath build -destination 'platform=macOS' \

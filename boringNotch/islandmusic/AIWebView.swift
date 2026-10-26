@@ -153,6 +153,23 @@ final class AIWebStore: NSObject, WKNavigationDelegate, WKUIDelegate, Observable
     }
 
     #if DEBUG
+    /// Test hook: which AI sign-in cookies exist (names and expiry only, never values).
+    func debugCookieNames() {
+        WKWebsiteDataStore.default().httpCookieStore.getAllCookies { cookies in
+            let interesting = ["__Secure-next-auth.session-token", "__Secure-next-auth.session-token.0", "sessionKey", "ds_session_id",
+                               "__Secure-1PSID", "SID", "userToken", "oai-did", "lastActiveOrg"]
+            let lines = cookies.filter { cookie in
+                let host = cookie.domain.hasPrefix(".") ? String(cookie.domain.dropFirst()) : cookie.domain
+                return ["claude.ai", "chatgpt.com", "openai.com", "deepseek.com", "google.com"].contains { host == $0 || host.hasSuffix("." + $0) }
+            }.map { cookie -> String in
+                let kind = interesting.contains(cookie.name) ? "LOGIN?" : "  "
+                return "\(kind) \(cookie.domain) \(cookie.name) expires=\(cookie.expiresDate.map { String(describing: $0) } ?? "session")"
+            }.sorted()
+            try? lines.joined(separator: "\n").write(
+                to: FileManager.default.temporaryDirectory.appendingPathComponent("cookie-names.txt"), atomically: true, encoding: .utf8)
+        }
+    }
+
     func debugCookie(set: Bool) {
         let store = WKWebsiteDataStore.default().httpCookieStore
         let file = FileManager.default.temporaryDirectory.appendingPathComponent("cookie-test.txt")

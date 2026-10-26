@@ -543,6 +543,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         hook("dim.debug.backup.delete") { AIWebStore.shared.debugBackupTest(step: "delete") }
         hook("dim.debug.backup.default") { AIWebStore.shared.debugBackupTest(step: "default") }
         hook("dim.debug.backup.read") { AIWebStore.shared.debugBackupTest(step: "read") }
+        hook("dim.debug.cookie.names") { AIWebStore.shared.debugCookieNames() }
         hook("dim.debug.cookie.set") { AIWebStore.shared.debugCookie(set: true) }
         hook("dim.debug.cookie.dump") { AIWebStore.shared.debugCookie(set: false) }
         hook("dim.debug.ai.claude") { AIChatManager.shared.provider = .claude }

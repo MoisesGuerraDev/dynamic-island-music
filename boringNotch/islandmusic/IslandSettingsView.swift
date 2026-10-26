@@ -500,6 +500,7 @@ struct AISettings: View {
     @Default(.aiProvider) var provider
     @Default(.aiEnabled) var enabled
     @Default(.aiUseKey) var useKey
+    @Default(.aiLockMinutes) var lockMinutes
     @Default(.aiSaveHistory) var saveHistory
     @State private var keys: [String: String] = [:]
     @State private var models: [String: String] = [:]
@@ -550,6 +551,12 @@ struct AISettings: View {
 
             Section {
                 Defaults.Toggle("Pedir la huella (Touch ID) para abrir el chat de IA", key: .aiTouchID)
+                Picker("Volver a pedirla", selection: $lockMinutes) {
+                    Text("Cada vez").tag(0)
+                    Text("A los 15 minutos").tag(15)
+                    Text("A la hora").tag(60)
+                    Text("Solo al abrir la app").tag(-1)
+                }
                 Button("Cerrar sesión en todas las IA", role: .destructive) { AIWebStore.shared.clearSessions() }
                 Toggle("Guardar el historial del chat con clave en este Mac", isOn: $saveHistory)
                 Button("Borrar el historial ahora", role: .destructive) { chat.clear() }
@@ -560,7 +567,8 @@ struct AISettings: View {
             }
         }
         .onAppear {
-            for p in AIProvider.allCases where p.needsKey { keys[p.rawValue] = KeychainStore.get(p.rawValue) ?? "" }
+            // Only providers the person set up with an API key: reading the Keychain can make macOS ask for the Mac password.
+            for p in AIProvider.allCases where p.needsKey && (useKey[p.rawValue] ?? false) { keys[p.rawValue] = KeychainStore.get(p.rawValue) ?? "" }
         }
     }
 }

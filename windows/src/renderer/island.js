@@ -4,7 +4,7 @@ import { S, bus, comps, activeComps, pages, metaOf, tabsAvailable, enabledAI, de
 import { esc, $, $$, dayKey } from './util.js';
 import { ic, fi } from './icons.js';
 import { colHTML, musicPos, pomoRemaining, timeFontSize, perfHTML } from './components.js';
-import { trayHTML, clipHTML, chatHTML, bindChat, gameHTML, bindGame, stopGame, focusChatInput, lockHTML, bindLock, webBarHTML, showWebview, reloadWebview, resetWebviews } from './views.js';
+import { trayHTML, clipHTML, chatHTML, bindChat, gameHTML, bindGame, stopGame, focusChatInput, focusWebview, lockHTML, bindLock, webBarHTML, showWebview, reloadWebview, resetWebviews } from './views.js';
 import { editBarHTML, bindEdit, setComps } from './edit.js';
 import { setLensEnabled, startLens } from './lens.js';
 import { startAmbient } from './ambient.js';
@@ -180,6 +180,7 @@ function renderRow() {
     $('#editbar').hidden = true;
     $('#webbar').innerHTML = webBarHTML();
     showWebview(S.chat.web);
+    focusWebview(S.chat.web);
     const homeW = openWidth(pages()[Math.min(S.page, pages().length - 1)] || [], S.info.cap);
     setWidth(Math.min(S.info.cap, Math.max(680, homeW)));
     renderPill();
@@ -724,13 +725,20 @@ document.addEventListener('keydown', (e) => {
 });
 
 // While a text field has the keyboard the island stays open and takes the keyboard focus from the system.
+function webChatActive() {
+  return S.open && S.view === 'chat' && webMode() && !S.lock.locked;
+}
+
+// While a text field (or the embedded AI site) has the keyboard the island stays open and takes the keyboard focus
+// from the system. It gives it back when nothing needs it, and always when the island closes.
 document.addEventListener('focusin', (e) => {
-  if (e.target.matches && e.target.matches('input,textarea,canvas')) dim.island.wantFocus(true);
+  if (e.target.matches && e.target.matches('input,textarea,canvas,webview')) dim.island.wantFocus(true);
 });
 document.addEventListener('focusout', () => {
   setTimeout(() => {
+    if (webChatActive()) return; // the keyboard is inside the AI site: that is not a reason to let go
     const a = document.activeElement;
-    if (!(a && a.matches && a.matches('input,textarea,canvas'))) dim.island.wantFocus(false);
+    if (!(a && a.matches && a.matches('input,textarea,canvas,webview'))) dim.island.wantFocus(false);
   }, 120);
 });
 

@@ -181,9 +181,26 @@ export function showWebview(p) {
     w.setAttribute('src', WEB_AI_META[p].url);
     w.setAttribute('partition', 'persist:ai'); // one saved session for all the AI sites
     w.setAttribute('allowpopups', '');
+    w.addEventListener('dom-ready', () => {
+      if (w.style.display !== 'none') focusGuest(w);
+    });
     host.appendChild(w);
     webviews[p] = w;
   }
+}
+
+function focusGuest(w) {
+  try {
+    w.focus();
+  } catch {
+    /* not attached yet: dom-ready tries again */
+  }
+}
+
+/** Gives the keyboard to the embedded site, so typing an e-mail or a code works. */
+export function focusWebview(p) {
+  const w = webviews[p];
+  if (w) setTimeout(() => focusGuest(w), 150);
 }
 
 /** After "Cerrar sesión en todas las IA": throw the pages away so they load signed out. */

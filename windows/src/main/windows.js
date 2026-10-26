@@ -252,6 +252,7 @@ export class IslandManager {
     if (on) {
       win.setFocusable(true);
       win.focus();
+      win.webContents.focus();
       isl.focused = true;
       isl.pins.add('input');
     } else {

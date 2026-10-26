@@ -9,6 +9,25 @@ final class AILock: ObservableObject {
     static let shared = AILock()
     @Published private(set) var unlocked = false
     @Published private(set) var failed = false
+    private var unlockedAt: Date?
+
+    init() {
+        // The Mac locking or sleeping always locks the chat again.
+        NSWorkspace.shared.notificationCenter.addObserver(forName: NSWorkspace.screensDidSleepNotification, object: nil, queue: .main) { [weak self] _ in
+            Task { @MainActor in self?.lock() }
+        }
+        DistributedNotificationCenter.default().addObserver(forName: NSNotification.Name("com.apple.screenIsLocked"), object: nil, queue: .main) { [weak self] _ in
+            Task { @MainActor in self?.lock() }
+        }
+    }
+
+    /// Called when the notch closes: lock again only once the chosen time has passed.
+    func lockIfExpired() {
+        let minutes = Defaults[.aiLockMinutes]
+        if minutes < 0 { return }
+        if minutes > 0, let unlockedAt, Date().timeIntervalSince(unlockedAt) < Double(minutes) * 60 { return }
+        lock()
+    }
 
     var required: Bool { Defaults[.aiTouchID] }
 
@@ -40,6 +59,7 @@ final class AILock: ObservableObject {
             Task { @MainActor in
                 self.unlocked = ok
                 self.failed = !ok
+                if ok { self.unlockedAt = Date() }
             }
         }
     }

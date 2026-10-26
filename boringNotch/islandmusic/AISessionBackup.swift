@@ -16,8 +16,6 @@ final class AISessionBackup: ObservableObject {
 
     static let fileName = "Sesiones-IA.dimsession"
     private static let magic = Data("DIMS1".utf8)
-    private static let keychainAccount = "session-backup-passphrase"
-    private static let autoKeyAccount = "session-backup-key"
     /// Only the sites of the AI chats (and Google, which Gemini signs in with).
     private static let domains = ["claude.ai", "anthropic.com", "chatgpt.com", "openai.com", "deepseek.com", "google.com"]
 
@@ -27,20 +25,46 @@ final class AISessionBackup: ObservableObject {
 
     // MARK: Folder and passphrase
 
-    /// Password the person set to open the copy on another computer (empty = not set).
-    var customPassphrase: String {
-        get { KeychainStore.get(Self.keychainAccount) ?? "" }
-        set { KeychainStore.set(newValue, for: Self.keychainAccount) }
+    // The keys live in a private file next to the copy (readable only by this user), not in the Keychain: every new build of an
+    // app that is not signed by Apple looks like a different app to the Keychain, and macOS then asks for the Mac password.
+    private struct Secrets: Codable {
+        var auto: String?
+        var custom: String?
     }
 
-    /// Without a custom password the key is made on this Mac and kept in its keychain: nothing to type or remember.
+    private var secretsURL: URL { defaultFolder.appendingPathComponent("llave.json") }
+
+    private func loadSecrets() -> Secrets {
+        guard let data = try? Data(contentsOf: secretsURL), let secrets = try? JSONDecoder().decode(Secrets.self, from: data) else { return Secrets() }
+        return secrets
+    }
+
+    private func saveSecrets(_ secrets: Secrets) {
+        guard let data = try? JSONEncoder().encode(secrets) else { return }
+        try? data.write(to: secretsURL, options: .atomic)
+        try? FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: secretsURL.path)
+    }
+
+    /// Password the person set to open the copy on another computer (empty = not set).
+    var customPassphrase: String {
+        get { loadSecrets().custom ?? "" }
+        set {
+            var secrets = loadSecrets()
+            secrets.custom = newValue.isEmpty ? nil : newValue
+            saveSecrets(secrets)
+        }
+    }
+
+    /// Without a custom password the key is made on this Mac: nothing to type or remember.
     private var effectivePassphrase: String {
-        if !customPassphrase.isEmpty { return customPassphrase }
-        if let key = KeychainStore.get(Self.autoKeyAccount), !key.isEmpty { return key }
+        var secrets = loadSecrets()
+        if let custom = secrets.custom, !custom.isEmpty { return custom }
+        if let auto = secrets.auto, !auto.isEmpty { return auto }
         var bytes = [UInt8](repeating: 0, count: 32)
         _ = SecRandomCopyBytes(kSecRandomDefault, 32, &bytes)
         let key = Data(bytes).base64EncodedString()
-        KeychainStore.set(key, for: Self.autoKeyAccount)
+        secrets.auto = key
+        saveSecrets(secrets)
         return key
     }
 

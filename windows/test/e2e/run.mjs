@@ -118,6 +118,42 @@ try {
   await page.screenshot({ path: path.join(out, 'island-ai.png') });
   await page.click('[data-act="tab"][data-v="home"]');
 
+  // Typing into the AI site: the island window must take the keyboard (it is not focusable while idle).
+  await page.click('[data-act="tab"][data-v="chat"]');
+  await page.waitForTimeout(3000);
+  const typed = await app.evaluate(async ({ webContents }) => {
+    const c = globalThis.__DIM__;
+    const isl = c.islands.first();
+    const guest = webContents.getAllWebContents().find((w) => w.getType() === 'webview');
+    if (!guest) return { error: 'no hay webview' };
+    await guest.executeJavaScript(`(() => { const i = document.createElement('input'); i.id = 'dim-test-input'; i.style.cssText = 'position:fixed;top:60px;left:60px;width:260px;height:44px;z-index:2147483647;font-size:20px'; document.body.appendChild(i); })()`);
+    guest.sendInputEvent({ type: 'mouseMove', x: 150, y: 80 });
+    guest.sendInputEvent({ type: 'mouseDown', x: 150, y: 80, button: 'left', clickCount: 1 });
+    guest.sendInputEvent({ type: 'mouseUp', x: 150, y: 80, button: 'left', clickCount: 1 });
+    await new Promise((r) => setTimeout(r, 400));
+    for (const ch of 'hola') {
+      guest.sendInputEvent({ type: 'keyDown', keyCode: ch });
+      guest.sendInputEvent({ type: 'char', keyCode: ch });
+      guest.sendInputEvent({ type: 'keyUp', keyCode: ch });
+    }
+    await new Promise((r) => setTimeout(r, 300));
+    const r = await guest.executeJavaScript(`({ focus: document.hasFocus(), active: document.activeElement && document.activeElement.id, value: document.getElementById('dim-test-input').value })`);
+    return { ...r, focusable: isl.win.isFocusable(), winFocused: isl.win.isFocused(), pins: [...isl.pins] };
+  });
+  check('la ventana de la isla se vuelve enfocable al abrir la IA', typed.focusable === true, JSON.stringify(typed));
+  check('al hacer clic en el cuadro de texto de la IA, el teclado llega', typed.active === 'dim-test-input' && typed.value === 'hola', JSON.stringify(typed));
+  check('el documento de la IA tiene el foco (document.hasFocus())', typed.focus === true, JSON.stringify(typed));
+  await page.waitForTimeout(500);
+  const stillFocusable = await app.evaluate(() => globalThis.__DIM__.islands.first().win.isFocusable());
+  check('la isla no suelta el teclado mientras escribes en la IA', stillFocusable === true);
+  await page.click('[data-act="tab"][data-v="home"]');
+  await app.evaluate(() => { const c = globalThis.__DIM__; const i = c.islands.first(); i.pins.clear(); c.islands.setOpen(i, false); });
+  await page.waitForTimeout(400);
+  const after = await app.evaluate(() => { const i = globalThis.__DIM__.islands.first(); return { focusable: i.win.isFocusable() }; });
+  check('al cerrar la isla vuelve a no enfocable (no le roba el foco a un juego)', after.focusable === false, JSON.stringify(after));
+  await app.evaluate(() => { const c = globalThis.__DIM__; const i = c.islands.first(); i.pins.add('toggle'); c.islands.setOpen(i, true); });
+  await page.waitForTimeout(600);
+
   // The AI sign-in is remembered: one shared saved session, session cookies get 90 days of life.
   await app.evaluate(async () => {
     const c = globalThis.__DIM__;

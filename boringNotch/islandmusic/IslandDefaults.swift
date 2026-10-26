@@ -230,6 +230,8 @@ extension Defaults.Keys {
     static let sessionBackupAuto = Key<Bool>("sessionBackupAuto", default: true)
     /// Ask for the fingerprint before opening the AI chat (on by default when this Mac has Touch ID).
     static let aiTouchID = Key<Bool>("aiTouchID", default: AILock.biometricsAvailable)
+    /// How long the AI chat stays unlocked: 0 = ask every time, -1 = until the app is reopened.
+    static let aiLockMinutes = Key<Int>("aiLockMinutes", default: 15)
 
     // Clipboard
     static let clipEnabled = Key<Bool>("clipEnabled", default: true)

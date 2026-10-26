@@ -1,27 +1,22 @@
 # Instalar Dynamic Island Music
 
-## Mac (macOS 14 o más nuevo)
-
-En **Terminal**:
+**Mac** (macOS 14 o más nuevo). En **Terminal**:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/MoisesGuerraDev/dynamic-island-music/main/install.sh | bash -s -- MoisesGuerraDev/dynamic-island-music
+curl -fsSL https://moisesguerradev.github.io/dynamic-island-music/mac | bash
 ```
 
-Descarga la app, comprueba que no esté alterada, la deja en tu **escritorio** y la abre. No pide administrador y no sale ningún aviso de macOS.
-Para dejarla en Aplicaciones, agrega `--applications` al final.
+La app queda en tu escritorio y se abre sola. Para dejarla en Aplicaciones: `... | bash -s -- --applications`.
+Si ese link no responde, el mismo instalador está en `https://raw.githubusercontent.com/MoisesGuerraDev/dynamic-island-music/main/install.sh`.
 
-¿Prefieres compilarla tú? Con Xcode: `git clone https://github.com/MoisesGuerraDev/dynamic-island-music.git && cd dynamic-island-music && ./build-mac.sh`
+**Windows** (10 u 11). Baja `DynamicIslandMusic-Setup.exe` desde [Releases](../../releases/latest) y ábrelo. No pide administrador.
+Si sale "Windows protegió tu PC": **Más información › Ejecutar de todas formas** (solo la primera vez).
+O en PowerShell: `irm https://raw.githubusercontent.com/MoisesGuerraDev/dynamic-island-music/main/windows/install.ps1 | iex`
 
-¿Bajaste el `.dmg` desde el navegador y macOS no la abre? Clic derecho sobre la app › **Abrir**, o *Ajustes del Sistema › Privacidad y seguridad › Abrir de todos modos*.
-(Apple solo quita ese aviso a apps firmadas con cuenta de pago; esta es gratuita y de código abierto.)
+## Si algo falla
 
-## Windows (10 u 11)
-
-Baja `DynamicIslandMusic-Setup.exe` desde **Releases** y ábrelo. Queda en el menú Inicio.
-Si sale "Windows protegió tu PC": **Más información › Ejecutar de todas formas**.
-
-O en PowerShell, una línea: `$env:DIM_REPO = 'MoisesGuerraDev/dynamic-island-music'; irm https://raw.githubusercontent.com/MoisesGuerraDev/dynamic-island-music/main/windows/install.ps1 | iex`
+- **Mac, bajaste el `.dmg` desde el navegador y no abre:** clic derecho sobre la app › **Abrir**, o *Ajustes del Sistema › Privacidad y seguridad › Abrir de todos modos*. Pasa porque la app no está firmada con una cuenta de pago de Apple.
+- **Compilarla tú (con Xcode):** `git clone https://github.com/MoisesGuerraDev/dynamic-island-music.git && cd dynamic-island-music && ./build-mac.sh`
 
 ## Desinstalar
 

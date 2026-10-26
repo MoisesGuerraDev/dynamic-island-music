@@ -11,18 +11,15 @@
 
 ## Instalar
 
-**Mac.** Pega esto en la app **Terminal** y pulsa Intro:
+**Mac** (macOS 14 o más nuevo): pega esto en **Terminal** y pulsa Intro.
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/MoisesGuerraDev/dynamic-island-music/main/install.sh | bash -s -- MoisesGuerraDev/dynamic-island-music
+curl -fsSL https://moisesguerradev.github.io/dynamic-island-music/mac | bash
 ```
 
-La app queda en tu escritorio y se abre sola. Sin avisos de macOS. (Necesita macOS 14 o más nuevo.)
+**Windows** (10 u 11): baja `DynamicIslandMusic-Setup.exe` desde [Releases](../../releases/latest) y ábrelo.
 
-**Windows.** Baja `DynamicIslandMusic-Setup.exe` desde [Releases](../../releases/latest) y ábrelo. Se instala como cualquier programa.
-Si sale "Windows protegió tu PC": **Más información › Ejecutar de todas formas** (solo la primera vez).
-
-Más opciones y soluciones: [INSTALAR.md](INSTALAR.md).
+Más opciones: [INSTALAR.md](INSTALAR.md).
 
 ## Qué trae
 
@@ -31,7 +28,7 @@ Más opciones y soluciones: [INSTALAR.md](INSTALAR.md).
 | **Reproductor** | Lee lo que suene en tu Mac: Spotify, Apple Music, YouTube en el navegador. Los colores del brillo salen de la carátula. |
 | **Pomodoro** | Cualquier duración (`25`, `1:30`, `1:30:00`), sprints, sonido configurable al terminar, aviso y vista con el notch cerrado. |
 | **Notas y tareas** | Un archivo `.md` por nota en la carpeta que elijas. En una carpeta de iCloud Drive se sincronizan solas con tu iPhone y tus otras computadoras. |
-| **Chat de IA** | Claude, ChatGPT, Gemini u Ollama con tu propia clave (guardada en el Llavero). Sin servidor intermedio. |
+| **Chat de IA** | Claude, ChatGPT, Gemini o DeepSeek con tu propia cuenta, dentro del notch. Sin servidor intermedio. |
 | **Portapapeles** | Historial que ignora apps de contraseñas y datos secretos. |
 | **Bandeja, Juego, Cámara, Calendario, Rendimiento** | Más componentes, todos opcionales. |
 | **Todo editable** | Lápiz en el notch: arrastra para ordenar, tira de la esquina para cambiar el tamaño, quita y agrega. Si no caben, pasan a otra página. |
@@ -41,9 +38,6 @@ Más opciones y soluciones: [INSTALAR.md](INSTALAR.md).
 ## Privacidad
 
 Sin telemetría. Todo se guarda en tu equipo. Detalles en [SECURITY.md](SECURITY.md).
-
-Sobre el chat de IA: cada persona usa su propia clave de API y paga solo lo que use. No se usa la suscripción de ChatGPT ni de Claude,
-porque sus términos no lo permiten en apps de terceros.
 
 ## Compilar desde el código
 

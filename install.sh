@@ -1,9 +1,9 @@
 #!/bin/bash
 # Instala Dynamic Island Music en tu escritorio, sin aviso de macOS y sin permisos de administrador.
 #
-#   curl -fsSL https://raw.githubusercontent.com/MoisesGuerraDev/dynamic-island-music/main/install.sh | bash -s -- MoisesGuerraDev/dynamic-island-music
+#   curl -fsSL https://raw.githubusercontent.com/MoisesGuerraDev/dynamic-island-music/main/install.sh | bash
 #
-# Opciones (después del MoisesGuerraDev/dynamic-island-music):
+# Opciones (con "| bash -s -- --applications"):
 #   --applications   instalarla en /Applications en vez del escritorio
 #
 # Qué hace: descarga la última versión (.dmg) y su suma de verificación, comprueba que coinciden, copia la app a tu
@@ -15,7 +15,7 @@ set -euo pipefail
 
 APP_NAME="Dynamic Island Music"
 DEST="${DIM_DEST:-$HOME/Desktop}"
-REPO="${DIM_REPO:-}"
+REPO="${DIM_REPO:-MoisesGuerraDev/dynamic-island-music}"
 for arg in "$@"; do
   case "$arg" in
     --applications) DEST="/Applications" ;;
@@ -37,20 +37,7 @@ HERE="$(cd "$(dirname "$0")" 2>/dev/null && pwd || true)"
 IN_REPO=0
 [ -n "$HERE" ] && [ -f "$HERE/boringNotch.xcodeproj/project.pbxproj" ] && IN_REPO=1
 
-# Dentro de una copia del repositorio no hace falta decir cuál es.
-if [ -z "$REPO" ] && [ "$IN_REPO" = 1 ] && command -v git >/dev/null; then
-  url="$(git -C "$HERE" config --get remote.origin.url 2>/dev/null || true)"
-  REPO="$(printf '%s' "$url" | sed -E 's#^(git@github.com:|https://github.com/)##; s#\.git$##')"
-fi
-
-BASE="${DIM_BASE_URL:-}"
-if [ -z "$BASE" ]; then
-  if [ -z "$REPO" ]; then
-    echo "Uso: bash install.sh USUARIO/REPOSITORIO [--applications]" >&2
-    exit 1
-  fi
-  BASE="https://github.com/$REPO/releases/latest/download"
-fi
+BASE="${DIM_BASE_URL:-https://github.com/$REPO/releases/latest/download}"
 
 TMP="$(mktemp -d)"
 MNT="$TMP/mnt"

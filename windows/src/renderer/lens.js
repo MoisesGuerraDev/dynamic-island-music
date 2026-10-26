@@ -1,5 +1,5 @@
 // Liquid Glass refraction for the small controls: each element gets an SVG filter built from a displacement map
-// shaped like a rounded lens, with a slight color split at the edge. Ported from the approved mockup.
+// shaped like a rounded lens, with a slight color split at the edge. Same as the design mockup.
 
 const SVG = 'http://www.w3.org/2000/svg';
 const lqMap = {};

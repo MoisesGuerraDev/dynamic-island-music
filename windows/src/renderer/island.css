@@ -1,4 +1,4 @@
-/* Island styles. Taken from the approved mockup (Windows 11 skin): same sizes, glass, rims and colors. */
+/* Island styles. Taken from the design mockup (Windows 11 skin): same sizes, glass, rims and colors. */
 @property --c1 { syntax: '<color>'; inherits: true; initial-value: #ff8a3d; }
 @property --c2 { syntax: '<color>'; inherits: true; initial-value: #e0294a; }
 @property --c3 { syntax: '<color>'; inherits: true; initial-value: #6b2f1a; }

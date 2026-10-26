@@ -108,12 +108,12 @@ a{color:#9cc2ff}
   var slug=owner+'/'+repo, base='https://github.com/'+slug+'/releases/latest/download/';
   var isMac=/Mac|iPhone|iPad/.test(navigator.platform||navigator.userAgent);
   var isWin=/Win/.test(navigator.platform||navigator.userAgent);
-  var cmd='curl -fsSL https://raw.githubusercontent.com/'+slug+'/main/install.sh | bash -s -- '+slug;
+  var cmd='curl -fsSL https://'+owner.toLowerCase()+'.github.io/'+repo+'/mac | bash';
   document.getElementById('cmd-mac').textContent=cmd;
   document.getElementById('repo').href='https://github.com/'+slug;
   document.getElementById('download-win').href=base+'DynamicIslandMusic-Setup.exe';
   document.getElementById('download-zip').href=base+'DynamicIslandMusic-Windows-x64.zip';
-  var cmdWin="$env:DIM_REPO = '"+slug+"'; irm https://raw.githubusercontent.com/"+slug+"/main/windows/install.ps1 | iex";
+  var cmdWin='irm https://raw.githubusercontent.com/'+slug+'/main/windows/install.ps1 | iex';
   document.getElementById('cmd-win').textContent=cmdWin;
   document.getElementById('copy-win').onclick=function(){var b=this;if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(cmdWin).then(function(){b.textContent='Copiado';setTimeout(function(){b.textContent='Copiar comando';},1500);},function(){});}};
   var d=document.getElementById('download'),det=document.getElementById('detected');

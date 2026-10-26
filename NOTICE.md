@@ -10,4 +10,4 @@ historial de git de este repositorio.
 
 Las librerías de terceros y sus licencias están en `THIRD_PARTY_LICENSES/`.
 
-"Dynamic Island" es una marca de Apple Inc. Este proyecto no está afiliado a Apple, TheBoredTeam ni a NotchNest.
+"Dynamic Island" es una marca de Apple Inc. Este proyecto no está afiliado a Apple ni a TheBoredTeam.

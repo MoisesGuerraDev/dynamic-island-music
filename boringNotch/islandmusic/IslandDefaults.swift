@@ -317,7 +317,7 @@ enum GlowSize: String, CaseIterable, Identifiable, Defaults.Serializable {
         case .large: 1.2
         }
     }
-    /// Size of the light inside the open notch (medium is the look the person approved).
+    /// Size of the light inside the open notch (medium is the default look).
     var innerFactor: CGFloat {
         switch self {
         case .small: 0.75

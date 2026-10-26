@@ -53,3 +53,5 @@ build/
 *.xcarchive
 *.dSYM
 
+
+dist/

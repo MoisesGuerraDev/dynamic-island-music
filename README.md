@@ -11,27 +11,40 @@
 
 ## Instalar
 
-**Mac** (macOS 14 o más nuevo; el Liquid Glass completo necesita macOS 26). Pega esto en la app Terminal:
+### Mac: un comando y la app queda en tu escritorio
+
+Pega esto en la app **Terminal** (macOS 14 o más nuevo; el Liquid Glass completo necesita macOS 26):
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/OWNER/REPO/main/install.sh | bash -s -- OWNER/REPO
 ```
 
-Descarga la última versión, comprueba su suma de verificación, la instala en `/Applications` y la abre. No usa `sudo`.
-También puedes bajar el `.dmg` desde [Releases](../../releases/latest) y arrastrar la app a Aplicaciones.
+Descarga la última versión, comprueba su suma de verificación, la deja en tu **escritorio** y la abre. No usa `sudo` y **macOS no muestra ningún aviso**.
+Si prefieres Aplicaciones, agrega `--applications` al final.
 
-> **¿Sale un aviso de macOS?** La app no está firmada por Apple (cuesta US$99 al año y este proyecto es gratuito).
-> Con el comando de arriba no sale. Con el `.dmg`, ve a *Ajustes del Sistema › Privacidad y seguridad › Abrir de todos modos*, solo la primera vez.
+### Mac: compilarla tú desde el código (con Xcode)
 
-Paso a paso, con qué hacer si macOS muestra un aviso: [INSTALAR.md](INSTALAR.md).
+```bash
+git clone https://github.com/OWNER/REPO.git && cd REPO && ./build-mac.sh
+```
 
-**Windows** (10 u 11, 64 bits). Pega esto en PowerShell (no pide administrador y SmartScreen no avisa):
+Compila (unos 3 minutos la primera vez) y deja la app en el escritorio. Sirve aunque todavía no haya una versión publicada, y tampoco muestra avisos: la compilaste tú en tu Mac.
+
+> **¿Por qué no es un `.dmg` de doble clic?** Apple solo quita el aviso a las apps firmadas con una cuenta de desarrollador de pago (US$99 al año) y este proyecto es gratuito.
+> Los comandos de arriba evitan el aviso. Si bajas el `.dmg` desde el navegador, ve a *Ajustes del Sistema › Privacidad y seguridad › Abrir de todos modos*, solo la primera vez.
+> Paso a paso y soluciones: [INSTALAR.md](INSTALAR.md).
+
+### Windows: se instala como cualquier programa
+
+Instalador de un clic: baja `DynamicIslandMusic-Setup.exe` desde [Releases](../../releases/latest) (si sale "Windows protegió tu PC": *Más información › Ejecutar de todas formas*). Queda en el menú Inicio, con desinstalador.
+
+O con una línea en PowerShell (no pide administrador y SmartScreen no avisa):
 
 ```powershell
 $env:DIM_REPO = 'OWNER/REPO'; irm https://raw.githubusercontent.com/OWNER/REPO/main/windows/install.ps1 | iex
 ```
 
-O baja `DynamicIslandMusic-Setup.exe` desde [Releases](../../releases/latest) (si sale "Windows protegió tu PC": *Más información › Ejecutar de todas formas*), o el `.zip` portátil `DynamicIslandMusic-Windows-x64.zip`. Es una isla flotante arriba y al centro (Electron), con lo mismo que la de Mac. Guía de pruebas: [windows/PROBAR-EN-WINDOWS.md](windows/PROBAR-EN-WINDOWS.md).
+También hay un `.zip` portátil (`DynamicIslandMusic-Windows-x64.zip`). Windows 10 u 11, 64 bits. Es una isla flotante arriba y al centro (Electron), con lo mismo que la de Mac. Guía de pruebas: [windows/PROBAR-EN-WINDOWS.md](windows/PROBAR-EN-WINDOWS.md).
 
 ## Qué trae
 

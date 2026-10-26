@@ -40,11 +40,11 @@ enum IslandComponent: String, Codable, CaseIterable, Identifiable, Defaults.Seri
 
     var defaultWidth: CGFloat {
         switch self {
-        case .player: 270
-        case .calendar: 165
-        case .notes: 150
-        case .pomodoro: 150
-        case .camera: 100
+        case .player: 312
+        case .calendar: 222
+        case .notes: 178
+        case .pomodoro: 159
+        case .camera: 178
         case .chat: 200
         case .clipboard: 190
         case .shelf: 190
@@ -55,7 +55,7 @@ enum IslandComponent: String, Codable, CaseIterable, Identifiable, Defaults.Seri
 
     var minWidth: CGFloat {
         switch self {
-        case .player: 250
+        case .player: 262
         case .calendar: 150
         case .notes: 130
         case .pomodoro: 140
@@ -136,7 +136,7 @@ extension Defaults.Keys {
     // Layout
     static let islandComponents = Key<[ComponentConfig]>("islandComponents", default: IslandComponent.defaultConfigs)
     /// Size of the open notch content. 1.0 is the design size; the default is smaller and minimal.
-    static let uiScale = Key<Double>("uiScale", default: 0.78)
+    static let uiScale = Key<Double>("uiScale", default: 1.0)
     static let manualSize = Key<Bool>("manualSize", default: false)
     static let manualOpenWidth = Key<Double>("manualOpenWidth", default: 900)
 
@@ -144,6 +144,8 @@ extension Defaults.Keys {
     static let glowStyle = Key<GlowStyle>("glowStyle", default: .subtle)
     static let liquidGlassButtons = Key<Bool>("liquidGlassButtons", default: true)
     static let liquidGlassSystem = Key<Bool>("liquidGlassSystem", default: false)
+    /// Open notch as translucent glass over the desktop (the closed notch stays black like the real one).
+    static let glassNotch = Key<Bool>("glassNotch", default: true)
 
     // Pomodoro (every duration is free, in seconds)
     static let pomoFocusSeconds = Key<Double>("pomoFocusSeconds", default: 25 * 60)
@@ -189,6 +191,7 @@ extension Defaults.Keys {
     static let perfShowThermal = Key<Bool>("perfShowThermal", default: true)
 
     // Live activities in the closed notch
-    static let liveMusic = Key<Bool>("liveMusic", default: true)
+    static let liveControls = Key<Bool>("liveControls", default: true)
+    static let liveSpectrum = Key<Bool>("liveSpectrum", default: false)
     static let livePomodoro = Key<Bool>("livePomodoro", default: true)
 }

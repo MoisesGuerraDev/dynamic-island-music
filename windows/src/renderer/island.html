@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; img-src 'self' data: blob: file:; style-src 'self' 'unsafe-inline'; script-src 'self'; media-src 'self' blob: data: file:; connect-src 'self'">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Dynamic Island Music</title>
+<link rel="stylesheet" href="island.css">
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><filter id="lgdist" x="0" y="0" width="100%" height="100%" color-interpolation-filters="sRGB"><feGaussianBlur stdDeviation="1.5" result="b"/><feTurbulence type="fractalNoise" baseFrequency=".03 .05" numOctaves="2" seed="3" result="n"/><feDisplacementMap in="b" in2="n" scale="14" xChannelSelector="R" yChannelSelector="G"/><feColorMatrix type="saturate" values="1.7"/></filter></svg>
+<svg id="lqdefs" width="0" height="0" style="position:absolute" aria-hidden="true"></svg>
+
+<div id="stage">
+  <div id="pill" class="pill-closed" aria-label="Isla cerrada"></div>
+  <div id="third" class="gcard below" hidden></div>
+  <div id="toast" class="gcard" hidden></div>
+  <div id="notch" class="notch g-glass" role="region" aria-label="Isla">
+    <div class="amb"><i class="mlight"></i></div>
+    <div class="rim"></div>
+    <div class="ntabs">
+      <div id="ntabs-l"></div>
+      <div id="ntabs-m"></div>
+      <div id="ntabs-r"></div>
+    </div>
+    <div class="row" id="row"></div>
+    <div class="editbar" id="editbar" hidden></div>
+  </div>
+</div>
+
+<script type="module" src="island.js"></script>
+</body>
+</html>

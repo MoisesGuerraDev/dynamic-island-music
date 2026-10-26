@@ -1,0 +1,408 @@
+import { BrowserWindow, screen, shell } from 'electron';
+import os from 'node:os';
+import { capWidth, displayKey } from '../shared/layout.js';
+
+const PAD_X = 70; // room for the glow and shadow at each side of the island
+const WIN_H = 480; // tall enough for the open island, its edit bar and the glow
+
+const inRect = (r, p) => !!r && p.x >= r.x && p.x <= r.x + r.w && p.y >= r.y && p.y <= r.y + r.h;
+const grow = (r, m) => (r ? { x: r.x - m, y: r.y - m, w: r.w + 2 * m, h: r.h + 2 * m } : null);
+
+function isHttp(url) {
+  return /^https?:\/\//i.test(url);
+}
+
+/**
+ * The floating island. One transparent, always-on-top window per screen, as wide as the widest the island can be.
+ * The empty part of the window lets every click through to what is behind it: the main process checks where
+ * the cursor is a few times a second and only makes the window clickable while it is over the island.
+ * That same check opens the island when the cursor rests on the top of the screen (if the person wants that).
+ */
+export class IslandManager {
+  constructor({ store, preload, rendererDir, onFirstLoad }) {
+    this.store = store;
+    this.preload = preload;
+    this.rendererDir = rendererDir;
+    this.islands = new Map(); // display id -> island
+    this.game = { exclusive: false, busy: false };
+    this.timer = null;
+    this.settingsWin = null;
+    this.onFirstLoad = onFirstLoad;
+    this.hiddenByUser = false;
+  }
+
+  start() {
+    this.sync();
+    this.timer = setInterval(() => this.#tick(), 50);
+    const resync = () => this.sync();
+    screen.on('display-added', resync);
+    screen.on('display-removed', resync);
+    screen.on('display-metrics-changed', resync);
+  }
+
+  stop() {
+    clearInterval(this.timer);
+    for (const isl of this.islands.values()) if (!isl.win.isDestroyed()) isl.win.destroy();
+    this.islands.clear();
+  }
+
+  // --- Windows per screen ---
+
+  #targetDisplays() {
+    const all = screen.getAllDisplays();
+    const primary = screen.getPrimaryDisplay();
+    const mode = this.store.get('displayMode');
+    if (mode === 'all') return all;
+    if (mode === 'specific') {
+      const found = all.find((d) => displayKey(d) === this.store.get('displayKey') || String(d.id) === this.store.get('displayKey'));
+      return [found || primary];
+    }
+    return [primary];
+  }
+
+  #geometry(display) {
+    const b = display.bounds;
+    const cap = capWidth(b.width, this.store.get('manualSize'), this.store.get('manualOpenWidth'));
+    const width = Math.min(b.width, cap + 2 * PAD_X);
+    return { x: b.x + Math.round((b.width - width) / 2), y: b.y, width, height: WIN_H, cap };
+  }
+
+  /** Creates, moves or removes island windows so they match the screens and the settings. */
+  sync() {
+    const wanted = new Map(this.#targetDisplays().map((d) => [d.id, d]));
+    for (const [id, isl] of this.islands) {
+      if (!wanted.has(id)) {
+        if (!isl.win.isDestroyed()) isl.win.destroy();
+        this.islands.delete(id);
+      }
+    }
+    for (const [id, display] of wanted) {
+      let isl = this.islands.get(id);
+      if (!isl) {
+        isl = this.#create(display);
+        this.islands.set(id, isl);
+      }
+      isl.display = display;
+      const g = this.#geometry(display);
+      isl.cap = g.cap;
+      if (!isl.win.isDestroyed()) {
+        isl.win.setBounds({ x: g.x, y: g.y, width: g.width, height: g.height });
+        this.#sendInfo(isl);
+      }
+    }
+  }
+
+  #create(display) {
+    const g = this.#geometry(display);
+    const win = new BrowserWindow({
+      x: g.x,
+      y: g.y,
+      width: g.width,
+      height: g.height,
+      frame: false,
+      transparent: true,
+      backgroundColor: '#00000000',
+      resizable: false,
+      movable: false,
+      minimizable: false,
+      maximizable: false,
+      fullscreenable: false,
+      skipTaskbar: true,
+      alwaysOnTop: true,
+      hasShadow: false,
+      focusable: false,
+      show: false,
+      title: 'Dynamic Island Music',
+      webPreferences: {
+        preload: this.preload,
+        contextIsolation: true,
+        sandbox: true,
+        nodeIntegration: false,
+        backgroundThrottling: false,
+        spellcheck: false,
+      },
+    });
+    win.setAlwaysOnTop(true, 'screen-saver');
+    try {
+      win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true, skipTransformProcessType: true });
+    } catch {
+      /* not supported on this OS */
+    }
+    win.setIgnoreMouseEvents(true);
+    lockDown(win.webContents);
+
+    const isl = {
+      display,
+      win,
+      cap: g.cap,
+      open: false,
+      pins: new Set(),
+      holdUntil: 0,
+      rect: null,
+      hoverSince: 0,
+      leaveSince: 0,
+      ignoring: true,
+      focused: false,
+    };
+    win.on('closed', () => {
+      for (const [id, v] of this.islands) if (v === isl) this.islands.delete(id);
+    });
+    win.once('ready-to-show', () => {
+      if (!this.game.exclusive && !this.hiddenByUser) win.showInactive();
+    });
+    win.webContents.once('did-finish-load', () => this.onFirstLoad?.(isl));
+    win.loadFile(`${this.rendererDir}/island.html`);
+    return isl;
+  }
+
+  #sendInfo(isl) {
+    if (isl.win.isDestroyed()) return;
+    isl.win.webContents.send('island:info', this.infoFor(isl));
+  }
+
+  infoFor(isl) {
+    const d = isl.display;
+    return {
+      displayKey: displayKey(d),
+      displayId: d.id,
+      screenWidth: d.bounds.width,
+      screenHeight: d.bounds.height,
+      cap: isl.cap,
+      winWidth: isl.win.getBounds().width,
+      winHeight: WIN_H,
+      topOffset: this.store.get('topOffset'),
+      open: isl.open,
+      hz: d.displayFrequency || 60,
+    };
+  }
+
+  find(webContents) {
+    for (const isl of this.islands.values()) if (!isl.win.isDestroyed() && isl.win.webContents === webContents) return isl;
+    return null;
+  }
+
+  all() {
+    return [...this.islands.values()].filter((i) => !i.win.isDestroyed());
+  }
+
+  first() {
+    return this.all()[0] || null;
+  }
+
+  /** Tells every island something (settings changed, new song...). */
+  send(channel, payload) {
+    for (const isl of this.all()) isl.win.webContents.send(channel, payload);
+  }
+
+  // --- Open / close / pins ---
+
+  setOpen(isl, open) {
+    if (isl.open === open) return;
+    isl.open = open;
+    isl.hoverSince = 0;
+    isl.leaveSince = 0;
+    if (open) {
+      isl.win.setAlwaysOnTop(true, 'screen-saver');
+      isl.win.moveTop();
+    } else {
+      isl.pins.clear();
+      this.#giveUpFocus(isl);
+    }
+    isl.win.webContents.send('island:state', { open });
+  }
+
+  toggle() {
+    const isl = this.first();
+    if (!isl) return;
+    this.hiddenByUser = false;
+    this.#revealAll();
+    const open = !isl.open;
+    this.setOpen(isl, open);
+    if (open) isl.pins.add('toggle');
+  }
+
+  /** Opens the island for a moment (Pomodoro finished, shortcut over a game, first run). */
+  peek(ms = 4000, isl = this.first()) {
+    if (!isl) return;
+    this.#revealAll();
+    isl.holdUntil = Date.now() + ms;
+    this.setOpen(isl, true);
+  }
+
+  #revealAll() {
+    for (const i of this.all()) if (!i.win.isVisible()) i.win.showInactive();
+  }
+
+  pin(isl, reason, on) {
+    if (on) isl.pins.add(reason);
+    else isl.pins.delete(reason);
+  }
+
+  wantFocus(isl, on) {
+    const win = isl.win;
+    if (on) {
+      win.setFocusable(true);
+      win.focus();
+      isl.focused = true;
+      isl.pins.add('input');
+    } else {
+      isl.pins.delete('input');
+      this.#giveUpFocus(isl);
+    }
+  }
+
+  #giveUpFocus(isl) {
+    if (!isl.focused) return;
+    isl.focused = false;
+    try {
+      if (isl.win.isFocused()) isl.win.blur();
+      isl.win.setFocusable(false);
+    } catch {
+      /* window closing */
+    }
+  }
+
+  // --- Game mode ---
+
+  setGameState(state) {
+    const changed = state.exclusive !== this.game.exclusive || state.busy !== this.game.busy;
+    this.game = state;
+    if (!changed) return;
+    const hide = this.store.get('gameHideExclusive') && state.exclusive;
+    for (const isl of this.all()) {
+      if (hide && isl.win.isVisible()) {
+        this.setOpen(isl, false);
+        isl.win.hide();
+      } else if (!hide && !isl.win.isVisible() && !this.hiddenByUser) {
+        isl.win.showInactive();
+      }
+    }
+    this.send('sys:game', this.game);
+  }
+
+  gameBlocksHover() {
+    return this.store.get('gameBasicOnly') && (this.game.busy || this.game.exclusive);
+  }
+
+  // --- Pointer watching ---
+
+  #hotZone(isl) {
+    const w = isl.win.getBounds().width;
+    const top = this.store.get('topOffset');
+    const strip = { x: w / 2 - 110, y: 0, w: 220, h: top + 26 };
+    return [strip, grow(isl.rect, 8)];
+  }
+
+  #setIgnore(isl, ignore) {
+    if (isl.ignoring === ignore) return;
+    isl.ignoring = ignore;
+    try {
+      isl.win.setIgnoreMouseEvents(ignore);
+    } catch {
+      /* closing */
+    }
+  }
+
+  #tick() {
+    if (!this.islands.size) return;
+    const p = screen.getCursorScreenPoint();
+    const now = Date.now();
+    for (const isl of this.all()) {
+      if (!isl.win.isVisible()) continue;
+      const b = isl.win.getBounds();
+      const local = { x: p.x - b.x, y: p.y - b.y };
+      const overIsland = inRect(grow(isl.rect, 6), local);
+      this.#setIgnore(isl, !(overIsland || isl.focused));
+
+      if (!isl.open) {
+        const inZone = this.#hotZone(isl).some((z) => inRect(z, local));
+        if (inZone && this.store.get('openOnHover') && !this.gameBlocksHover()) {
+          if (!isl.hoverSince) isl.hoverSince = now;
+          else if (now - isl.hoverSince >= this.store.get('hoverDelay')) this.setOpen(isl, true);
+        } else {
+          isl.hoverSince = 0;
+        }
+      } else {
+        const inside = inRect(grow(isl.rect, 16), local);
+        if (!inside && isl.pins.size === 0 && now > isl.holdUntil) {
+          if (!isl.leaveSince) isl.leaveSince = now;
+          else if (now - isl.leaveSince >= this.store.get('closeDelay')) this.setOpen(isl, false);
+        } else {
+          isl.leaveSince = 0;
+        }
+      }
+    }
+  }
+
+  // --- Settings window ---
+
+  openSettings(tab) {
+    if (this.settingsWin && !this.settingsWin.isDestroyed()) {
+      if (this.settingsWin.isMinimized()) this.settingsWin.restore();
+      this.settingsWin.show();
+      this.settingsWin.focus();
+      if (tab) this.settingsWin.webContents.send('settings:goto', tab);
+      return;
+    }
+    const mica = process.platform === 'win32' && Number(os.release().split('.')[2]) >= 22000;
+    const win = new BrowserWindow({
+      width: 1000,
+      height: 700,
+      minWidth: 780,
+      minHeight: 520,
+      show: false,
+      title: 'Dynamic Island Music · Ajustes',
+      backgroundColor: mica ? '#00000000' : '#101218',
+      ...(mica ? { backgroundMaterial: 'mica' } : {}),
+      autoHideMenuBar: true,
+      titleBarStyle: 'hidden',
+      titleBarOverlay: { color: '#00000000', symbolColor: '#cfd3dc', height: 44 },
+      webPreferences: {
+        preload: this.preload,
+        contextIsolation: true,
+        sandbox: true,
+        nodeIntegration: false,
+        spellcheck: false,
+      },
+    });
+    this.settingsWin = win;
+    lockDown(win.webContents);
+    win.once('ready-to-show', () => win.show());
+    win.on('closed', () => {
+      this.settingsWin = null;
+    });
+    win.loadFile(`${this.rendererDir}/settings.html`, { query: { tab: tab || '', mica: mica ? '1' : '' } });
+  }
+
+  settingsSend(channel, payload) {
+    if (this.settingsWin && !this.settingsWin.isDestroyed()) this.settingsWin.webContents.send(channel, payload);
+  }
+
+  // --- AI sites in their own window (use your own account in the browser, no API key) ---
+
+  openWeb(url, partition) {
+    if (!/^https:\/\/(claude\.ai|chatgpt\.com|gemini\.google\.com)\//.test(url)) return;
+    const win = new BrowserWindow({
+      width: 460,
+      height: 720,
+      title: 'IA',
+      autoHideMenuBar: true,
+      backgroundColor: '#101218',
+      webPreferences: { partition: `persist:${partition}`, contextIsolation: true, sandbox: true, nodeIntegration: false },
+    });
+    win.webContents.setWindowOpenHandler(({ url: u }) => {
+      if (isHttp(u)) shell.openExternal(u);
+      return { action: 'deny' };
+    });
+    win.loadURL(url);
+  }
+}
+
+/** No page of ours may navigate away or open windows: links go to the system browser. */
+export function lockDown(contents) {
+  contents.on('will-navigate', (e) => e.preventDefault());
+  contents.setWindowOpenHandler(({ url }) => {
+    if (isHttp(url)) shell.openExternal(url);
+    return { action: 'deny' };
+  });
+}

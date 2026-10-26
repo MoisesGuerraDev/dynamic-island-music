@@ -18,10 +18,10 @@ let editExtraHeight: CGFloat = 40
 let maxOpenWidth: CGFloat = 1300
 let openNotchSize: CGSize = .init(width: 900, height: 232)
 let windowSize: CGSize = .init(width: maxOpenWidth + 2 * windowSidePadding, height: openNotchSize.height + editExtraHeight + shadowPadding)
-let cornerRadiusInsets: (opened: (top: CGFloat, bottom: CGFloat), closed: (top: CGFloat, bottom: CGFloat)) = (opened: (top: 19, bottom: 24), closed: (top: 6, bottom: 14))
+let cornerRadiusInsets: (opened: (top: CGFloat, bottom: CGFloat), closed: (top: CGFloat, bottom: CGFloat)) = (opened: (top: 0, bottom: 28), closed: (top: 0, bottom: 14))
 
 enum MusicPlayerImageSizes {
-    static let cornerRadiusInset: (opened: CGFloat, closed: CGFloat) = (opened: 13.0, closed: 4.0)
+    static let cornerRadiusInset: (opened: CGFloat, closed: CGFloat) = (opened: 16.0, closed: 4.0)
     static let size = (opened: CGSize(width: 90, height: 90), closed: CGSize(width: 20, height: 20))
 }
 

@@ -60,6 +60,7 @@ struct IslandSettingsView: View {
 
     var body: some View {
         VStack(spacing: 0) {
+            Color.clear.frame(height: 22)
             ScrollView(.horizontal, showsIndicators: false) {
                 HStack(spacing: 2) {
                     ForEach(Tab.allCases) { t in
@@ -70,7 +71,7 @@ struct IslandSettingsView: View {
                             }
                             .frame(width: 78, height: 50)
                             .foregroundStyle(tab == t ? Color.effectiveAccent : Color.secondary)
-                            .background(tab == t ? Color.primary.opacity(0.09) : Color.clear, in: RoundedRectangle(cornerRadius: 9, style: .continuous))
+                            .background { if tab == t { Color.clear.mockGlass(RoundedRectangle(cornerRadius: 12, style: .continuous)) } }
                             .contentShape(Rectangle())
                         }
                         .buttonStyle(.plain)
@@ -105,8 +106,9 @@ struct IslandSettingsView: View {
             .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .formStyle(.grouped)
+        .scrollContentBackground(.hidden)
         .frame(width: 780, height: 660)
-        .background(Color(NSColor.windowBackgroundColor))
+        .background(VisualEffectView(material: .hudWindow, blendingMode: .behindWindow).ignoresSafeArea())
         .tint(.effectiveAccent)
         .id(accentTrigger)
         .onReceive(NotificationCenter.default.publisher(for: NSNotification.Name("AccentColorChanged"))) { _ in
@@ -184,6 +186,7 @@ struct GlassSettings: View {
                 Text("El estilo lo eliges tú, pero el color siempre sale de la carátula de la canción que suena: si la portada es roja, el brillo es rojo.")
             }
             Section {
+                Defaults.Toggle("Notch de vidrio transparente", key: .glassNotch)
                 Defaults.Toggle("Botones de vidrio", key: .liquidGlassButtons)
                 Defaults.Toggle("Usar el Liquid Glass del sistema (macOS 26)", key: .liquidGlassSystem)
             } header: {
@@ -533,12 +536,13 @@ struct LiveSettings: View {
         Form {
             Section {
                 Toggle("Música sonando", isOn: $coordinator.musicLiveActivityEnabled)
+                Defaults.Toggle("Con música, el mouse sobre el notch muestra anterior, pausa y siguiente (clic para abrir)", key: .liveControls)
+                Defaults.Toggle("Ondas de sonido a la derecha del notch", key: .liveSpectrum)
                 Defaults.Toggle("Pomodoro en marcha", key: .livePomodoro)
-                Defaults.Toggle("Mostrar la carátula junto al temporizador si suena música", key: .liveMusic)
             } header: {
                 Text("Qué se muestra con el notch cerrado")
             } footer: {
-                Text("Si hay música y Pomodoro a la vez, la carátula va a la izquierda del notch y el tiempo del temporizador a la derecha. Cuando termina el Pomodoro, el notch se abre un momento y suena el aviso (se configura en la pestaña Pomodoro).")
+                Text("Si hay música y Pomodoro a la vez, se muestra el Pomodoro: el tiempo y la fase a la izquierda y una insignia a la derecha. Al pasar el mouse aparecen los botones. Cuando termina el Pomodoro, el notch se abre un momento y suena el aviso (se configura en la pestaña Pomodoro).")
             }
         }
     }

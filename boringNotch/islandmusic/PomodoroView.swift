@@ -78,14 +78,3 @@ struct PomodoroView: View {
         KeyboardFocus.shared.release()
     }
 }
-
-/// Closed-notch live activity for the timer.
-struct PomodoroLiveText: View {
-    @ObservedObject var pomo = PomodoroManager.shared
-    var body: some View {
-        Text(TimeText.clock(pomo.remaining))
-            .font(.system(size: 12, weight: .semibold, design: .monospaced))
-            .foregroundStyle(Color(red: 0.6, green: 0.76, blue: 1))
-            .monospacedDigit()
-    }
-}

@@ -1,0 +1,829 @@
+// The island page: open panel, closed pill, edit mode and every tab. The main process owns the data;
+// this file draws it and sends back what the person does.
+import { S, bus, comps, activeComps, pages, metaOf, tabsAvailable, enabledAI, defaultAI, aiMeta, componentOn } from './state.js';
+import { esc, $, $$, dayKey } from './util.js';
+import { ic, fi } from './icons.js';
+import { colHTML, musicPos, pomoRemaining, timeFontSize, perfHTML } from './components.js';
+import { trayHTML, clipHTML, chatHTML, bindChat, gameHTML, bindGame, stopGame, focusChatInput } from './views.js';
+import { editBarHTML, bindEdit, setComps } from './edit.js';
+import { setLensEnabled, startLens } from './lens.js';
+import { startAmbient } from './ambient.js';
+import { paletteFromImage, paletteFromHex, DEFAULT_PALETTE } from './colors.js';
+import { playPomodoroSound } from './sounds.js';
+import { openWidth } from '../shared/layout.js';
+import { formatDuration, parseDuration } from '../shared/time.js';
+
+let dim;
+const TABN = { home: 'Inicio', tray: 'Bandeja', game: 'Juego', clip: 'Portapapeles', chat: 'Mini chat' };
+const TABI = { home: 'home', tray: 'tray', game: 'game', clip: 'clip', chat: 'spark' };
+
+// ---------- Style ----------
+
+let paletteKey = '';
+
+function setPalette(p) {
+  const root = document.documentElement.style;
+  root.setProperty('--c1', p.c1);
+  root.setProperty('--c2', p.c2);
+  root.setProperty('--c3', p.c3);
+}
+
+async function updatePalette() {
+  const s = S.set;
+  let key = 'default';
+  let pal = DEFAULT_PALETTE;
+  if (s.glowColorMode === 'custom') {
+    key = `custom:${s.glowColor}`;
+    pal = paletteFromHex(s.glowColor);
+  } else if (s.coverColors && S.music && S.music.session && S.music.cover) {
+    key = `cover:${S.music.key}`;
+    if (key === paletteKey) return;
+    paletteKey = key;
+    const p = await paletteFromImage(S.music.cover);
+    if (p) setPalette(p);
+    else setPalette(DEFAULT_PALETTE);
+    return;
+  }
+  if (key === paletteKey) return;
+  paletteKey = key;
+  setPalette(pal);
+}
+
+function applyStyle() {
+  const s = S.set;
+  const root = document.documentElement;
+  const stage = $('#stage');
+  const notch = $('#notch');
+  const pointer = notch.classList.contains('pointer');
+  notch.className = `notch g-${['off', 'soft', 'strong', 'glass'].includes(s.glowStyle) ? s.glowStyle : 'glass'}${pointer ? ' pointer' : ''}`;
+  stage.classList.toggle('is-open', S.open);
+  stage.classList.toggle('hide-tabs', !s.showTabs);
+  stage.classList.toggle('hide-header', !s.showHeaderButtons);
+  stage.classList.toggle('no-viz', !s.visualizer);
+  stage.classList.toggle('no-bounce', !s.hoverBounce);
+  stage.classList.toggle('flat', !s.liquidButtons);
+  stage.classList.toggle('no-shadow', !s.windowShadow);
+  root.style.setProperty('--top', `${s.topOffset}px`);
+  root.style.setProperty('--pa', String(Math.max(0.3, Math.min(1, s.panelOpacity / 100))));
+  setLensEnabled(s.liquidButtons);
+  updatePalette();
+}
+
+// ---------- Header ----------
+
+function renderTabs() {
+  const tabs = tabsAvailable();
+  $('#ntabs-l').innerHTML = tabs
+    .map((n) => `<button class="tab${S.view === n ? ' on' : ''}" data-act="tab" data-v="${n}" aria-label="${TABN[n]}" title="${TABN[n]}">${ic(TABI[n])}</button>`)
+    .join('');
+  const b = S.battery;
+  const pct = b ? Math.round(b.level * 100) : 0;
+  const bat = S.set.batteryPill && S.hasBattery !== false && b ? `<span class="pill"><span class="bat${b.charging ? ' chg' : ''}" style="--lvl:${Math.max(8, pct)}%"></span>${pct}%</span>` : '';
+  $('#ntabs-r').innerHTML = `${bat}<button class="round" data-act="edit-toggle" aria-label="${S.editing ? 'Terminar de editar' : 'Editar componentes'}" title="${S.editing ? 'Listo' : 'Editar componentes'}">${ic(S.editing ? 'check' : 'edit')}</button><button class="round" data-act="open-settings" aria-label="Ajustes" title="Ajustes">${ic('gear')}</button><button class="round" data-act="close-island" aria-label="Cerrar la isla" title="Cerrar la isla">${ic('x')}</button>`;
+}
+
+function renderDots(n) {
+  const m = $('#ntabs-m');
+  if (n < 2) {
+    m.innerHTML = '';
+    return;
+  }
+  m.innerHTML = `<span class="dots">${Array.from({ length: n }, (_, i) => `<button class="dot${i === S.page ? ' on' : ''}" data-act="dot" data-p="${i}" aria-label="Página ${i + 1}"></button>`).join('')}</span>`;
+}
+
+// ---------- Row ----------
+
+function keepFocus(fn) {
+  const a = document.activeElement;
+  const id = a && a.id;
+  const isText = a && (a.tagName === 'INPUT' || a.tagName === 'TEXTAREA');
+  const val = isText ? a.value : null;
+  const ss = isText ? a.selectionStart : 0;
+  fn();
+  if (id && isText) {
+    const n = document.getElementById(id);
+    if (n) {
+      n.focus();
+      n.value = val;
+      try {
+        n.setSelectionRange(ss, ss);
+      } catch {
+        /* not a text field */
+      }
+    }
+  }
+}
+
+function setWidth(px) {
+  $('#notch').style.setProperty('--w', `${Math.round(px)}px`);
+}
+
+function renderRow() {
+  keepFocus(() => {
+    const row = $('#row');
+    stopGame();
+    row.className = `row${S.set.separators ? ' seps' : ''}`;
+    row.style.height = S.view === 'chat' ? '214px' : '';
+    $('#ntabs-m').innerHTML = '';
+    $('#editbar').hidden = true;
+    const cap = S.info.cap;
+
+    if (S.view !== 'home') {
+      const homeW = openWidth((pages()[Math.min(S.page, pages().length - 1)] || []), cap);
+      setWidth(Math.min(cap, Math.max(680, homeW)));
+      if (S.view === 'tray') row.innerHTML = trayHTML();
+      else if (S.view === 'clip') row.innerHTML = clipHTML();
+      else if (S.view === 'game') {
+        row.innerHTML = gameHTML();
+        bindGame();
+      } else if (S.view === 'chat') {
+        row.innerHTML = chatHTML();
+        bindChat();
+      }
+      afterRender();
+      return;
+    }
+
+    const act = activeComps();
+    if (!act.length) {
+      setWidth(560);
+      row.innerHTML = '<p class="empty">Enciende al menos un componente en Ajustes o agrégalo con el lápiz.</p>';
+      renderEditBar();
+      afterRender();
+      return;
+    }
+    const pgs = pages();
+    if (S.page >= pgs.length) S.page = pgs.length - 1;
+    if (S.page < 0) S.page = 0;
+    const items = pgs[S.page];
+    setWidth(openWidth(items, cap));
+    renderDots(pgs.length);
+    row.innerHTML = items
+      .map(
+        (c) =>
+          `<div class="col${S.editing ? ' ed' : ''}" data-k="${c.id}" style="flex:${c.width} 1 ${c.width}px;min-width:${metaOf(c.id).min}px"${S.editing ? ' draggable="true"' : ''}>${
+            S.editing
+              ? `<button class="mnus" data-act="rm-comp" data-k="${c.id}" aria-label="Quitar ${metaOf(c.id).name}">${ic('minus')}</button><span class="rsz" data-rz="${c.id}" role="separator" aria-label="Cambiar el tamaño de ${metaOf(c.id).name}"></span>`
+              : ''
+          }${colHTML(c.id)}</div>`,
+      )
+      .join('');
+    bindEdit(row);
+    renderEditBar();
+    afterRender();
+  });
+}
+
+function renderEditBar() {
+  const eb = $('#editbar');
+  if (!S.editing || S.view !== 'home') {
+    eb.hidden = true;
+    return;
+  }
+  eb.hidden = false;
+  eb.innerHTML = editBarHTML();
+}
+
+/** Things to do after any redraw of the row: focus inputs, attach the camera, refresh the rectangle. */
+function afterRender() {
+  bindInputs();
+  const v = $('#camv');
+  if (v && camStream) v.srcObject = camStream;
+  renderPill();
+  syncPerf();
+  scheduleRect();
+}
+
+function bindInputs() {
+  const nin = $('#note-in');
+  if (nin) {
+    if (document.activeElement !== nin) nin.focus();
+    nin.onkeydown = (e) => {
+      if (e.key === 'Enter') {
+        const v = nin.value.trim();
+        S.ui.noteAdding = false;
+        if (v) dim.notes.add(v, !(e.ctrlKey || e.metaKey));
+        renderRow();
+      } else if (e.key === 'Escape') {
+        e.stopPropagation();
+        S.ui.noteAdding = false;
+        renderRow();
+      }
+    };
+    nin.onblur = () => setTimeout(() => {
+      const cur = $('#note-in');
+      if (S.ui.noteAdding && (!cur || document.activeElement !== cur)) {
+        S.ui.noteAdding = false;
+        renderRow();
+      }
+    }, 150);
+  }
+  const cin = $('#cal-in');
+  if (cin) {
+    if (document.activeElement !== cin) cin.focus();
+    cin.onkeydown = (e) => {
+      if (e.key === 'Enter') {
+        const v = cin.value.trim();
+        const m = /^(\d{1,2}):(\d{2})\s+(.+)$/.exec(v);
+        const date = dayKey(new Date(Date.now() + S.ui.calDay * 86_400_000));
+        S.ui.calAdding = false;
+        if (v) dim.calendar.add(m ? { title: m[3], time: `${m[1].padStart(2, '0')}:${m[2]}`, date } : { title: v, time: '', date });
+        renderRow();
+      } else if (e.key === 'Escape') {
+        e.stopPropagation();
+        S.ui.calAdding = false;
+        renderRow();
+      }
+    };
+    cin.onblur = () => setTimeout(() => {
+      const cur = $('#cal-in');
+      if (S.ui.calAdding && (!cur || document.activeElement !== cur)) {
+        S.ui.calAdding = false;
+        renderRow();
+      }
+    }, 150);
+  }
+  const tin = $('#tin');
+  if (tin) {
+    if (document.activeElement !== tin) {
+      tin.focus();
+      tin.select();
+    }
+    const apply = () => {
+      const sec = parseDuration(tin.value);
+      S.ui.timeEditing = false;
+      if (sec > 0) dim.pomo.act('setDuration', sec);
+      renderRow();
+    };
+    tin.onkeydown = (e) => {
+      if (e.key === 'Enter') apply();
+      else if (e.key === 'Escape') {
+        e.stopPropagation();
+        S.ui.timeEditing = false;
+        renderRow();
+      }
+    };
+    tin.onblur = () => setTimeout(() => {
+      if (S.ui.timeEditing && document.activeElement !== $('#tin')) apply();
+    }, 150);
+  }
+}
+
+function render() {
+  applyStyle();
+  renderTabs();
+  renderRow();
+}
+
+bus.render = render;
+bus.renderCol = renderRow;
+bus.renderPill = renderPill;
+bus.renderTabs = renderTabs;
+bus.syncPerf = syncPerf;
+
+// ---------- Closed pill (live activities) ----------
+
+const LIVE_ORDER = { mus: ['mus', 'pom', 'perf', 'bat'], pom: ['pom', 'mus', 'perf', 'bat'] };
+
+function liveKeys() {
+  const s = S.set;
+  const m = S.music;
+  const on = {
+    mus: s.liveMusic && m && m.session && (m.playing || Date.now() - S.lastPlayedAt < s.hideMusicAfterPause * 1000),
+    pom: s.livePomodoro && S.pomo && S.pomo.running,
+    perf: s.livePerf && S.perf && (!s.perfOnlyWhenGame || S.game.busy),
+    bat: s.liveBattery && S.hasBattery && S.battery && S.battery.charging,
+  };
+  return (LIVE_ORDER[s.livePrio] || LIVE_ORDER.mus).filter((k) => on[k]);
+}
+
+function liveParts(k) {
+  const m = S.music;
+  if (k === 'mus') {
+    const mart = `<span class="mart">${m.cover ? `<img src="${esc(m.cover)}" alt="">` : ''}</span>`;
+    const viz = '<span class="viz"><i></i><i></i><i></i><i></i></span>';
+    return { l: mart, r: viz, c: mart + viz };
+  }
+  if (k === 'pom') {
+    const icn = `<span class="ci2">${ic('clock')}</span>`;
+    const t = `<b class="mono" data-pt>${formatDuration(Math.ceil(pomoRemaining()))}</b>`;
+    return { l: icn, r: t, c: icn + t };
+  }
+  if (k === 'perf') {
+    const p = S.perf;
+    const left = `<span class="fps">CPU ${p.cpu}%</span>`;
+    const gpu = p.gpu === null ? `<b class="mono">RAM ${p.ramPercent}%</b>` : `<b class="mono">GPU ${S.set.perfShowTemp && p.gpuTemp !== null ? p.gpuTemp + '°' : p.gpu + '%'}</b>`;
+    return { l: left, r: gpu, c: `<span class="fps">${p.cpu}%</span>${p.gpu === null ? '' : gpu}` };
+  }
+  const pct = Math.round(S.battery.level * 100);
+  const bolt = `<span class="ci2 gr">${ic('bolt')}</span>`;
+  return { l: bolt, r: `<b class="mono">${pct}%</b>`, c: `${bolt}<b class="mono">${pct}%</b>` };
+}
+
+let lastLiveSig = '';
+
+function renderPill() {
+  const pill = $('#pill');
+  const third = $('#third');
+  const keys = liveKeys();
+  const s = S.set;
+  const max = Math.max(1, Math.min(3, s.liveMax));
+  let ordered = keys.slice();
+  if (ordered.length > max) {
+    const r = S.rot % ordered.length;
+    ordered = ordered.slice(r).concat(ordered.slice(0, r));
+  }
+  const shown = ordered.slice(0, max);
+  const extra = keys.length - shown.length;
+  const show = s.closedStyle === 'always' || (s.closedStyle === 'activity' && keys.length > 0);
+  lastLiveSig = `${keys.join()}|${S.rot}|${max}|${show}`;
+
+  let html = '<span class="idle"></span>';
+  let w = 150;
+  const two = shown.slice(0, 2);
+  if (two.length === 1) {
+    const p = liveParts(two[0]);
+    html = `<div class="lside">${p.l}</div><div class="rside">${p.r}</div>`;
+    w = 260;
+  } else if (two.length === 2) {
+    html = `<div class="lside">${liveParts(two[0]).c}</div><div class="rside">${liveParts(two[1]).c}</div>`;
+    w = 440;
+  }
+  if (extra > 0 || (shown.length > 2 && !s.liveThirdBelow)) html += `<span class="more" title="Las demás rotan cada ${s.liveRotate} segundos">+${Math.max(extra, shown.length - 2)}</span>`;
+  pill.innerHTML = html;
+  pill.style.width = `${w}px`;
+  pill.classList.toggle('off', !show);
+  pill.classList.toggle('glow', shown.includes('mus') && s.glowStyle !== 'off');
+  pill.classList.toggle('paused', !(S.music && S.music.playing));
+
+  if (shown.length > 2 && s.liveThirdBelow && !S.open) {
+    third.innerHTML = liveParts(shown[2]).c;
+    third.hidden = false;
+  } else {
+    third.hidden = true;
+  }
+  scheduleRect();
+}
+
+// ---------- Toast ----------
+
+let toastTimer = null;
+
+function showToast(item) {
+  if (S.open) return;
+  const t = $('#toast');
+  t.innerHTML = `<span class="ck">Copiado</span><span class="tx">${esc(item.kind === 'image' ? item.text : item.text.slice(0, 120))}</span>`;
+  t.hidden = false;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => {
+    t.hidden = true;
+  }, 2400);
+}
+
+// ---------- Pointer rectangle for the main process ----------
+
+let rectTimer = null;
+
+function reportRect() {
+  const notch = $('#notch');
+  const pill = $('#pill');
+  let r = { x: 0, y: 0, w: 0, h: 0 };
+  if (S.open) r = { x: notch.offsetLeft, y: notch.offsetTop, w: notch.offsetWidth, h: notch.offsetHeight };
+  else if (!pill.classList.contains('off')) {
+    const b = pill.getBoundingClientRect();
+    r = { x: b.left, y: b.top, w: b.width, h: b.height };
+  }
+  dim.island.reportRect(r);
+}
+
+function scheduleRect() {
+  clearTimeout(rectTimer);
+  rectTimer = setTimeout(reportRect, 30);
+  setTimeout(reportRect, 480);
+}
+
+// ---------- Perf subscription ----------
+
+let perfSub = false;
+
+function syncPerf() {
+  const s = S.set;
+  const items = S.view === 'home' && S.open ? (pages()[Math.min(S.page, pages().length - 1)] || []) : [];
+  const inPanel = S.open && items.some((c) => c.id === 'performance');
+  const inPill = !S.open && s.livePerf && (!s.perfOnlyWhenGame || S.game.busy);
+  const need = inPanel || inPill;
+  if (need !== perfSub) {
+    perfSub = need;
+    dim.perf.subscribe(need);
+  }
+}
+
+// ---------- Camera ----------
+
+let camStream = null;
+
+async function startCam() {
+  try {
+    camStream = await navigator.mediaDevices.getUserMedia({ video: { width: 240, height: 240 }, audio: false });
+    S.ui.camOn = true;
+    S.ui.camError = '';
+  } catch {
+    camStream = null;
+    S.ui.camOn = false;
+    S.ui.camError = 'No se pudo abrir la cámara. Revisa los permisos de Windows.';
+  }
+  renderRow();
+}
+
+function stopCam() {
+  if (camStream) camStream.getTracks().forEach((t) => t.stop());
+  camStream = null;
+  S.ui.camOn = false;
+}
+
+// ---------- Actions ----------
+
+function setView(v) {
+  if (S.view === v) return;
+  S.view = v;
+  S.editing = false;
+  dim.island.pin('edit', false);
+  stopGame();
+  renderTabs();
+  renderRow();
+  if (v === 'chat') setTimeout(focusChatInput, 60);
+}
+
+function setOpenLocal(open) {
+  S.open = open;
+  $('#stage').classList.toggle('is-open', open);
+  if (!open) {
+    S.editing = false;
+    S.ui.noteAdding = S.ui.calAdding = S.ui.timeEditing = false;
+    S.view = 'home';
+    S.page = 0;
+    stopGame();
+    stopCam();
+    dim.island.wantFocus(false);
+    renderTabs();
+    renderRow();
+  } else {
+    renderTabs();
+    renderRow();
+  }
+  renderPill();
+  syncPerf();
+  scheduleRect();
+}
+
+function endEdit() {
+  S.editing = false;
+  dim.island.pin('edit', false);
+  renderTabs();
+  renderRow();
+}
+
+const actions = {
+  tab: (t) => setView(t.dataset.v),
+  'open-view': (t) => setView(t.dataset.v),
+  'edit-toggle': () => {
+    S.editing = !S.editing;
+    if (S.editing && S.view !== 'home') S.view = 'home';
+    dim.island.pin('edit', S.editing);
+    renderTabs();
+    renderRow();
+  },
+  'open-settings': () => dim.island.openSettings(''),
+  'open-ai-settings': () => dim.island.openSettings('ia'),
+  'close-island': () => dim.island.setOpen(false),
+  dot: (t) => {
+    S.page = +t.dataset.p;
+    renderRow();
+  },
+  'rm-comp': (t, e) => {
+    e.stopPropagation();
+    setComps(comps().map((c) => (c.id === t.dataset.k ? { ...c, enabled: false } : c)));
+    renderRow();
+  },
+  'add-comp': (t) => {
+    setComps(comps().map((c) => (c.id === t.dataset.k ? { ...c, enabled: true } : c)));
+    renderRow();
+  },
+  // music
+  'music-toggle': () => dim.music.control('toggle'),
+  'music-next': () => dim.music.control('next'),
+  'music-prev': () => dim.music.control('prev'),
+  'music-seek': (t, e) => {
+    if (!S.music || !S.music.canSeek || !S.music.duration) return;
+    const r = t.getBoundingClientRect();
+    dim.music.control('seek', Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)) * S.music.duration);
+  },
+  // pomodoro
+  'pomo-toggle': () => dim.pomo.act('toggle'),
+  'pomo-reset': () => dim.pomo.act('reset'),
+  'pomo-skip': () => dim.pomo.act('skip'),
+  'pomo-edit': () => {
+    S.ui.timeEditing = true;
+    renderRow();
+  },
+  // calendar
+  'cal-day': (t) => {
+    S.ui.calDay = +t.dataset.o;
+    renderRow();
+  },
+  'cal-add': () => {
+    S.ui.calAdding = !S.ui.calAdding;
+    renderRow();
+  },
+  'cal-del': (t) => dim.calendar.remove(t.dataset.id),
+  'ai-open': (t) => {
+    const p = t.dataset.ai;
+    if (S.set.aiOpenMode === 'web' && ['claude', 'openai', 'gemini'].includes(p)) {
+      dim.ai.openWeb(p);
+      return;
+    }
+    S.chat.provider = p;
+    setView('chat');
+    if (S.view === 'chat') renderRow();
+  },
+  // notes
+  'note-add': () => {
+    S.ui.noteAdding = !S.ui.noteAdding;
+    renderRow();
+  },
+  'note-toggle': (t) => {
+    if (t.dataset.task === '1') dim.notes.toggle(t.dataset.id);
+  },
+  'note-del': (t, e) => {
+    e.stopPropagation();
+    dim.notes.remove(t.dataset.id);
+  },
+  // camera
+  'cam-toggle': () => {
+    if (S.ui.camOn) {
+      stopCam();
+      renderRow();
+    } else startCam();
+  },
+  // clipboard
+  'clip-copy': async (t) => {
+    const ok = await dim.clip.copy(t.dataset.id);
+    const ca = t.querySelector('[data-ca]');
+    if (ok && ca) {
+      const old = ca.textContent;
+      ca.textContent = 'Copiado';
+      ca.classList.add('ok');
+      setTimeout(() => {
+        ca.textContent = old;
+        ca.classList.remove('ok');
+      }, 1200);
+    }
+  },
+  'clip-pause': () => dim.settings.patch({ clipPaused: !S.clip.paused }),
+  'clip-clear': () => dim.clip.clear(),
+  // shelf
+  'shelf-open': (t) => dim.shelf.reveal(t.dataset.id),
+  'shelf-clear': () => dim.shelf.clear(),
+  // chat
+  'chat-provider': (t) => {
+    S.chat.provider = t.dataset.p;
+    renderRow();
+    focusChatInput();
+  },
+  'chat-clear': () => {
+    S.chat.messages = [];
+    dim.ai.clearHistory();
+    renderRow();
+  },
+  'pill-open': () => dim.island.setOpen(true),
+};
+
+document.addEventListener('click', (e) => {
+  const t = e.target.closest('[data-act]');
+  if (!t) return;
+  const fn = actions[t.dataset.act];
+  if (fn) fn(t, e);
+});
+
+document.addEventListener('contextmenu', (e) => {
+  const ci = e.target.closest('.ci[data-id]');
+  if (ci) {
+    e.preventDefault();
+    dim.clip.remove(ci.dataset.id);
+  }
+});
+
+$('#pill').addEventListener('click', () => dim.island.setOpen(true));
+
+document.addEventListener('keydown', (e) => {
+  if (e.key !== 'Escape') return;
+  if (S.editing) endEdit();
+  else if (document.activeElement && document.activeElement !== document.body && document.activeElement.tagName === 'INPUT') document.activeElement.blur();
+  else if (S.open) dim.island.setOpen(false);
+});
+
+// While a text field has the keyboard the island stays open and takes the keyboard focus from the system.
+document.addEventListener('focusin', (e) => {
+  if (e.target.matches && e.target.matches('input,textarea,canvas')) dim.island.wantFocus(true);
+});
+document.addEventListener('focusout', () => {
+  setTimeout(() => {
+    const a = document.activeElement;
+    if (!(a && a.matches && a.matches('input,textarea,canvas'))) dim.island.wantFocus(false);
+  }, 120);
+});
+
+// Files dropped on the island go to the tray.
+function hasFiles(e) {
+  return e.dataTransfer && Array.from(e.dataTransfer.types || []).includes('Files');
+}
+document.addEventListener('dragover', (e) => {
+  if (!hasFiles(e)) return;
+  e.preventDefault();
+  const d = $('#drop');
+  if (d) d.classList.add('over');
+});
+document.addEventListener('dragleave', () => {
+  const d = $('#drop');
+  if (d) d.classList.remove('over');
+});
+document.addEventListener('drop', async (e) => {
+  if (!hasFiles(e)) return;
+  e.preventDefault();
+  if (!S.set.shelfEnabled) return;
+  const paths = dim.shelf.pathsFromFiles(e.dataTransfer.files);
+  if (paths.length) {
+    await dim.shelf.addPaths(paths);
+    setView('tray');
+  }
+});
+document.addEventListener('dragstart', (e) => {
+  const f = e.target.closest && e.target.closest('.file[data-id]');
+  if (f) {
+    e.preventDefault();
+    dim.shelf.startDrag(f.dataset.id);
+  }
+});
+
+// ---------- Ticks ----------
+
+function tick() {
+  const m = S.music;
+  if (m && m.session) {
+    if (m.playing) S.lastPlayedAt = Date.now();
+    const pos = musicPos();
+    const f = $('[data-pfill]');
+    const c = $('[data-pcur]');
+    if (f && m.duration > 0) f.style.width = `${(pos / m.duration) * 100}%`;
+    if (c) c.textContent = formatDuration(pos);
+  }
+  const p = S.pomo;
+  if (p) {
+    const rem = pomoRemaining();
+    const text = formatDuration(Math.ceil(rem));
+    const t = $('[data-ptime]');
+    if (t) {
+      t.textContent = text;
+      t.style.fontSize = `${timeFontSize(text)}px`;
+    }
+    const b = $('[data-pbar]');
+    if (b && p.duration > 0) b.style.width = `${((p.duration - rem) / p.duration) * 100}%`;
+    const pt = $('[data-pt]');
+    if (pt) pt.textContent = text;
+  }
+  const sig = `${liveKeys().join()}|${S.rot}|${Math.max(1, Math.min(3, S.set.liveMax))}|${S.set.closedStyle === 'always' || (S.set.closedStyle === 'activity' && liveKeys().length > 0)}`;
+  if (sig !== lastLiveSig) renderPill();
+}
+
+let rotCount = 0;
+setInterval(() => {
+  tick();
+}, 250);
+setInterval(() => {
+  rotCount++;
+  if (rotCount % Math.max(2, S.set.liveRotate) === 0) {
+    S.rot++;
+    renderPill();
+  }
+}, 1000);
+
+// ---------- Boot ----------
+
+async function boot() {
+  if (!window.dim) await import('./dev-shim.js');
+  dim = window.dim;
+
+  const [set, info, music, pomo, notes, clip, cal, shelf, hist] = await Promise.all([
+    dim.settings.getAll(),
+    dim.island.info(),
+    dim.music.get(),
+    dim.pomo.get(),
+    dim.notes.get(),
+    dim.clip.get(),
+    dim.calendar.list(),
+    dim.shelf.list(),
+    dim.ai.history(),
+  ]);
+  S.set = set;
+  if (info) S.info = info;
+  S.open = !!(info && info.open);
+  S.music = music;
+  if (music && music.playing) S.lastPlayedAt = Date.now();
+  S.pomo = pomo;
+  S.notes = notes;
+  S.clip = clip;
+  S.cal = cal;
+  S.shelf = shelf;
+  S.chat.messages = (hist || []).map((m) => ({ role: m.role, text: m.text }));
+  S.chat.provider = defaultAI();
+
+  dim.settings.onChange((changed) => {
+    Object.assign(S.set, changed);
+    paletteKey = '';
+    render();
+  });
+  dim.island.onInfo((i) => {
+    S.info = i;
+    render();
+  });
+  dim.island.onState(({ open }) => setOpenLocal(open));
+  dim.island.onGame((g) => {
+    S.game = g;
+    renderPill();
+    syncPerf();
+  });
+  dim.island.onCommand((c) => {
+    if (c.name === 'open-chat') {
+      S.chat.provider = defaultAI();
+      if (S.view === 'chat') renderRow();
+      else setView('chat');
+      setTimeout(focusChatInput, 120);
+    }
+  });
+  dim.music.onState((m) => {
+    S.music = m;
+    if (m.playing) S.lastPlayedAt = Date.now();
+    updatePalette();
+    renderRow();
+  });
+  dim.pomo.onState((p) => {
+    S.pomo = p;
+    renderRow();
+  });
+  dim.pomo.onSound((cfg) => playPomodoroSound(cfg));
+  dim.notes.onChange((n) => {
+    S.notes = n;
+    renderRow();
+  });
+  dim.clip.onChange((c) => {
+    S.clip = c;
+    renderRow();
+  });
+  dim.clip.onToast(showToast);
+  dim.calendar.onChange((c) => {
+    S.cal = c;
+    renderRow();
+  });
+  dim.shelf.onChange((l) => {
+    S.shelf = l;
+    renderRow();
+  });
+  dim.perf.onSample((p) => {
+    S.perf = p;
+    const el = $('[data-perf]');
+    if (el) el.outerHTML = perfHTML();
+    if (liveKeys().includes('perf')) renderPill();
+  });
+
+  if (navigator.getBattery) {
+    navigator.getBattery().then((b) => {
+      const upd = () => {
+        S.battery = { level: b.level, charging: b.charging };
+        renderTabs();
+        renderPill();
+      };
+      b.addEventListener('levelchange', upd);
+      b.addEventListener('chargingchange', upd);
+      upd();
+    }).catch(() => {});
+  }
+  dim.system.info().then((i) => {
+    S.hasBattery = i && i.hasBattery !== undefined ? i.hasBattery : null;
+    if (i && i.game) S.game = i.game;
+    renderTabs();
+    renderPill();
+  });
+
+  const notch = $('#notch');
+  startLens(document.getElementById('stage'));
+  startAmbient(notch);
+  new ResizeObserver(scheduleRect).observe(notch);
+  new ResizeObserver(scheduleRect).observe($('#pill'));
+  $('#pill').addEventListener('transitionend', scheduleRect);
+  notch.addEventListener('transitionend', scheduleRect);
+  render();
+  scheduleRect();
+  document.body.dataset.ready = '1';
+}
+
+boot();

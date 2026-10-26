@@ -1,0 +1,190 @@
+// Default settings. Same component ids and widths as the macOS app (boringNotch/islandmusic/IslandDefaults.swift),
+// so the two apps feel the same. Everything here is configurable from the settings window.
+
+export const COMPONENTS = ['player', 'calendar', 'notes', 'pomodoro', 'camera', 'chat', 'clipboard', 'shelf', 'game', 'performance'];
+
+export const COMPONENT_META = {
+  player: { name: 'Reproductor', icon: 'screen', width: 300, min: 280 },
+  calendar: { name: 'Calendario', icon: 'cal', width: 190, min: 170 },
+  notes: { name: 'Notas', icon: 'note', width: 180, min: 150 },
+  pomodoro: { name: 'Temporizador', icon: 'clock', width: 170, min: 160 },
+  camera: { name: 'Cámara', icon: 'cam', width: 130, min: 110 },
+  chat: { name: 'Chat de IA', icon: 'spark', width: 220, min: 190 },
+  clipboard: { name: 'Portapapeles', icon: 'clip', width: 210, min: 170 },
+  shelf: { name: 'Bandeja', icon: 'tray', width: 210, min: 170 },
+  game: { name: 'Juego', icon: 'game', width: 160, min: 130 },
+  performance: { name: 'Rendimiento', icon: 'bolt', width: 190, min: 160 },
+};
+
+export const MAX_COMPONENT_WIDTH = 520;
+export const SIDE_PADDING = 18; // each side of the open island, as in the mockup (padding: 12px 18px)
+
+export function defaultComponents() {
+  const on = new Set(['player', 'calendar', 'notes', 'pomodoro', 'camera']);
+  return COMPONENTS.map((id) => ({ id, enabled: on.has(id), width: COMPONENT_META[id].width }));
+}
+
+export const AI_PROVIDERS = ['claude', 'openai', 'gemini', 'ollama', 'custom'];
+
+export const AI_META = {
+  claude: { name: 'Claude', letter: 'C', color: '#d97757', model: 'claude-haiku-5-5', needsKey: true },
+  openai: { name: 'ChatGPT', letter: 'G', color: '#10a37f', model: 'gpt-4o-mini', needsKey: true },
+  gemini: { name: 'Gemini', letter: 'Ge', color: '#4285f4', model: 'gemini-2.0-flash', needsKey: true },
+  ollama: { name: 'Ollama (local)', letter: 'O', color: '#8e93a3', model: 'llama3.2', needsKey: false },
+  custom: { name: 'Otra IA', letter: '+', color: '#a78bfa', model: '', needsKey: true },
+};
+
+export const POMO_SOUNDS = ['Campana', 'Cristal', 'Marimba', 'Pulso', 'Digital', 'Gong'];
+
+export const DEFAULTS = {
+  // Layout
+  components: defaultComponents(),
+  manualSize: false,
+  manualOpenWidth: 900,
+  rememberPerDisplay: true,
+  layoutsByDisplay: {},
+  topOffset: 10,
+
+  // System
+  welcomed: false,
+  launchAtLogin: true,
+  displayMode: 'primary', // primary | all | specific
+  displayKey: '',
+  openOnHover: true,
+  hoverDelay: 140,
+  closeDelay: 650,
+  closedStyle: 'activity', // always | activity | never
+
+  // Style
+  glowStyle: 'glass', // off | soft | strong | glass
+  panelOpacity: 78,
+  glowColorMode: 'cover', // cover | custom
+  glowColor: '#ff8a3d',
+  liquidButtons: true,
+  hoverBounce: true,
+  showTabs: true,
+  showHeaderButtons: true,
+  separators: true,
+  batteryPill: true,
+  windowShadow: true,
+
+  // Player
+  preferredPlayer: 'auto', // auto | spotify | apple | browser
+  coverColors: true,
+  visualizer: true,
+  hideMusicAfterPause: 30,
+
+  // Pomodoro (every duration is free, in seconds)
+  pomoFocusSeconds: 25 * 60,
+  pomoRestSeconds: 5 * 60,
+  pomoSprints: 4,
+  pomoSoundEnabled: true,
+  pomoSoundName: 'Campana',
+  pomoSoundVolume: 80,
+  pomoSoundRepeat: 2,
+  pomoCustomSound: '',
+  pomoNotify: true,
+  pomoAutoNext: false,
+  pomoOpenOnFinish: true,
+
+  // Notes
+  notesFolder: '',
+  notesShowAge: true,
+  notesHideDoneAfterDays: 1,
+  notesOrder: 'new', // new | old
+
+  // Calendar (events are stored on this PC)
+  calendarEnabled: true,
+
+  // AI chat
+  aiProvider: 'claude',
+  aiEnabled: { claude: true, openai: true, gemini: false, ollama: true, custom: false },
+  aiModels: {},
+  aiSaveHistory: true,
+  aiIncludeNowPlaying: false,
+  ollamaUrl: 'http://localhost:11434',
+  customBaseUrl: '',
+  aiOpenMode: 'mini', // mini | web
+
+  // Clipboard
+  clipEnabled: true,
+  clipPaused: false,
+  clipMax: 50,
+  clipPersist: true,
+  clipToast: true,
+  clipIgnoreSecrets: true,
+  clipIgnoredApps: ['1password', 'bitwarden', 'keepass', 'keepassxc', 'lastpass', 'dashlane', 'nordpass', 'enpass', 'roboform', 'protonpass'],
+  clipAutoDeleteDays: 7,
+
+  // Performance
+  perfShowCPU: true,
+  perfShowGPU: true,
+  perfShowRAM: true,
+  perfShowRefresh: true,
+  perfShowTemp: true,
+  perfInterval: 1000,
+  perfOnlyWhenGame: false,
+
+  // Live activities with the island closed
+  liveMusic: true,
+  livePomodoro: true,
+  livePerf: false,
+  liveBattery: false,
+  liveMax: 2,
+  livePrio: 'mus', // mus | pom
+  liveRotate: 5,
+  liveThirdBelow: true,
+
+  // Tabs of the open island
+  shelfEnabled: true,
+  shelfRemoveOnDrag: true,
+  gameTabEnabled: true,
+  snakeSpeed: 110,
+  snakeProgressive: true,
+  snakeBest: 0,
+  mirrorShape: 'circle', // circle | square
+
+  // Game mode (Windows)
+  gameHideExclusive: true,
+  gameBasicOnly: true,
+  gameMuteClipToast: true,
+
+  // Shortcuts (Electron accelerators; Ctrl on Windows)
+  shortcutToggle: 'Control+Shift+N',
+  shortcutPlayer: 'Control+Shift+P',
+  shortcutPomodoro: 'Control+Shift+T',
+  shortcutChat: 'Control+Alt+Space',
+  shortcutPeek: 'Control+Shift+Space',
+};
+
+export function clone(v) {
+  return v === undefined ? undefined : JSON.parse(JSON.stringify(v));
+}
+
+/** Fills in anything missing and keeps the components list complete and sane. */
+export function normalizeSettings(raw) {
+  const out = { ...clone(DEFAULTS), ...(raw && typeof raw === 'object' ? clone(raw) : {}) };
+  out.aiEnabled = { ...DEFAULTS.aiEnabled, ...(out.aiEnabled || {}) };
+  out.components = normalizeComponents(out.components);
+  return out;
+}
+
+export function normalizeComponents(list) {
+  const seen = new Set();
+  const out = [];
+  for (const c of Array.isArray(list) ? list : []) {
+    if (!c || !COMPONENT_META[c.id] || seen.has(c.id)) continue;
+    seen.add(c.id);
+    const meta = COMPONENT_META[c.id];
+    const w = Number(c.width);
+    out.push({
+      id: c.id,
+      enabled: !!c.enabled,
+      width: Number.isFinite(w) ? Math.max(meta.min, Math.min(MAX_COMPONENT_WIDTH, Math.round(w))) : meta.width,
+    });
+  }
+  for (const id of COMPONENTS) {
+    if (!seen.has(id)) out.push({ id, enabled: false, width: COMPONENT_META[id].width });
+  }
+  return out;
+}

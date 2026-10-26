@@ -1,0 +1,26 @@
+{
+  "name": "dynamic-island-music",
+  "productName": "Dynamic Island Music",
+  "version": "0.1.0",
+  "description": "Isla flotante para Windows 11 con música, Pomodoro, notas, chat de IA y más. Gratis, de código abierto y sin telemetría.",
+  "license": "GPL-3.0-only",
+  "author": "Dynamic Island Music contributors",
+  "homepage": "https://github.com/OWNER/REPO",
+  "type": "module",
+  "main": "src/main/index.js",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "start:mock": "DIM_MOCK_MEDIA=1 electron .",
+    "test": "node --test \"test/unit/*.test.mjs\"",
+    "test:e2e": "node test/e2e/run.mjs",
+    "icons": "scripts/make-icons.sh",
+    "dist": "electron-builder --win nsis --x64 --publish never",
+    "pack": "electron-builder --win --x64 --dir --publish never"
+  },
+  "devDependencies": {
+    "electron": "^45.0.0",
+    "electron-builder": "^26.18.0",
+    "playwright-core": "^1.64.1"
+  }
+}

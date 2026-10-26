@@ -58,7 +58,8 @@ struct IslandHomeView: View {
         let editing = layout.editing
         ZStack(alignment: .topLeading) {
             content(for: cfg.id)
-                .padding(.horizontal, 10)
+                .padding(.leading, cfg.id == .player ? 0 : 10)
+                .padding(.trailing, 10)
                 .frame(width: cfg.width, alignment: .topLeading)
                 .allowsHitTesting(!editing)
 
@@ -106,7 +107,7 @@ struct IslandHomeView: View {
             MusicPlayerView(albumArtNamespace: albumArtNamespace)
         case .calendar:
             HStack(alignment: .top, spacing: 6) {
-                CalendarView()
+                IslandCalendarView()
                     .onHover { vm.isHoveringCalendar = $0 }
                     .environmentObject(vm)
                 VStack(spacing: 6) {

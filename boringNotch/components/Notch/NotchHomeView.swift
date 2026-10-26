@@ -17,8 +17,9 @@ struct MusicPlayerView: View {
     let albumArtNamespace: Namespace.ID
 
     var body: some View {
-        HStack {
-            AlbumArtView(vm: vm, albumArtNamespace: albumArtNamespace).padding(.all, 5)
+        HStack(spacing: 12) {
+            AlbumArtView(vm: vm, albumArtNamespace: albumArtNamespace)
+                .frame(width: LayoutManager.designHeight, height: LayoutManager.designHeight)
             MusicControlsView().drawingGroup().compositingGroup()
         }
     }
@@ -146,8 +147,8 @@ struct AlbumArtView: View {
             AppIcon(for: musicManager.bundleIdentifier ?? "com.apple.Music")
                 .resizable()
                 .aspectRatio(contentMode: .fill)
-                .frame(width: 30, height: 30)
-                .offset(x: 10, y: 10)
+                .frame(width: 28, height: 28)
+                .offset(x: 8, y: 8)
                 .transition(.scale.combined(with: .opacity))
                 .zIndex(2)
         }
@@ -185,9 +186,14 @@ struct MusicControlsView: View {
 
     private func songInfo(width: CGFloat) -> some View {
         VStack(alignment: .leading, spacing: 0) {
-            MarqueeText(
-                $musicManager.songTitle, font: .headline, nsFont: .headline, textColor: .white,
-                frameWidth: width)
+            HStack(spacing: 6) {
+                MarqueeText(
+                    $musicManager.songTitle, font: .headline, nsFont: .headline, textColor: .white,
+                    frameWidth: max(40, width - 19))
+                EqualizerBars(
+                    color: Color(nsColor: musicManager.glowColor).ensureMinimumBrightness(factor: 0.8),
+                    active: musicManager.isPlaying)
+            }
             MarqueeText(
                 $musicManager.artistName,
                 font: .headline,
@@ -585,15 +591,23 @@ struct CustomSlider: View {
             let filledTrackWidth = min(max(progress, 0), 1) * width
 
             ZStack(alignment: .leading) {
-                Rectangle()
-                    .fill(.gray.opacity(0.3))
-                    .frame(height: height)
+                ZStack(alignment: .leading) {
+                    Rectangle()
+                        .fill(.gray.opacity(0.3))
+                        .frame(height: height)
 
-                Rectangle()
-                    .fill(color)
-                    .frame(width: filledTrackWidth, height: height)
+                    Rectangle()
+                        .fill(LinearGradient(colors: [color.opacity(0.55), color], startPoint: .leading, endPoint: .trailing))
+                        .frame(width: filledTrackWidth, height: height)
+                }
+                .cornerRadius(height / 2)
+
+                Circle()
+                    .fill(.white)
+                    .frame(width: dragging ? 14 : 11, height: dragging ? 14 : 11)
+                    .shadow(color: .black.opacity(0.4), radius: 2)
+                    .offset(x: min(max(filledTrackWidth - 5.5, 0), max(0, width - 11)))
             }
-            .cornerRadius(height / 2)
             .frame(height: 10)
             .contentShape(Rectangle())
             .gesture(

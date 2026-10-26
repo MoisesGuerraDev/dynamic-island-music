@@ -171,16 +171,16 @@ struct AmbientLight: View {
     var body: some View {
         GeometryReader { g in
             let c = Color(nsColor: music.glowColor)
-            let strength: Double = (style == .strong ? 1.0 : 0.85) * (music.isPlaying ? 1 : 0.55)
+            let strength: Double = (style == .strong ? 1.0 : 0.9) * (music.isPlaying ? 1 : 0.55)
             let p = pointer.point
             let px = ((p?.x ?? g.size.width / 2) - g.size.width / 2) * 0.07
             let py = ((p?.y ?? g.size.height / 2) - g.size.height / 2) * 0.07
             ZStack {
                 Ellipse()
-                    .fill(RadialGradient(colors: [c.opacity(strength), .clear], center: .center, startRadius: 0, endRadius: g.size.width * 0.3))
-                    .frame(width: g.size.width * 0.7, height: g.size.height * 1.6)
-                    .blur(radius: 34)
-                    .position(x: g.size.width * 0.2 + px, y: g.size.height * 0.55 + py)
+                    .fill(RadialGradient(colors: [c.opacity(strength), c.opacity(strength * 0.35), .clear], center: .center, startRadius: 0, endRadius: g.size.width * 0.34))
+                    .frame(width: g.size.width * 0.8, height: g.size.height * 1.7)
+                    .blur(radius: 30)
+                    .position(x: g.size.width * 0.14 + px, y: g.size.height * 0.62 + py)
                 Ellipse()
                     .fill(RadialGradient(colors: [c.opacity(strength * 0.7), .clear], center: .center, startRadius: 0, endRadius: g.size.width * 0.25))
                     .frame(width: g.size.width * 0.5, height: g.size.height * 1.3)

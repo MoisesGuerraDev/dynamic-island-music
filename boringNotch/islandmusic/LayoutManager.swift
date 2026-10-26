@@ -27,7 +27,7 @@ final class LayoutManager: ObservableObject {
     /// Horizontal padding that wraps all the components inside the notch (design units).
     static let sidePadding: CGFloat = 14
     /// Height of the row of components in design units, before the scale.
-    static let designHeight: CGFloat = 152
+    static let designHeight: CGFloat = 140
 
     var scale: CGFloat { CGFloat(max(0.5, min(1.2, Defaults[.uiScale]))) }
 
@@ -47,7 +47,7 @@ final class LayoutManager: ObservableObject {
         if Defaults[.manualSize] { return CGFloat(Defaults[.manualOpenWidth]) }
         let screen = screenUUID.flatMap { NSScreen.screen(withUUID: $0) } ?? NSScreen.main
         let w = screen?.frame.width ?? 1470
-        return min((w * 0.72).rounded(), 1300)
+        return min((w * 0.75).rounded(), 1300)
     }
 
     var enabled: [ComponentConfig] { configs.filter { $0.enabled } }
@@ -89,7 +89,7 @@ final class LayoutManager: ObservableObject {
     func openSize(for screenUUID: String?, view: NotchViews) -> CGSize {
         let cap = capacity(for: screenUUID)
         let width = view == .home ? openWidth(for: screenUUID) : min(cap, max(680, openWidth(for: screenUUID)))
-        let height = 52 + Self.designHeight * scale + 6 + (editing && view == .home ? 34 : 0)
+        let height = 40 + Self.designHeight * scale + 7 + (editing && view == .home ? 34 : 0)
         return CGSize(width: width, height: height)
     }
 

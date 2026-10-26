@@ -27,8 +27,10 @@ struct ContentView: View {
     @ObservedObject var pomodoro = PomodoroManager.shared
     @ObservedObject var clipboard = ClipboardManager.shared
     @Default(.glowStyle) var glowStyle
+    @Default(.glassNotch) var glassNotch
     @Default(.livePomodoro) var livePomodoro
-    @Default(.liveMusic) var liveMusic
+    @Default(.liveControls) var liveControls
+    @Default(.liveSpectrum) var liveSpectrum
     @State private var hoverTask: Task<Void, Never>?
     @State private var isHovering: Bool = false
     @State private var anyDropDebounceTask: Task<Void, Never>?
@@ -49,18 +51,41 @@ struct ContentView: View {
     private let extendedHoverPadding: CGFloat = 30
     private let zeroHeightHoverPadding: CGFloat = 10
 
-    private var topCornerRadius: CGFloat {
-       ((vm.notchState == .open) && Defaults[.cornerRadiusScaling])
-                ? cornerRadiusInsets.opened.top
-                : cornerRadiusInsets.closed.top
+    private var pomodoroClosedActive: Bool {
+        vm.notchState == .closed && !vm.hideOnClosed && pomodoro.isRunning && livePomodoro && !coordinator.sneakPeek.show
     }
 
-    private var currentNotchShape: NotchShape {
-        NotchShape(
-            topCornerRadius: topCornerRadius,
-            bottomCornerRadius: ((vm.notchState == .open) && Defaults[.cornerRadiusScaling])
-                ? cornerRadiusInsets.opened.bottom
-                : cornerRadiusInsets.closed.bottom
+    private var musicClosedActive: Bool {
+        vm.notchState == .closed && !vm.hideOnClosed && coordinator.musicLiveActivityEnabled
+            && (musicManager.isPlaying || !musicManager.isPlayerIdle)
+            && !(pomodoro.isRunning && livePomodoro)
+    }
+
+    /// Closed notch with a live activity: hovering shows its buttons (previous / play / next, or reset / pause / skip)
+    /// instead of opening the whole panel; a click opens it.
+    private var closedControlsActive: Bool {
+        liveControls && (pomodoroClosedActive || musicClosedActive)
+    }
+
+    private var closedControlsShown: Bool { closedControlsActive && isHovering }
+
+    /// Width of each side of the closed notch next to the camera cutout (cover on the left, spectrum or buttons on the right).
+    private var closedEar: CGFloat {
+        let side = max(0, vm.effectiveClosedNotchHeight - 12)
+        return closedControlsShown ? ClosedMusicControls.width(side: side) : side
+    }
+
+    /// Same for the timer: time and phase on the left, a badge (or the buttons) on the right.
+    private var pomodoroEar: CGFloat { closedControlsShown ? 86 : 54 }
+
+    private var topCornerRadius: CGFloat {
+        vm.notchState == .open ? islandCorners.opened.top : islandCorners.closed.top
+    }
+
+    private var currentNotchShape: IslandShape {
+        IslandShape(
+            topRadius: topCornerRadius,
+            bottomRadius: vm.notchState == .open ? islandCorners.opened.bottom : islandCorners.closed.bottom
         )
     }
 
@@ -74,12 +99,12 @@ struct ContentView: View {
         } else if vm.notchState == .closed && !vm.hideOnClosed && pomodoro.isRunning && livePomodoro
             && !coordinator.sneakPeek.show
         {
-            chinWidth += (2 * max(0, vm.effectiveClosedNotchHeight - 12) + 20) + 34
+            chinWidth += 2 * pomodoroEar + 20
         } else if (!coordinator.expandingView.show || coordinator.expandingView.type == .music)
             && vm.notchState == .closed && (musicManager.isPlaying || !musicManager.isPlayerIdle)
             && coordinator.musicLiveActivityEnabled && !vm.hideOnClosed
         {
-            chinWidth += (2 * max(0, vm.effectiveClosedNotchHeight - 12) + 20)
+            chinWidth += 2 * closedEar + 20
         } else if !coordinator.expandingView.show && vm.notchState == .closed
             && (!musicManager.isPlaying && musicManager.isPlayerIdle) && Defaults[.showNotHumanFace]
             && !vm.hideOnClosed
@@ -98,6 +123,7 @@ struct ContentView: View {
             return max(0.6, scaleFactor)
         }()
         
+        let onHome = vm.notchState == .open && coordinator.currentView == .home
         ZStack(alignment: .top) {
             VStack(spacing: 0) {
                 let mainLayout = NotchLayout()
@@ -105,14 +131,26 @@ struct ContentView: View {
                     .padding(
                         .horizontal,
                         vm.notchState == .open
-                        ? Defaults[.cornerRadiusScaling]
-                        ? (cornerRadiusInsets.opened.top) : (cornerRadiusInsets.opened.bottom)
+                        ? (onHome ? 0 : (Defaults[.cornerRadiusScaling]
+                            ? (cornerRadiusInsets.opened.top) : (cornerRadiusInsets.opened.bottom)) + 20)
                         : cornerRadiusInsets.closed.bottom
                     )
-                    .padding([.horizontal, .bottom], vm.notchState == .open ? 12 : 0)
+                    .padding(.bottom, vm.notchState == .open ? (onHome ? 7 : 12) : 0)
                     .background {
                         ZStack {
                             Color.black
+                            if glassNotch && vm.notchState == .open {
+                                // Full glass: the desktop shows through, blurred, under a dark tint that is solid at the top.
+                                VisualEffectView(material: .hudWindow, blendingMode: .behindWindow)
+                                    .transition(.opacity)
+                                LinearGradient(
+                                    stops: [
+                                        .init(color: .black, location: 0),
+                                        .init(color: .black.opacity(0.92), location: 0.2),
+                                        .init(color: .black.opacity(0.76), location: 1),
+                                    ],
+                                    startPoint: .top, endPoint: .bottom)
+                            }
                             if glowStyle != .off && vm.notchState == .open {
                                 AmbientLight().transition(.opacity)
                             }
@@ -132,7 +170,28 @@ struct ContentView: View {
                             .padding(.horizontal, topCornerRadius)
                     }
                     .overlay {
-                        if glowStyle != .off && (vm.notchState == .open || musicManager.isPlaying) {
+                        if glassNotch && vm.notchState == .open {
+                            // Liquid glass edge: soft inner glow, sheen on top and a bright rim that fades toward the cover color.
+                            ZStack {
+                                currentNotchShape
+                                    .stroke(Color.white.opacity(0.14), lineWidth: 12)
+                                    .blur(radius: 7)
+                                    .clipShape(currentNotchShape)
+                                currentNotchShape
+                                    .fill(LinearGradient(colors: [Color.white.opacity(0.09), .clear], startPoint: .top, endPoint: UnitPoint(x: 0.5, y: 0.4)))
+                                currentNotchShape
+                                    .stroke(
+                                        LinearGradient(
+                                            stops: [
+                                                .init(color: Color.white.opacity(0.7), location: 0),
+                                                .init(color: Color.white.opacity(0.08), location: 0.45),
+                                                .init(color: (glowStyle == .off ? Color.white : Color(nsColor: musicManager.glowColor)).opacity(0.75), location: 1),
+                                            ],
+                                            startPoint: .topLeading, endPoint: .bottomTrailing),
+                                        lineWidth: 1.4)
+                            }
+                            .allowsHitTesting(false)
+                        } else if glowStyle != .off && (vm.notchState == .open || musicManager.isPlaying) {
                             currentNotchShape
                                 .stroke(
                                     LinearGradient(
@@ -148,8 +207,8 @@ struct ContentView: View {
                     )
                     .shadow(
                         color: (glowStyle != .off && (vm.notchState == .open || musicManager.isPlaying))
-                            ? Color(nsColor: musicManager.glowColor).opacity(glowStyle == .strong ? 0.8 : 0.45) : .clear,
-                        radius: glowStyle == .strong ? 26 : 14, y: 6
+                            ? Color(nsColor: musicManager.glowColor).opacity(glowStyle == .strong ? 0.55 : 0.3) : .clear,
+                        radius: glowStyle == .strong ? 22 : 12, y: 6
                     )
                     .padding(
                         .bottom,
@@ -269,6 +328,7 @@ struct ContentView: View {
             }
         }
         .padding(.bottom, 8)
+        .padding(.horizontal, windowSidePadding)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .compositingGroup()
         .scaleEffect(
@@ -479,6 +539,8 @@ struct ContentView: View {
                     width: max(0, vm.effectiveClosedNotchHeight - 12),
                     height: max(0, vm.effectiveClosedNotchHeight - 12)
                 )
+                // Same width as the controls on the right, so the middle stays centered on the camera cutout.
+                .frame(width: closedEar, alignment: .leading)
 
             Rectangle()
                 .fill(.black)
@@ -528,7 +590,11 @@ struct ContentView: View {
                 )
 
             HStack {
-                if useMusicVisualizer {
+                if closedControlsShown {
+                    ClosedMusicControls(side: max(0, vm.effectiveClosedNotchHeight - 12))
+                } else if !liveSpectrum {
+                    Color.clear
+                } else if useMusicVisualizer {
                     Rectangle()
                         .fill(
                             Defaults[.coloredSpectrogram]
@@ -547,52 +613,50 @@ struct ContentView: View {
                 }
             }
             .frame(
-                width: max(
-                    0,
-                    vm.effectiveClosedNotchHeight - 12
-                        + gestureProgress / 2
-                ),
+                width: closedControlsShown
+                    ? closedEar
+                    : max(
+                        0,
+                        vm.effectiveClosedNotchHeight - 12
+                            + gestureProgress / 2
+                    ),
                 height: max(
                     0,
                     vm.effectiveClosedNotchHeight - 12
                 ),
-                alignment: .center
+                alignment: closedControlsShown ? .trailing : .center
             )
         }
         .frame(
             height: vm.effectiveClosedNotchHeight,
             alignment: .center
         )
+        .animation(.spring(response: 0.35, dampingFraction: 0.8), value: closedControlsShown)
     }
 
-    /// Timer in the closed notch: music cover on the left if something is playing, otherwise a clock; time on the right.
+    /// Timer in the closed notch: time and phase on the left, a small badge on the right that turns into
+    /// reset / pause / skip buttons when the pointer is over the notch.
     @ViewBuilder
     func PomodoroLiveActivity() -> some View {
-        let side = max(0, vm.effectiveClosedNotchHeight - 12)
         HStack {
-            Group {
-                if liveMusic && musicManager.isPlaying {
-                    Image(nsImage: musicManager.albumArt)
-                        .resizable()
-                        .clipShape(RoundedRectangle(cornerRadius: MusicPlayerImageSizes.cornerRadiusInset.closed))
-                } else {
-                    Image(systemName: "timer")
-                        .resizable()
-                        .scaledToFit()
-                        .padding(2)
-                        .foregroundStyle(Color(red: 0.6, green: 0.76, blue: 1))
-                }
-            }
-            .frame(width: side, height: side)
+            PomodoroClosedInfo(compact: !closedControlsShown)
+                .frame(width: pomodoroEar, alignment: .leading)
 
             Rectangle()
                 .fill(.black)
                 .frame(width: vm.closedNotchSize.width - cornerRadiusInsets.closed.top)
 
-            PomodoroLiveText()
-                .frame(width: side + 34, height: side, alignment: .center)
+            Group {
+                if closedControlsShown {
+                    PomodoroClosedControls()
+                } else {
+                    PomodoroClosedBadge()
+                }
+            }
+            .frame(width: pomodoroEar, alignment: .trailing)
         }
         .frame(height: vm.effectiveClosedNotchHeight, alignment: .center)
+        .animation(.spring(response: 0.35, dampingFraction: 0.8), value: closedControlsShown)
     }
 
     @ViewBuilder
@@ -633,6 +697,7 @@ struct ContentView: View {
             
             guard vm.notchState == .closed,
                   !coordinator.sneakPeek.show,
+                  !closedControlsActive,
                   Defaults[.openNotchOnHover] else { return }
             
             hoverTask = Task {
@@ -642,6 +707,7 @@ struct ContentView: View {
                 await MainActor.run {
                     guard self.vm.notchState == .closed,
                           self.isHovering,
+                          !self.vm.isHoveringClosedControls,
                           !self.coordinator.sneakPeek.show else { return }
                     
                     self.doOpen()

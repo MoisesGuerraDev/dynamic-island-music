@@ -30,6 +30,8 @@ class BoringViewModel: NSObject, ObservableObject {
 
     @Published var edgeAutoOpenActive: Bool = false
     @Published var isHoveringCalendar: Bool = false
+    /// Pointer is over the previous / play / next buttons of the closed notch, so hovering must not open it.
+    @Published var isHoveringClosedControls: Bool = false
     @Published var isBatteryPopoverActive: Bool = false
 
     @Published var screenUUID: String?

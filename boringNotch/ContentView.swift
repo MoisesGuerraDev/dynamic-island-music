@@ -31,6 +31,8 @@ struct ContentView: View {
     @Default(.glowIntensity) var glowIntensity
     @Default(.notchBorder) var notchBorder
     @Default(.glowMotion) var glowMotion
+    @Default(.glowSpread) var glowSpread
+    @Default(.danceSize) var danceSize
     @Default(.livePomodoro) var livePomodoro
     @Default(.liveControls) var liveControls
     @Default(.livePerformance) var livePerformance
@@ -89,8 +91,8 @@ struct ContentView: View {
     }
 
     private var glowRadius: CGFloat {
-        let base: CGFloat = glowStyle == .strong ? 24 : 15
-        return base * min(2.2, max(0.8, glowIntensity)) * (vm.notchState == .closed ? 1.25 : 1)
+        let base: CGFloat = glowStyle == .strong ? 22 : 14
+        return (base * glowSpread.spreadFactor + CGFloat(max(0, glowIntensity - 1)) * 3) * (vm.notchState == .closed ? 1.2 : 1)
     }
 
     private var topCornerRadius: CGFloat {
@@ -219,7 +221,8 @@ struct ContentView: View {
                     .background {
                         if glowOn {
                             NotchGlow(shape: currentNotchShape, color: Color(nsColor: musicManager.glowColor),
-                                      opacity: glowOpacity, radius: glowRadius, dances: glowMotion && musicManager.isPlaying)
+                                      opacity: glowOpacity, radius: glowRadius, dances: glowMotion && musicManager.isPlaying,
+                                      amount: danceSize.danceFactor)
                         }
                     }
                     .padding(

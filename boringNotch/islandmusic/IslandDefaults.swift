@@ -179,6 +179,10 @@ extension Defaults.Keys {
     static let notchBorder = Key<NotchBorder>("notchBorder", default: .off)
     /// The color glow breathes and drifts slowly while music plays.
     static let glowMotion = Key<Bool>("glowMotion", default: true)
+    /// How far the colored light spreads around the notch.
+    static let glowSpread = Key<GlowSize>("glowSpread", default: .medium)
+    /// How much the light moves with the beat.
+    static let danceSize = Key<GlowSize>("danceSize", default: .medium)
     /// Follow the real sound of the Mac (asks for the system audio permission) instead of a simulated beat.
     static let realAudioBeat = Key<Bool>("realAudioBeat", default: false)
     static let manualSize = Key<Bool>("manualSize", default: false)
@@ -267,4 +271,32 @@ enum GlowColorMode: String, CaseIterable, Identifiable, Defaults.Serializable {
     case cover, custom
     var id: String { rawValue }
     var title: String { self == .cover ? "De la carátula" : "Elegir un color" }
+}
+
+enum GlowSize: String, CaseIterable, Identifiable, Defaults.Serializable {
+    case small, medium, large
+    var id: String { rawValue }
+    var title: String {
+        switch self {
+        case .small: "Chico"
+        case .medium: "Mediano"
+        case .large: "Grande"
+        }
+    }
+    /// Size of the light around the notch.
+    var spreadFactor: CGFloat {
+        switch self {
+        case .small: 0.6
+        case .medium: 0.85
+        case .large: 1.2
+        }
+    }
+    /// How far the beat moves the light.
+    var danceFactor: Double {
+        switch self {
+        case .small: 0.55
+        case .medium: 1.0
+        case .large: 1.7
+        }
+    }
 }

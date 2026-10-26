@@ -655,10 +655,11 @@ struct CustomSlider: View {
 private struct CoverBeat: ViewModifier {
     let playing: Bool
     @Default(.glowMotion) private var motion
+    @Default(.danceSize) private var danceSize
 
     func body(content: Content) -> some View {
         TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: !(playing && motion))) { tl in
-            let beat = (playing && motion) ? BeatPulse.shared.sample(at: tl.date) : 0
+            let beat = (playing && motion) ? BeatPulse.shared.sample(at: tl.date) * danceSize.danceFactor : 0
             content.scaleEffect((playing ? 1.02 : 1.0) + 0.03 * beat)
         }
     }

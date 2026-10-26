@@ -108,4 +108,13 @@ class BoringNotchSkyLightWindow: NSPanel {
     
     override var canBecomeKey: Bool { MainActor.assumeIsolated { KeyboardFocus.shared.wantsKey } }
     override var canBecomeMain: Bool { false }
+
+    /// A click inside the notch while a text field wants the keyboard: take it now. macOS only lets an app that is not
+    /// in front become active in answer to a click, so this has to happen here and not when the field appears.
+    override func sendEvent(_ event: NSEvent) {
+        if event.type == .leftMouseDown, !isKeyWindow, MainActor.assumeIsolated({ KeyboardFocus.shared.wantsKey }) {
+            MainActor.assumeIsolated { KeyboardFocus.shared.request() }
+        }
+        super.sendEvent(event)
+    }
 }

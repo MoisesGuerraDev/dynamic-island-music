@@ -160,8 +160,11 @@ final class KeyboardFocus: ObservableObject {
     func request() {
         wantsKey = true
         SharingStateManager.shared.preventNotchClose = true
+        // The notch floats over whatever app is in front. For typing to reach it, the app has to be the active one:
+        // without this the panel never becomes the key window and text fields (and web pages) ignore the keyboard.
+        if !NSApp.isActive { NSApp.activate(ignoringOtherApps: true) }
         for w in NSApp.windows where w is BoringNotchSkyLightWindow {
-            w.makeKey()
+            w.makeKeyAndOrderFront(nil)
         }
     }
 

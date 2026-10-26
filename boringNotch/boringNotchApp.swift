@@ -533,6 +533,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         hook("dim.debug.settings") { SettingsWindowController.shared.showWindow() }
         hook("dim.debug.enable.all") { for c in IslandComponent.allCases { LayoutManager.shared.setEnabled(c, true) } }
         hook("dim.debug.reset") { LayoutManager.shared.reset() }
+        hook("dim.debug.ai.probe") { AIWebStore.shared.debugProbe() }
+        hook("dim.debug.ai.claude") { AIChatManager.shared.provider = .claude }
+        hook("dim.debug.ai.chatgpt") { AIChatManager.shared.provider = .openai }
+        hook("dim.debug.ai.gemini") { AIChatManager.shared.provider = .gemini }
+        hook("dim.debug.ai.deepseek") { AIChatManager.shared.provider = .deepseek }
         hook("dim.debug.gap.small") { MenuBarSpace.shared.debugForce(gap: 10) }
         hook("dim.debug.gap.clear") { MenuBarSpace.shared.debugForce(gap: nil) }
     }

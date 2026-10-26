@@ -16,10 +16,12 @@ struct TabButton: View {
     var body: some View {
         Button(action: onClick) {
             Image(systemName: icon)
-                .padding(.horizontal, 15)
+                .font(.system(size: 14, weight: .medium))
+                .frame(width: 38, height: 28)
                 .contentShape(Capsule())
         }
         .buttonStyle(PlainButtonStyle())
+        .islandGlass(Capsule(), tint: selected ? Color.white.opacity(0.28) : nil)
     }
 }
 

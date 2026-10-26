@@ -184,11 +184,12 @@ struct GlassSettings: View {
                 Text("El estilo lo eliges tú, pero el color siempre sale de la carátula de la canción que suena: si la portada es roja, el brillo es rojo.")
             }
             Section {
-                Defaults.Toggle("Botones con Liquid Glass", key: .liquidGlassButtons)
+                Defaults.Toggle("Botones de vidrio", key: .liquidGlassButtons)
+                Defaults.Toggle("Usar el Liquid Glass del sistema (macOS 26)", key: .liquidGlassSystem)
             } header: {
                 Text("Vidrio")
             } footer: {
-                Text("En macOS 26 o más nuevo usa el Liquid Glass del sistema, con refracción y reflejo al pasar el mouse. En versiones anteriores usa un vidrio esmerilado.")
+                Text("Por defecto el vidrio es el del diseño: translúcido, con borde brillante, y la luz de color de la carátula se ve a través y sigue al mouse. Si prefieres el Liquid Glass nativo de macOS 26, actívalo arriba.")
             }
         }
     }

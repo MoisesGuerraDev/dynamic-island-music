@@ -37,6 +37,7 @@ struct AlbumArtView: View {
         Button(action: musicManager.openMusicApp) {
             ZStack(alignment: .bottomTrailing) {
                 artwork(cornerRadius: cornerRadius)
+                    .shadow(color: Color(nsColor: musicManager.glowColor).opacity(musicManager.isPlaying ? 0.75 : 0.25), radius: 16, y: 8)
                     .matchedGeometryEffect(id: "albumArt", in: albumArtNamespace)
                     .overlay(glowOverlay(cornerRadius: cornerRadius))
                     .contentShape(RoundedRectangle(cornerRadius: cornerRadius, style: .continuous))
@@ -71,7 +72,7 @@ struct AlbumArtView: View {
         Group {
             if Defaults[.lightingEffect] {
                 RoundedRectangle(cornerRadius: cornerRadius, style: .continuous)
-                    .fill(Color(nsColor: musicManager.avgColor).opacity(musicManager.isPlaying ? 0.25 : 0.0))
+                    .fill(Color(nsColor: musicManager.glowColor).opacity(musicManager.isPlaying ? 0.25 : 0.0))
                     .blur(radius: 24)
                     .scaleEffect(1.06)
                     .allowsHitTesting(false)
@@ -192,7 +193,7 @@ struct MusicControlsView: View {
                 font: .headline,
                 nsFont: .headline,
                 textColor: Defaults[.playerColorTinting]
-                    ? Color(nsColor: musicManager.avgColor)
+                    ? Color(nsColor: musicManager.glowColor)
                         .ensureMinimumBrightness(factor: 0.6) : .gray,
                 frameWidth: width
             )
@@ -239,7 +240,7 @@ struct MusicControlsView: View {
                 sliderValue: $sliderValue,
                 duration: $musicManager.songDuration,
                 lastDragged: $lastDragged,
-                color: musicManager.avgColor,
+                color: musicManager.glowColor,
                 dragging: $dragging,
                 currentDate: timeline.date,
                 timestampDate: musicManager.timestampDate,

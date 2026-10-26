@@ -141,6 +141,7 @@ extension Defaults.Keys {
     // Look
     static let glowStyle = Key<GlowStyle>("glowStyle", default: .subtle)
     static let liquidGlassButtons = Key<Bool>("liquidGlassButtons", default: true)
+    static let liquidGlassSystem = Key<Bool>("liquidGlassSystem", default: false)
 
     // Pomodoro (every duration is free, in seconds)
     static let pomoFocusSeconds = Key<Double>("pomoFocusSeconds", default: 25 * 60)

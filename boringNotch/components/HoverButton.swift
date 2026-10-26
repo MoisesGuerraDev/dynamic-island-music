@@ -20,27 +20,14 @@ struct HoverButton: View {
         let size = CGFloat(scale == .large ? 40 : 30)
         
         Button(action: action) {
-            Rectangle()
-                .fill(.clear)
-                .contentShape(Rectangle())
-                .frame(width: size, height: size)
-                .overlay {
-                    Capsule()
-                        .fill(isHovering ? Color.gray.opacity(0.2) : .clear)
-                        .frame(width: size, height: size)
-                        .overlay {
-                            Image(systemName: icon)
-                                .foregroundColor(iconColor)
-                                .contentTransition(contentTransition)
-                                .font(scale == .large ? .largeTitle : .body)
-                        }
-                }
+            Image(systemName: icon)
+                .foregroundColor(iconColor)
+                .contentTransition(contentTransition)
+                .font(scale == .large ? .title : .system(size: 14, weight: .semibold))
+                .frame(width: size + (scale == .large ? 6 : 2), height: size + (scale == .large ? 6 : 2))
+                .contentShape(Circle())
         }
         .buttonStyle(PlainButtonStyle())
-        .onHover { hovering in
-            withAnimation(.smooth(duration: 0.3)) {
-                isHovering = hovering
-            }
-        }
+        .islandGlass(Circle())
     }
 }

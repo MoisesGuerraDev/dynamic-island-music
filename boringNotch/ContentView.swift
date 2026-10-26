@@ -110,7 +110,20 @@ struct ContentView: View {
                         : cornerRadiusInsets.closed.bottom
                     )
                     .padding([.horizontal, .bottom], vm.notchState == .open ? 12 : 0)
-                    .background(.black)
+                    .background {
+                        ZStack {
+                            Color.black
+                            if glowStyle != .off && vm.notchState == .open {
+                                AmbientLight().transition(.opacity)
+                            }
+                        }
+                    }
+                    .onContinuousHover(coordinateSpace: .local) { phase in
+                        switch phase {
+                        case .active(let p): PointerLight.shared.point = p
+                        case .ended: PointerLight.shared.point = nil
+                        }
+                    }
                     .clipShape(currentNotchShape)
                     .overlay(alignment: .top) {
                         Rectangle()
@@ -382,7 +395,7 @@ struct ContentView: View {
                                   HStack(alignment: .center) {
                                       Image(systemName: "music.note")
                                       GeometryReader { geo in
-                                          MarqueeText(.constant(musicManager.songTitle + " - " + musicManager.artistName),  textColor: Defaults[.playerColorTinting] ? Color(nsColor: musicManager.avgColor).ensureMinimumBrightness(factor: 0.6) : .gray, minDuration: 1, frameWidth: geo.size.width)
+                                          MarqueeText(.constant(musicManager.songTitle + " - " + musicManager.artistName),  textColor: Defaults[.playerColorTinting] ? Color(nsColor: musicManager.glowColor).ensureMinimumBrightness(factor: 0.6) : .gray, minDuration: 1, frameWidth: geo.size.width)
                                       }
                                   }
                                   .foregroundStyle(.gray)
@@ -477,7 +490,7 @@ struct ContentView: View {
                             MarqueeText(
                                 .constant(musicManager.songTitle),
                                 textColor: Defaults[.coloredSpectrogram]
-                                    ? Color(nsColor: musicManager.avgColor) : Color.gray,
+                                    ? Color(nsColor: musicManager.glowColor) : Color.gray,
                                 minDuration: 0.4,
                                 frameWidth: 100
                             )
@@ -493,7 +506,7 @@ struct ContentView: View {
                                 .truncationMode(.tail)
                                 .foregroundStyle(
                                     Defaults[.coloredSpectrogram]
-                                        ? Color(nsColor: musicManager.avgColor)
+                                        ? Color(nsColor: musicManager.glowColor)
                                         : Color.gray
                                 )
                                 .opacity(
@@ -519,7 +532,7 @@ struct ContentView: View {
                     Rectangle()
                         .fill(
                             Defaults[.coloredSpectrogram]
-                                ? Color(nsColor: musicManager.avgColor).gradient
+                                ? Color(nsColor: musicManager.glowColor).gradient
                                 : Color.gray.gradient
                         )
                         .frame(width: 50, alignment: .center)

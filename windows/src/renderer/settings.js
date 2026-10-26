@@ -243,6 +243,7 @@ const TABS = [
             sec('Con tu cuenta', [
               ...WEB_AI.map((p) => ({ t: 'toggle', k: '__aiweb', provider: p, label: WEB_AI_META[p].name, note: 'Página oficial dentro de la isla. La sesión se guarda solo en este PC.', rr: true })),
               { t: 'webselect', label: 'La que sale junto al "+" del calendario' },
+              BTN('Cerrar sesión en todas las IA', 'Cerrar sesión', 'ai-signout', 'La sesión se recuerda 90 días aunque cierres la isla o la app. Este botón es lo único que la borra.', { danger: true }),
               INFO('Privacidad', 'Hablas directamente con el sitio oficial', 'La app no ve tus mensajes ni tu contraseña: es la página de ese servicio. Para Google, la ventana de inicio de sesión es la oficial de Google.'),
             ]),
           ]
@@ -694,6 +695,9 @@ async function doAction(b) {
       ctx.keys[b.dataset.p] = false;
       say('Clave borrada.');
       render();
+      break;
+    case 'ai-signout':
+      if (await dim.ai.signOutAll()) say('Sesiones cerradas.');
       break;
     case 'notes-choose':
       if (await dim.notes.chooseFolder()) say('Carpeta cambiada.');

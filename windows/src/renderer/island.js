@@ -4,7 +4,7 @@ import { S, bus, comps, activeComps, pages, metaOf, tabsAvailable, enabledAI, de
 import { esc, $, $$, dayKey } from './util.js';
 import { ic, fi } from './icons.js';
 import { colHTML, musicPos, pomoRemaining, timeFontSize, perfHTML } from './components.js';
-import { trayHTML, clipHTML, chatHTML, bindChat, gameHTML, bindGame, stopGame, focusChatInput, webBarHTML, showWebview, reloadWebview } from './views.js';
+import { trayHTML, clipHTML, chatHTML, bindChat, gameHTML, bindGame, stopGame, focusChatInput, webBarHTML, showWebview, reloadWebview, resetWebviews } from './views.js';
 import { editBarHTML, bindEdit, setComps } from './edit.js';
 import { setLensEnabled, startLens } from './lens.js';
 import { startAmbient } from './ambient.js';
@@ -849,6 +849,10 @@ async function boot() {
       else setView('chat');
       setTimeout(focusChatInput, 120);
     }
+  });
+  dim.ai.onSignedOut(() => {
+    resetWebviews();
+    if (S.view === 'chat' && webMode()) renderRow();
   });
   dim.music.onState((m) => {
     S.music = m;

@@ -118,6 +118,32 @@ try {
   await page.screenshot({ path: path.join(out, 'island-ai.png') });
   await page.click('[data-act="tab"][data-v="home"]');
 
+  // The AI sign-in is remembered: one shared saved session, session cookies get 90 days of life.
+  await app.evaluate(async () => {
+    const c = globalThis.__DIM__;
+    await c.aiSession.cookies.set({ url: 'https://claude.ai/', name: 'dim_test_session', value: 'abc123', secure: true, httpOnly: true }); // no expiry on purpose
+  });
+  await page.waitForTimeout(800);
+  const ck = await app.evaluate(async () => {
+    const list = await globalThis.__DIM__.aiSession.cookies.get({ name: 'dim_test_session' });
+    return list.map((c) => ({ session: c.session, exp: c.expirationDate, value: c.value }));
+  });
+  const days = ck[0] && ck[0].exp ? (ck[0].exp - Date.now() / 1000) / 86400 : 0;
+  check('cookie de sesión de la IA queda con 90 días de vida', ck.length === 1 && ck[0].session === false && days > 89 && days < 91, JSON.stringify(ck));
+  check('las IA comparten una sola sesión guardada (persist:ai)', await page.evaluate(() => { document.querySelector('[data-act="tab"][data-v="chat"]').click(); return true; }));
+  await page.waitForTimeout(500);
+  const part = await page.evaluate(() => Array.from(document.querySelectorAll('webview')).map((w) => w.getAttribute('partition')));
+  check('el webview usa la partición persistente compartida', part.length >= 1 && part.every((p) => p === 'persist:ai'), JSON.stringify(part));
+  const pk = await page.evaluate(async () => {
+    const w = document.querySelector('webview');
+    const ready = await new Promise((res) => { let done = false; const f = (v) => { if (!done) { done = true; res(v); } }; w.addEventListener('dom-ready', () => f(true)); setTimeout(() => f(false), 15000); });
+    if (!ready) return 'sin-red';
+    return w.executeJavaScript('typeof window.PublicKeyCredential');
+  });
+  if (pk === 'sin-red') console.log('• llaves de acceso ocultas en el webview: omitido (sin red para cargar claude.ai)');
+  else check('las llaves de acceso (WebAuthn) están ocultas en el webview de la IA', pk === 'undefined', String(pk));
+  await page.click('[data-act="tab"][data-v="home"]');
+
   // Closed island: cover on the left, timer on the right, both sides the same width.
   await app.evaluate(() => { const c = globalThis.__DIM__; const i = c.islands.first(); i.pins.clear(); c.islands.setOpen(i, false); });
   await page.waitForTimeout(1200);
@@ -149,6 +175,19 @@ try {
   failed++;
 } finally {
   await app.close();
+}
+// Second start with the same data folder: the AI session must still be there.
+{
+  const app2 = await electron.launch({ args: [root], env: { ...process.env, DIM_TEST: '1', DIM_MOCK_MEDIA: '1', DIM_USER_DATA: ud } });
+  try {
+    const p2 = await app2.firstWindow();
+    await p2.waitForSelector('body[data-ready="1"]', { timeout: 15000 });
+    await p2.waitForTimeout(800);
+    const again = await app2.evaluate(async () => (await globalThis.__DIM__.aiSession.cookies.get({ name: 'dim_test_session' })).map((c) => ({ value: c.value, session: c.session })));
+    check('la sesión de la IA sigue ahí después de cerrar y abrir la app', again.length === 1 && again[0].value === 'abc123' && again[0].session === false, JSON.stringify(again));
+  } finally {
+    await app2.close();
+  }
 }
 console.log(failed ? `\n${failed} comprobaciones fallaron. Capturas en ${out}` : `\nTodo bien. Capturas en ${out}`);
 process.exit(failed ? 1 : 0);

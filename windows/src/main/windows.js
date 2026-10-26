@@ -1,6 +1,11 @@
 import { BrowserWindow, screen, session, shell } from 'electron';
 import os from 'node:os';
 import { capWidth, displayKey } from '../shared/layout.js';
+import { AI_PARTITION } from '../shared/cookies.js';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const AI_GUEST_PRELOAD = path.join(path.dirname(fileURLToPath(import.meta.url)), '..', 'preload', 'ai-guest.cjs');
 
 const PAD_X = 70; // room for the glow and shadow at each side of the island
 const WIN_H = 480; // tall enough for the open island, its edit bar and the glow
@@ -390,7 +395,7 @@ export class IslandManager {
       title: 'IA',
       autoHideMenuBar: true,
       backgroundColor: '#101218',
-      webPreferences: { partition: `persist:${partition}`, contextIsolation: true, sandbox: true, nodeIntegration: false },
+      webPreferences: { partition, contextIsolation: true, sandbox: true, nodeIntegration: false, preload: AI_GUEST_PRELOAD },
     });
     win.webContents.setWindowOpenHandler(({ url: u }) => {
       if (isHttp(u)) shell.openExternal(u);
@@ -409,13 +414,12 @@ const WEB_AI_URL = /^https:\/\/(claude\.ai|chatgpt\.com|gemini\.google\.com|chat
  */
 function guardWebviews(host) {
   host.on('will-attach-webview', (event, webPreferences, params) => {
-    delete webPreferences.preload;
-    delete webPreferences.preloadURL;
+    webPreferences.preload = AI_GUEST_PRELOAD; // our own script that hides passkeys; the page can never choose another
     webPreferences.nodeIntegration = false;
     webPreferences.contextIsolation = true;
     webPreferences.sandbox = true;
     webPreferences.webSecurity = true;
-    if (!WEB_AI_URL.test(String(params.src)) || !String(params.partition).startsWith('persist:ai-')) event.preventDefault();
+    if (!WEB_AI_URL.test(String(params.src)) || params.partition !== AI_PARTITION) event.preventDefault();
   });
   host.on('did-attach-webview', (_event, guest) => {
     const ses = guest.session;
@@ -428,7 +432,7 @@ function guardWebviews(host) {
     guest.setWindowOpenHandler(({ url }) => {
       // "Continue with Google" opens a small sign-in window: allow https ones, same saved session.
       if (/^https:\/\//i.test(url)) {
-        return { action: 'allow', overrideBrowserWindowOptions: { width: 520, height: 700, autoHideMenuBar: true, backgroundColor: '#101218', webPreferences: { sandbox: true, contextIsolation: true, nodeIntegration: false } } };
+        return { action: 'allow', overrideBrowserWindowOptions: { width: 520, height: 700, autoHideMenuBar: true, backgroundColor: '#101218', webPreferences: { sandbox: true, contextIsolation: true, nodeIntegration: false, preload: AI_GUEST_PRELOAD } } };
       }
       return { action: 'deny' };
     });

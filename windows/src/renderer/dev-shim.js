@@ -218,6 +218,8 @@ const dim = {
     saveHistory: () => {},
     clearHistory: async () => {},
     openWeb: () => {},
+    signOutAll: async () => true,
+    onSignedOut: (cb) => on('ai:signedOut', cb),
     encryptionAvailable: async () => true,
   },
   perf: {

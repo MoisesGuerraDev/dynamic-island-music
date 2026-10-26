@@ -73,6 +73,8 @@ contextBridge.exposeInMainWorld('dim', {
     saveHistory: (messages) => ipcRenderer.send('ai:saveHistory', messages),
     clearHistory: () => invoke('ai:clearHistory'),
     openWeb: (provider) => ipcRenderer.send('ai:openWeb', provider),
+    signOutAll: () => invoke('ai:signOutAll'),
+    onSignedOut: (cb) => on('ai:signedOut', cb),
     encryptionAvailable: () => invoke('ai:encryptionAvailable'),
   },
   perf: {

@@ -4,15 +4,15 @@ import path from 'node:path';
 import { AI_META } from '../shared/defaults.js';
 
 const WEB_AI = {
-  claude: { url: 'https://claude.ai/new', partition: 'ai-claude' },
-  openai: { url: 'https://chatgpt.com/', partition: 'ai-openai' },
-  gemini: { url: 'https://gemini.google.com/app', partition: 'ai-gemini' },
-  deepseek: { url: 'https://chat.deepseek.com/', partition: 'ai-deepseek' },
+  claude: { url: 'https://claude.ai/new', partition: 'persist:ai' },
+  openai: { url: 'https://chatgpt.com/', partition: 'persist:ai' },
+  gemini: { url: 'https://gemini.google.com/app', partition: 'persist:ai' },
+  deepseek: { url: 'https://chat.deepseek.com/', partition: 'persist:ai' },
 };
 
 /** Wires every call a page can make. A call from anything that is not one of our own windows is ignored. */
 export function registerIpc(ctx) {
-  const { store, islands, media, pomodoro, notes, clip, ai, perf, system, calendar, shelf, shortcuts, secrets } = ctx;
+  const { store, islands, media, pomodoro, notes, clip, ai, perf, system, calendar, shelf, shortcuts, secrets, aiSession } = ctx;
 
   const trusted = (sender) => !!islands.find(sender) || (islands.settingsWin && !islands.settingsWin.isDestroyed() && islands.settingsWin.webContents === sender);
   const handle = (channel, fn) =>
@@ -147,6 +147,21 @@ export function registerIpc(ctx) {
   handle('ai:history', () => ai.history());
   listen('ai:saveHistory', (_e, messages) => ai.saveHistory(messages));
   handle('ai:clearHistory', () => ai.clearHistory());
+  handle('ai:signOutAll', async (e) => {
+    const r = await dialog.showMessageBox(parentFor(e) ?? undefined, {
+      type: 'warning',
+      buttons: ['Cancelar', 'Cerrar sesión'],
+      defaultId: 0,
+      cancelId: 0,
+      title: 'Cerrar sesión en todas las IA',
+      message: '¿Cerrar la sesión de Claude, ChatGPT, Gemini y DeepSeek?',
+      detail: 'Tendrás que volver a iniciar sesión en cada una.',
+    });
+    if (r.response !== 1) return false;
+    await aiSession.signOutAll();
+    islands.send('ai:signedOut', true);
+    return true;
+  });
   handle('ai:encryptionAvailable', () => secrets.available());
   listen('ai:openWeb', (_e, provider) => {
     const w = WEB_AI[provider];

@@ -179,10 +179,18 @@ export function showWebview(p) {
     const w = document.createElement('webview');
     w.className = 'aiw';
     w.setAttribute('src', WEB_AI_META[p].url);
-    w.setAttribute('partition', `persist:ai-${p}`);
+    w.setAttribute('partition', 'persist:ai'); // one saved session for all the AI sites
     w.setAttribute('allowpopups', '');
     host.appendChild(w);
     webviews[p] = w;
+  }
+}
+
+/** After "Cerrar sesión en todas las IA": throw the pages away so they load signed out. */
+export function resetWebviews() {
+  for (const k of Object.keys(webviews)) {
+    webviews[k].remove();
+    delete webviews[k];
   }
 }
 

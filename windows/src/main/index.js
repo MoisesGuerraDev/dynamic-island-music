@@ -18,6 +18,7 @@ import { Shortcuts } from './shortcuts.js';
 import { AppTray } from './tray.js';
 import { PsRpc } from './psrpc.js';
 import { registerIpc } from './ipc.js';
+import { AiSession } from './aisession.js';
 
 const here = path.dirname(fileURLToPath(import.meta.url));
 const root = path.join(here, '..', '..');
@@ -50,6 +51,14 @@ function start() {
 
   app.whenReady().then(() => boot(ctx));
   app.on('before-quit', () => shutdown(ctx));
+  // Write the saved AI sessions (cookies) to disk before the process ends.
+  let flushed = false;
+  app.on('will-quit', (event) => {
+    if (flushed || !ctx.aiSession) return;
+    flushed = true;
+    event.preventDefault();
+    ctx.aiSession.flush().finally(() => app.quit());
+  });
 }
 
 async function boot(ctx) {
@@ -97,7 +106,10 @@ async function boot(ctx) {
   const calendar = new CalendarStore({ file: path.join(userData, 'events.json') });
   const shelf = new Shelf({ file: path.join(userData, 'shelf.json') });
 
-  Object.assign(ctx, { store, secrets, helper, islands, system, media, pomodoro, notes, clip, ai, perf, calendar, shelf });
+  const aiSession = new AiSession();
+  aiSession.start();
+
+  Object.assign(ctx, { aiSession, store, secrets, helper, islands, system, media, pomodoro, notes, clip, ai, perf, calendar, shelf });
 
   // --- Commands from shortcuts and the tray ---
   const send = (name, extra = {}) => islands.send('cmd', { name, ...extra });

@@ -1,0 +1,132 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dynamic Island Music</title>
+<meta name="description" content="Música, Pomodoro, notas, chat de IA y más en el notch de tu Mac y en una isla para Windows. Gratis y de código abierto.">
+<link rel="icon" href="app-icon.svg">
+<style>
+:root{--bg:#07070c;--fg:#f4f4f8;--fg2:#a9aab8;--line:rgba(255,255,255,.1);--card:rgba(255,255,255,.06);--c1:#ff2d55;--c2:#ff9f0a;--c3:#8b5cf6}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font:16px/1.55 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI Variable","Segoe UI",system-ui,sans-serif;
+  padding:0 max(16px,env(safe-area-inset-left)) 64px max(16px,env(safe-area-inset-right))}
+.glow{position:fixed;inset:-20% -10% auto -10%;height:70vh;z-index:-1;filter:blur(90px);opacity:.55;
+  background:radial-gradient(40% 50% at 28% 40%,var(--c1),transparent 70%),radial-gradient(40% 50% at 55% 55%,var(--c2),transparent 70%),radial-gradient(40% 50% at 78% 38%,var(--c3),transparent 70%)}
+main{max-width:860px;margin:0 auto}
+header{padding:72px 0 28px;text-align:center}
+header img{width:132px;height:132px;filter:drop-shadow(0 20px 40px rgba(0,0,0,.5))}
+h1{font-size:clamp(30px,6vw,48px);line-height:1.1;margin:18px 0 10px;letter-spacing:-.02em}
+.lead{color:var(--fg2);max-width:56ch;margin:0 auto;font-size:18px}
+.cta{display:flex;flex-wrap:wrap;gap:12px;justify-content:center;margin:30px 0 10px}
+.btn{display:inline-flex;align-items:center;gap:10px;padding:14px 24px;border-radius:999px;font-weight:600;font-size:17px;text-decoration:none;color:#fff;
+  background:rgba(255,255,255,.12);box-shadow:inset 1.5px 1.5px 2px rgba(255,255,255,.55),inset -1.5px -1.5px 2px rgba(255,255,255,.2),0 10px 30px rgba(0,0,0,.4);
+  -webkit-backdrop-filter:blur(14px) saturate(1.6);backdrop-filter:blur(14px) saturate(1.6);border:0;cursor:pointer;transition:transform .25s cubic-bezier(.34,1.56,.64,1)}
+.btn:hover{transform:scale(1.05)}
+.btn.main{background:linear-gradient(135deg,rgba(255,45,85,.75),rgba(255,159,10,.7))}
+.small{color:var(--fg2);font-size:14px;text-align:center}
+section{margin-top:44px}
+h2{font-size:22px;margin:0 0 12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;padding:20px 22px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px}
+.grid .card h3{margin:0 0 6px;font-size:16px}.grid .card p{margin:0;color:var(--fg2);font-size:15px}
+code,pre{font:14px ui-monospace,"SF Mono",Menlo,Consolas,monospace}
+pre{margin:0;background:rgba(0,0,0,.45);border:1px solid var(--line);border-radius:12px;padding:14px 16px;overflow-x:auto;white-space:pre-wrap;word-break:break-all}
+.copy{margin-top:10px}
+ol{margin:8px 0 0;padding-left:22px;color:var(--fg2)}
+li{margin:4px 0}
+.os[hidden]{display:none}
+.tabs{display:flex;gap:6px;justify-content:center;margin-bottom:14px}
+.tabs button{all:unset;cursor:pointer;padding:8px 18px;border-radius:999px;color:var(--fg2);border:1px solid var(--line)}
+.tabs button[aria-pressed="true"]{color:#fff;background:rgba(255,255,255,.14)}
+footer{margin-top:56px;color:var(--fg2);font-size:14px;text-align:center}
+a{color:#9cc2ff}
+</style>
+</head>
+<body>
+<div class="glow" aria-hidden="true"></div>
+<main>
+<header>
+  <img src="app-icon.svg" alt="Icono de Dynamic Island Music">
+  <h1>Dynamic Island Music</h1>
+  <p class="lead">Tu música, un Pomodoro con el tiempo que quieras, notas que se sincronizan con tu iCloud, un chat con tu IA favorita y más, todo en el notch de tu Mac y en una isla para Windows. Gratis y de código abierto.</p>
+  <div class="cta">
+    <a class="btn main" id="download" href="#">Descargar</a>
+  </div>
+  <p class="small" id="detected">Detectando tu sistema…</p>
+</header>
+
+<section>
+  <div class="tabs" role="group" aria-label="Sistema">
+    <button id="tab-mac" aria-pressed="true">Mac</button>
+    <button id="tab-win" aria-pressed="false">Windows</button>
+  </div>
+
+  <div class="card os" id="os-mac">
+    <h2>Instalar en Mac</h2>
+    <p><b>La forma más fácil:</b> copia este comando, pégalo en la app <b>Terminal</b> y pulsa Intro. Descarga la app, comprueba que no esté alterada, la instala y la abre.</p>
+    <pre id="cmd-mac">…</pre>
+    <button class="btn copy" id="copy-mac">Copiar comando</button>
+    <p class="small" style="text-align:left;margin-top:14px">¿Prefieres el instalador normal? Descarga el <code>.dmg</code>, arrastra la app a Aplicaciones y, si macOS dice que no puede verificarla (es normal, no está firmada por Apple), ve a <b>Ajustes del Sistema › Privacidad y seguridad › Abrir de todos modos</b>. Solo la primera vez.</p>
+    <p class="small" style="text-align:left">Requiere macOS 14 o más nuevo. El Liquid Glass completo necesita macOS 26.</p>
+  </div>
+
+  <div class="card os" id="os-win" hidden>
+    <h2>Instalar en Windows</h2>
+    <p>Descarga el instalador y ábrelo. Si Windows muestra "Windows protegió tu PC", pulsa <b>Más información › Ejecutar de todas formas</b>: aparece con las apps nuevas de código abierto hasta que ganan reputación.</p>
+    <p><a class="btn main" id="download-win" href="#">Descargar para Windows</a></p>
+    <p class="small" style="text-align:left">Requiere Windows 10 u 11.</p>
+  </div>
+</section>
+
+<section>
+  <h2>Qué trae</h2>
+  <div class="grid">
+    <div class="card"><h3>Música de cualquier app</h3><p>Spotify, Apple Music, YouTube en el navegador… lo que suene. Los colores del brillo salen de la carátula.</p></div>
+    <div class="card"><h3>Pomodoro libre</h3><p>El tiempo que quieras, y suena cuando termina. Se ve también con el notch cerrado.</p></div>
+    <div class="card"><h3>Notas con iCloud</h3><p>Archivos de texto en una carpeta de iCloud Drive: se sincronizan solos con tu iPhone y tus otras computadoras.</p></div>
+    <div class="card"><h3>Chat de IA</h3><p>Claude, ChatGPT, Gemini u Ollama con tu propia clave. Sin intermediarios.</p></div>
+    <div class="card"><h3>Todo editable</h3><p>Arrastra, cambia de tamaño, quita y agrega componentes. Si no caben, pasan a otra página.</p></div>
+    <div class="card"><h3>Privado</h3><p>Sin telemetría. Todo se queda en tu equipo.</p></div>
+  </div>
+</section>
+
+<footer>
+  <p><a id="repo" href="#">Código en GitHub</a> · Licencia GPL-3.0 · Basada en Boring Notch</p>
+  <p>"Dynamic Island" es una marca de Apple Inc. Este proyecto no está afiliado a Apple.</p>
+</footer>
+</main>
+<script>
+(function(){
+  var host=location.hostname, path=location.pathname.split('/').filter(Boolean);
+  var owner=host.endsWith('github.io')?host.split('.')[0]:'OWNER';
+  var repo=host.endsWith('github.io')?(path[0]||host):'REPO';
+  var slug=owner+'/'+repo, base='https://github.com/'+slug+'/releases/latest/download/';
+  var isMac=/Mac|iPhone|iPad/.test(navigator.platform||navigator.userAgent);
+  var isWin=/Win/.test(navigator.platform||navigator.userAgent);
+  var cmd='curl -fsSL https://raw.githubusercontent.com/'+slug+'/main/install.sh | bash -s -- '+slug;
+  document.getElementById('cmd-mac').textContent=cmd;
+  document.getElementById('repo').href='https://github.com/'+slug;
+  document.getElementById('download-win').href=base+'DynamicIslandMusic-Setup.exe';
+  var d=document.getElementById('download'),det=document.getElementById('detected');
+  function show(os){
+    document.getElementById('os-mac').hidden=os!=='mac';
+    document.getElementById('os-win').hidden=os!=='win';
+    document.getElementById('tab-mac').setAttribute('aria-pressed',os==='mac');
+    document.getElementById('tab-win').setAttribute('aria-pressed',os==='win');
+  }
+  var os=isWin?'win':'mac';
+  if(os==='win'){d.textContent='Descargar para Windows';d.href=base+'DynamicIslandMusic-Setup.exe';det.textContent='Detectamos Windows.';}
+  else{d.textContent='Descargar para Mac';d.href=base+'DynamicIslandMusic.dmg';det.textContent=isMac?'Detectamos un Mac.':'Elige tu sistema abajo.';}
+  show(os);
+  document.getElementById('tab-mac').onclick=function(){show('mac');};
+  document.getElementById('tab-win').onclick=function(){show('win');};
+  document.getElementById('copy-mac').onclick=function(){
+    var b=this;
+    var done=function(){b.textContent='Copiado';setTimeout(function(){b.textContent='Copiar comando';},1500);};
+    if(navigator.clipboard&&navigator.clipboard.writeText){navigator.clipboard.writeText(cmd).then(done,function(){});}
+  };
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#1a1536"/>
+      <stop offset="0.55" stop-color="#0c0b1c"/>
+      <stop offset="1" stop-color="#050509"/>
+    </linearGradient>
+    <clipPath id="sq"><rect x="100" y="100" width="824" height="824" rx="190"/></clipPath>
+    <radialGradient id="gRed" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#ff2d55" stop-opacity="0.95"/><stop offset="1" stop-color="#ff2d55" stop-opacity="0"/></radialGradient>
+    <radialGradient id="gOrange" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#ff9f0a" stop-opacity="0.95"/><stop offset="1" stop-color="#ff9f0a" stop-opacity="0"/></radialGradient>
+    <radialGradient id="gViolet" cx="0.5" cy="0.5" r="0.5"><stop offset="0" stop-color="#8b5cf6" stop-opacity="0.95"/><stop offset="1" stop-color="#8b5cf6" stop-opacity="0"/></radialGradient>
+    <linearGradient id="rim" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.85"/>
+      <stop offset="0.45" stop-color="#ffffff" stop-opacity="0.06"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0.5"/>
+    </linearGradient>
+    <linearGradient id="gloss" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.16"/>
+      <stop offset="0.5" stop-color="#ffffff" stop-opacity="0"/>
+    </linearGradient>
+    <linearGradient id="bar" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff"/>
+      <stop offset="1" stop-color="#ffc4a0"/>
+    </linearGradient>
+    <filter id="blur60" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="58"/></filter>
+    <filter id="blur14" x="-50%" y="-50%" width="200%" height="200%"><feGaussianBlur stdDeviation="14"/></filter>
+    <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%"><feGaussianBlur stdDeviation="22"/></filter>
+  </defs>
+  <g filter="url(#shadow)" opacity="0.45"><rect x="100" y="128" width="824" height="824" rx="190" fill="#000"/></g>
+  <rect x="100" y="100" width="824" height="824" rx="190" fill="url(#bg)"/>
+  <g clip-path="url(#sq)">
+    <g filter="url(#blur60)">
+      <ellipse cx="380" cy="430" rx="290" ry="260" fill="url(#gRed)"/>
+      <ellipse cx="540" cy="520" rx="300" ry="240" fill="url(#gOrange)"/>
+      <ellipse cx="720" cy="430" rx="250" ry="240" fill="url(#gViolet)"/>
+    </g>
+    <path d="M302 100H722V176Q722 262 636 262H388Q302 262 302 176Z" fill="#000" opacity="0.65" filter="url(#blur14)" transform="translate(0 14)"/>
+    <path d="M302 100H722V176Q722 262 636 262H388Q302 262 302 176Z" fill="#000"/>
+    <path d="M302 100V176Q302 262 388 262H636Q722 262 722 176V100" fill="none" stroke="url(#rim)" stroke-width="4" stroke-linejoin="round"/>
+    <g fill="url(#bar)">
+      <rect x="418" y="168" width="22" height="54" rx="11"/>
+      <rect x="458" y="140" width="22" height="82" rx="11"/>
+      <rect x="498" y="120" width="22" height="102" rx="11"/>
+      <rect x="538" y="150" width="22" height="72" rx="11"/>
+      <rect x="578" y="176" width="22" height="46" rx="11"/>
+    </g>
+    <rect x="100" y="100" width="824" height="412" fill="url(#gloss)"/>
+    <rect x="102" y="102" width="820" height="820" rx="188" fill="none" stroke="#ffffff" stroke-opacity="0.12" stroke-width="3"/>
+  </g>
+</svg>

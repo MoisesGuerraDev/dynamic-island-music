@@ -37,6 +37,8 @@ class MusicManager: ObservableObject {
     @Published var isPlayerIdle: Bool = true
     @Published var animations: BoringAnimations = .init()
     @Published var avgColor: NSColor = .white
+    /// Most vivid color of the cover. Used for the glow around the notch and the highlights.
+    @Published var glowColor: NSColor = .systemPurple
     @Published var bundleIdentifier: String? = nil
     @Published var songDuration: TimeInterval = 0
     @Published var elapsedTime: TimeInterval = 0
@@ -568,6 +570,7 @@ class MusicManager: ObservableObject {
             DispatchQueue.main.async {
                 withAnimation(.smooth) {
                     self?.avgColor = color ?? .white
+                    self?.glowColor = self?.albumArt.vibrantColor() ?? color ?? .systemPurple
                 }
             }
         }

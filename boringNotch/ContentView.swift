@@ -23,6 +23,12 @@ struct ContentView: View {
     @ObservedObject var batteryModel = BatteryStatusViewModel.shared
     @ObservedObject var brightnessManager = BrightnessManager.shared
     @ObservedObject var volumeManager = VolumeManager.shared
+    @ObservedObject var layoutManager = LayoutManager.shared
+    @ObservedObject var pomodoro = PomodoroManager.shared
+    @ObservedObject var clipboard = ClipboardManager.shared
+    @Default(.glowStyle) var glowStyle
+    @Default(.livePomodoro) var livePomodoro
+    @Default(.liveMusic) var liveMusic
     @State private var hoverTask: Task<Void, Never>?
     @State private var isHovering: Bool = false
     @State private var anyDropDebounceTask: Task<Void, Never>?
@@ -65,6 +71,10 @@ struct ContentView: View {
             && vm.notchState == .closed && Defaults[.showPowerStatusNotifications]
         {
             chinWidth = 640
+        } else if vm.notchState == .closed && !vm.hideOnClosed && pomodoro.isRunning && livePomodoro
+            && !coordinator.sneakPeek.show
+        {
+            chinWidth += (2 * max(0, vm.effectiveClosedNotchHeight - 12) + 20) + 34
         } else if (!coordinator.expandingView.show || coordinator.expandingView.type == .music)
             && vm.notchState == .closed && (musicManager.isPlaying || !musicManager.isPlayerIdle)
             && coordinator.musicLiveActivityEnabled && !vm.hideOnClosed
@@ -108,9 +118,25 @@ struct ContentView: View {
                             .frame(height: 1)
                             .padding(.horizontal, topCornerRadius)
                     }
+                    .overlay {
+                        if glowStyle != .off && (vm.notchState == .open || musicManager.isPlaying) {
+                            currentNotchShape
+                                .stroke(
+                                    LinearGradient(
+                                        colors: [.white.opacity(0.28), Color(nsColor: musicManager.glowColor).opacity(glowStyle == .strong ? 0.95 : 0.6)],
+                                        startPoint: .top, endPoint: .bottom),
+                                    lineWidth: 1)
+                                .allowsHitTesting(false)
+                        }
+                    }
                     .shadow(
                         color: ((vm.notchState == .open || isHovering) && Defaults[.enableShadow])
                             ? .black.opacity(0.7) : .clear, radius: Defaults[.cornerRadiusScaling] ? 6 : 4
+                    )
+                    .shadow(
+                        color: (glowStyle != .off && (vm.notchState == .open || musicManager.isPlaying))
+                            ? Color(nsColor: musicManager.glowColor).opacity(glowStyle == .strong ? 0.8 : 0.45) : .clear,
+                        radius: glowStyle == .strong ? 26 : 14, y: 6
                     )
                     .padding(
                         .bottom,
@@ -158,6 +184,18 @@ struct ContentView: View {
                             }
                         }
                     }
+                    .onReceive(NotificationCenter.default.publisher(for: .pomodoroFinished)) { _ in
+                        guard vm.notchState == .closed else { return }
+                        doOpen()
+                        hoverTask?.cancel()
+                        hoverTask = Task {
+                            try? await Task.sleep(for: .seconds(8))
+                            guard !Task.isCancelled else { return }
+                            await MainActor.run {
+                                if !isHovering && !SharingStateManager.shared.preventNotchClose { vm.close() }
+                            }
+                        }
+                    }
                     .onReceive(NotificationCenter.default.publisher(for: .sharingDidFinish)) { _ in
                         if vm.notchState == .open && !isHovering && !vm.isBatteryPopoverActive {
                             hoverTask?.cancel()
@@ -195,7 +233,12 @@ struct ContentView: View {
                     }
                     .sensoryFeedback(.alignment, trigger: haptics)
                     .contextMenu {
-                        Button("Settings") {
+                        Button("Editar componentes") {
+                            doOpen()
+                            coordinator.currentView = .home
+                            layoutManager.editing = true
+                        }
+                        Button("Ajustes") {
                             SettingsWindowController.shared.showWindow()
                         }
                         .keyboardShortcut(KeyEquivalent(","), modifiers: .command)
@@ -213,7 +256,7 @@ struct ContentView: View {
             }
         }
         .padding(.bottom, 8)
-        .frame(maxWidth: windowSize.width, maxHeight: windowSize.height, alignment: .top)
+        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .compositingGroup()
         .scaleEffect(
             x: gestureScale,
@@ -296,6 +339,9 @@ struct ContentView: View {
                       } else if coordinator.sneakPeek.show && Defaults[.inlineHUD] && (coordinator.sneakPeek.type != .music) && (coordinator.sneakPeek.type != .battery) && vm.notchState == .closed {
                           InlineHUD(type: $coordinator.sneakPeek.type, value: $coordinator.sneakPeek.value, icon: $coordinator.sneakPeek.icon, hoverAnimation: $isHovering, gestureProgress: $gestureProgress)
                               .transition(.opacity)
+                      } else if vm.notchState == .closed && !vm.hideOnClosed && pomodoro.isRunning && livePomodoro && !coordinator.sneakPeek.show {
+                          PomodoroLiveActivity()
+                              .frame(alignment: .center)
                       } else if (!coordinator.expandingView.show || coordinator.expandingView.type == .music) && vm.notchState == .closed && (musicManager.isPlaying || !musicManager.isPlayerIdle) && coordinator.musicLiveActivityEnabled && !vm.hideOnClosed {
                           MusicLiveActivity()
                               .frame(alignment: .center)
@@ -344,6 +390,11 @@ struct ContentView: View {
                               }
                           }
                       }
+                      if let item = clipboard.toast, vm.notchState == .closed, !vm.hideOnClosed {
+                          ClipboardToast(item: item)
+                              .padding(.bottom, 8)
+                              .frame(maxWidth: .infinity)
+                      }
                   }
               }
               .conditionalModifier((coordinator.sneakPeek.show && (coordinator.sneakPeek.type == .music) && vm.notchState == .closed && !vm.hideOnClosed && Defaults[.sneakPeekStyles] == .standard) || (coordinator.sneakPeek.show && (coordinator.sneakPeek.type != .music) && (vm.notchState == .closed))) { view in
@@ -355,9 +406,15 @@ struct ContentView: View {
                 VStack {
                     switch coordinator.currentView {
                     case .home:
-                        NotchHomeView(albumArtNamespace: albumArtNamespace)
+                        IslandHomeView(albumArtNamespace: albumArtNamespace)
                     case .shelf:
                         ShelfView()
+                    case .chat:
+                        ChatTabView()
+                    case .clipboard:
+                        ClipboardTabView()
+                    case .game:
+                        SnakeTabView()
                     }
                 }
                 .transition(
@@ -493,6 +550,36 @@ struct ContentView: View {
             height: vm.effectiveClosedNotchHeight,
             alignment: .center
         )
+    }
+
+    /// Timer in the closed notch: music cover on the left if something is playing, otherwise a clock; time on the right.
+    @ViewBuilder
+    func PomodoroLiveActivity() -> some View {
+        let side = max(0, vm.effectiveClosedNotchHeight - 12)
+        HStack {
+            Group {
+                if liveMusic && musicManager.isPlaying {
+                    Image(nsImage: musicManager.albumArt)
+                        .resizable()
+                        .clipShape(RoundedRectangle(cornerRadius: MusicPlayerImageSizes.cornerRadiusInset.closed))
+                } else {
+                    Image(systemName: "timer")
+                        .resizable()
+                        .scaledToFit()
+                        .padding(2)
+                        .foregroundStyle(Color(red: 0.6, green: 0.76, blue: 1))
+                }
+            }
+            .frame(width: side, height: side)
+
+            Rectangle()
+                .fill(.black)
+                .frame(width: vm.closedNotchSize.width - cornerRadiusInsets.closed.top)
+
+            PomodoroLiveText()
+                .frame(width: side + 34, height: side, alignment: .center)
+        }
+        .frame(height: vm.effectiveClosedNotchHeight, alignment: .center)
     }
 
     @ViewBuilder

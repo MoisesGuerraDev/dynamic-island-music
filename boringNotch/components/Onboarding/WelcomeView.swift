@@ -21,15 +21,15 @@ struct WelcomeView: View {
                     .offset(y: -5)
                     .background(SparkleView().opacity(0.6))
                 VStack(spacing: 8) {
-                    Image("logo2")
+                    Image(nsImage: NSApp.applicationIconImage)
                         .resizable()
                         .aspectRatio(contentMode: .fit)
-                        .frame(width: 100, height: 100)
+                        .frame(width: 110, height: 110)
                         .padding(.bottom, 8)
-                    Text("Boring Notch")
+                    Text("Dynamic Island Music")
                         .font(.system(.largeTitle, design: .default))
                         .fontWeight(.semibold)
-                    Text("Welcome")
+                    Text("Bienvenido")
                         .font(.title)
                         .foregroundStyle(.secondary)
                         .padding(.bottom, 30)
@@ -53,7 +53,7 @@ struct WelcomeView: View {
                     Button {
                         onGetStarted?()
                     } label: {
-                        Text("Get started")
+                        Text("Empezar")
                             .padding(.horizontal, 20)
                             .padding(.vertical, 6)
                     }
@@ -62,14 +62,12 @@ struct WelcomeView: View {
                 .padding(.top)
             }
             
-            Image("theboringteam")
-                .resizable()
-                .aspectRatio(contentMode: .fit)
-                .frame(height: 22)
+            Text(AppInfo.basedOn)
+                .font(.caption)
+                .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottom)
                 .padding()
                 .padding(.bottom, 36)
-                .blendMode(.overlay)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .ignoresSafeArea()

@@ -13,6 +13,7 @@ struct BoringHeader: View {
     @ObservedObject var batteryModel = BatteryStatusViewModel.shared
     @ObservedObject var coordinator = BoringViewCoordinator.shared
     @StateObject var tvm = ShelfStateViewModel.shared
+    @ObservedObject var layout = LayoutManager.shared
     var body: some View {
         HStack(spacing: 0) {
             HStack {
@@ -38,37 +39,18 @@ struct BoringHeader: View {
 
             HStack(spacing: 4) {
                 if vm.notchState == .open {
-                    if Defaults[.showMirror] {
-                        Button(action: {
-                            vm.toggleCameraPreview()
-                        }) {
-                            Capsule()
-                                .fill(.black)
-                                .frame(width: 30, height: 30)
-                                .overlay {
-                                    Image(systemName: "web.camera")
-                                        .foregroundColor(.white)
-                                        .padding()
-                                        .imageScale(.medium)
-                                }
-                        }
-                        .buttonStyle(PlainButtonStyle())
-                    }
                     if Defaults[.settingsIconInNotch] {
-                        Button(action: {
-                            SettingsWindowController.shared.showWindow()
-                        }) {
-                            Capsule()
-                                .fill(.black)
-                                .frame(width: 30, height: 30)
-                                .overlay {
-                                    Image(systemName: "gear")
-                                        .foregroundColor(.white)
-                                        .padding()
-                                        .imageScale(.medium)
-                                }
+                        GlassCircleButton(symbol: layout.editing ? "checkmark" : "pencil", size: 28) {
+                            withAnimation(.smooth) {
+                                if !layout.editing { BoringViewCoordinator.shared.currentView = .home }
+                                layout.editing.toggle()
+                            }
                         }
-                        .buttonStyle(PlainButtonStyle())
+                        .help(layout.editing ? "Listo" : "Editar componentes")
+                        GlassCircleButton(symbol: "gearshape", size: 28) {
+                            SettingsWindowController.shared.showWindow()
+                        }
+                        .help("Ajustes")
                     }
                     if Defaults[.showBatteryIndicator] {
                         BoringBatteryView(

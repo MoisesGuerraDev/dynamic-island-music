@@ -67,6 +67,27 @@ class BoringViewModel: NSObject, ObservableObject {
             .store(in: &cancellables)
         
         setupDetectorObserver()
+
+        // The open size follows the layout (components, pages, edit mode) and the selected tab.
+        NotificationCenter.default.publisher(for: .islandLayoutChanged)
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in self?.refreshOpenSize() }
+            .store(in: &cancellables)
+        coordinator.$currentView
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in self?.refreshOpenSize() }
+            .store(in: &cancellables)
+    }
+
+    func openSize() -> CGSize {
+        MainActor.assumeIsolated {
+            LayoutManager.shared.openSize(for: screenUUID, view: coordinator.currentView)
+        }
+    }
+
+    func refreshOpenSize() {
+        guard notchState == .open else { return }
+        withAnimation(.smooth(duration: 0.3)) { notchSize = openSize() }
     }
     
     private func setupDetectorObserver() {
@@ -190,7 +211,7 @@ class BoringViewModel: NSObject, ObservableObject {
     }
 
     func open() {
-        self.notchSize = openNotchSize
+        self.notchSize = openSize()
         self.notchState = .open
         
         // Force music information update when notch is opened

@@ -7,6 +7,7 @@
 
 import AVFoundation
 import Combine
+import notify
 import Defaults
 import KeyboardShortcuts
 import Sparkle
@@ -22,21 +23,20 @@ struct DynamicNotchApp: App {
 
     init() {
         updaterController = SPUStandardUpdaterController(
-            startingUpdater: true, updaterDelegate: nil, userDriverDelegate: nil)
+            startingUpdater: false, updaterDelegate: nil, userDriverDelegate: nil)
 
         // Initialize the settings window controller with the updater controller
         SettingsWindowController.shared.setUpdaterController(updaterController)
     }
 
     var body: some Scene {
-        MenuBarExtra("boring.notch", systemImage: "sparkle", isInserted: $showMenuBarIcon) {
+        MenuBarExtra("Dynamic Island Music", systemImage: "sparkle", isInserted: $showMenuBarIcon) {
             Button("Settings") {
                 SettingsWindowController.shared.showWindow()
             }
             .keyboardShortcut(KeyEquivalent(","), modifiers: .command)
-            CheckForUpdatesView(updater: updaterController.updater)
             Divider()
-            Button("Restart Boring Notch") {
+            Button("Reiniciar la app") {
                 ApplicationRelauncher.restart()
             }
             Button("Quit", role: .destructive) {
@@ -65,6 +65,36 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var isScreenLocked: Bool = false
     private var windowScreenDidChangeObserver: Any?
     private var dragDetectors: [String: DragDetector] = [:] // UUID -> DragDetector
+    private var sizeObservers: [ObjectIdentifier: AnyCancellable] = [:]
+
+    /// The window only covers what is needed, so it never blocks clicks in the menu bar around the notch.
+    private func observeWindowSize(_ window: NSWindow, viewModel: BoringViewModel) {
+        sizeObservers[ObjectIdentifier(window)] = viewModel.$notchSize
+            .receive(on: RunLoop.main)
+            .sink { [weak self, weak window, weak viewModel] size in
+                guard let self, let window, let viewModel else { return }
+                self.fitWindow(window, notchWidth: size.width, viewModel: viewModel, delayShrink: true)
+            }
+    }
+
+    private func fitWindow(_ window: NSWindow, notchWidth: CGFloat, viewModel: BoringViewModel, delayShrink: Bool) {
+        let desired = min(windowSize.width, max(640, notchWidth + 2 * windowSidePadding))
+        guard abs(desired - window.frame.width) > 0.5 else { return }
+        let apply = { [weak window, weak viewModel] in
+            guard let window, let viewModel else { return }
+            let target = min(windowSize.width, max(640, viewModel.notchSize.width + 2 * windowSidePadding))
+            let screen = viewModel.screenUUID.flatMap { NSScreen.screen(withUUID: $0) } ?? window.screen ?? NSScreen.main
+            guard let frame = screen?.frame else { return }
+            window.setFrame(
+                NSRect(x: frame.midX - target / 2, y: frame.maxY - windowSize.height, width: target, height: windowSize.height),
+                display: true)
+        }
+        if delayShrink && desired < window.frame.width {
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.55, execute: apply)
+        } else {
+            apply()
+        }
+    }
 
     func applicationShouldTerminateAfterLastWindowClosed(_ sender: NSApplication) -> Bool {
         return false
@@ -248,6 +278,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
         window.orderFrontRegardless()
         NotchSpaceManager.shared.notchSpace.windows.insert(window)
+        observeWindowSize(window, viewModel: viewModel)
 
         // Observe when the window's screen changes so we can update drag detectors
         windowScreenDidChangeObserver = NotificationCenter.default.addObserver(
@@ -407,6 +438,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             }
         }
 
+        #if DEBUG
+        installDebugHooks()
+        #endif
+
         if !Defaults[.showOnAllDisplays] {
             let viewModel = self.vm
             let window = createBoringNotchWindow(
@@ -448,9 +483,34 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         previousScreens = NSScreen.screens
     }
 
+    #if DEBUG
+    /// Test hooks, only in debug builds: `notifyutil -p dim.debug.open`, `dim.debug.tab.chat`, ...
+    private func installDebugHooks() {
+        func hook(_ name: String, _ action: @escaping @MainActor () -> Void) {
+            var token: Int32 = 0
+            notify_register_dispatch(name, &token, DispatchQueue.main) { _ in
+                Task { @MainActor in action() }
+            }
+        }
+        hook("dim.debug.open") { withAnimation { self.vm.open() } }
+        hook("dim.debug.close") { withAnimation { self.vm.close() } }
+        hook("dim.debug.tab.home") { self.coordinator.currentView = .home }
+        hook("dim.debug.tab.chat") { self.coordinator.currentView = .chat }
+        hook("dim.debug.tab.clipboard") { self.coordinator.currentView = .clipboard }
+        hook("dim.debug.tab.game") { self.coordinator.currentView = .game }
+        hook("dim.debug.tab.shelf") { self.coordinator.currentView = .shelf }
+        hook("dim.debug.edit.on") { LayoutManager.shared.editing = true }
+        hook("dim.debug.edit.off") { LayoutManager.shared.editing = false }
+        hook("dim.debug.pomo.toggle") { PomodoroManager.shared.toggle() }
+        hook("dim.debug.pomo.short") { PomodoroManager.shared.setCurrentDuration(5); PomodoroManager.shared.start() }
+        hook("dim.debug.settings") { SettingsWindowController.shared.showWindow() }
+        hook("dim.debug.enable.all") { for c in IslandComponent.allCases { LayoutManager.shared.setEnabled(c, true) } }
+        hook("dim.debug.reset") { LayoutManager.shared.reset() }
+    }
+    #endif
+
     func playWelcomeSound() {
-        let audioPlayer = AudioPlayer()
-        audioPlayer.play(fileName: "boring", fileExtension: "m4a")
+        // No welcome sound: the original one belongs to Boring Notch.
     }
 
     func deviceHasNotch() -> Bool {

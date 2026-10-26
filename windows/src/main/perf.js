@@ -94,7 +94,7 @@ export class PerfMonitor extends EventEmitter {
       gpu: this.gpu.gpu === null ? null : Math.round(this.gpu.gpu),
       gpuTemp: this.gpu.gpuTemp === null ? null : Math.round(this.gpu.gpuTemp),
       gpuName: this.gpu.gpuName,
-      hz: this.refreshHz(),
+      hz: Math.round(this.refreshHz()),
       at: Date.now(),
     };
     this.emit('sample', this.last);

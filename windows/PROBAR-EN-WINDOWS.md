@@ -7,7 +7,7 @@ Archivo: `DynamicIslandMusic-Windows-x64.zip` (Windows 10 u 11, 64 bits). No hac
 2. Clic derecho › **Extraer todo…** y elige una carpeta que no vayas a mover, por ejemplo `C:\DynamicIslandMusic`.
 3. Abre `Dynamic Island Music.exe`.
 
-La isla aparece **arriba y al centro** de la pantalla principal. Pasa el mouse por ahí y se abre. También hay un icono en la bandeja (junto al reloj, quizá dentro de la flecha ^).
+La primera vez sale una pantalla corta con «By: MoisesGuerraDev» y el botón **Empezar** (no pide nada ni activa nada por sí sola; «Abrir con Windows» es opcional y viene sin marcar). La isla aparece **arriba y al centro** de la pantalla principal. Pasa el mouse por ahí y se abre. También hay un icono en la bandeja (junto al reloj, quizá dentro de la flecha ^).
 
 ## 2. Si Windows avisa (SmartScreen)
 Sale "Windows protegió tu PC" porque la app no está firmada (es gratis y de código abierto). Pulsa **Más información › Ejecutar de todas formas**. Solo la primera vez.
@@ -36,7 +36,7 @@ Clic derecho en el icono de la bandeja › **Salir** (o Ajustes › Acerca de �
 - **Notificaciones:** salen al terminar el Pomodoro (se pueden apagar en Ajustes › Pomodoro).
 - **Cámara:** solo se pide si pulsas el espejo; se apaga al cerrar la isla.
 - **Internet:** solo cuando usas el chat de IA. No hay telemetría.
-- Al abrirse, la app se registra para iniciar con Windows (Ajustes › General lo apaga). Si mueves la carpeta, apágalo y vuelve a encenderlo.
+- La app **no** se agrega sola al inicio de Windows: solo si marcas «Abrir con Windows» en el tutorial o en Ajustes › General. No pide permisos de administrador.
 
 ## 6. Si algo falla
 Cuéntame qué hiciste y qué pasó. Tus datos y ajustes están en `%APPDATA%\Dynamic Island Music` (Ajustes › General › Carpeta de datos). Para desinstalar: sal de la app, borra la carpeta y esa de datos.

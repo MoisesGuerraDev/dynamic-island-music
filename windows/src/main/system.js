@@ -46,7 +46,7 @@ export class SystemInfo {
       size: d.size,
       scaleFactor: d.scaleFactor,
       rotation: d.rotation,
-      hz: d.displayFrequency || 60,
+      hz: Math.round(d.displayFrequency || 60),
       pixels: { width: Math.round(d.size.width * d.scaleFactor), height: Math.round(d.size.height * d.scaleFactor) },
     }));
   }

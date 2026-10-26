@@ -206,7 +206,7 @@ export class IslandManager {
       winHeight: isl.win.getBounds().height,
       topOffset: this.store.get('topOffset'),
       open: isl.open,
-      hz: d.displayFrequency || 60,
+      hz: Math.round(d.displayFrequency || 60),
     };
   }
 

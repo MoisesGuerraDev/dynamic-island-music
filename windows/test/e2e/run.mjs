@@ -328,7 +328,7 @@ try {
   await page.waitForTimeout(2600);
   const pf = await page.evaluate(() => { const e = document.querySelector('[data-perf]'); if (!e) return null; const col = e.closest('.col'); const cs = getComputedStyle(e); return { text: e.textContent.replace(/\s+/g, ' ').trim(), w: col.offsetWidth, opacity: cs.opacity, label: getComputedStyle(e.querySelector('.pf span')).fontSize, value: getComputedStyle(e.querySelector('.pf em')).fontSize, bar: e.querySelector('.pf i') ? e.querySelector('.pf i').offsetHeight : 0 }; });
   check('Rendimiento: 130 px de ancho, letras de 9-10 px, barras de 3 px, al 38 %', pf && pf.w === 130 && pf.opacity === '0.38' && pf.label === '9px' && pf.value === '10px' && pf.bar === 3, JSON.stringify(pf));
-  check('Rendimiento: nunca en blanco (CPU, GPU «No disponible», RAM, Hz y estado)', pf && /CPU \d+%/.test(pf.text) && pf.text.includes('GPU No disponible') && /RAM [\d.]+ GB/.test(pf.text) && /Pantalla \d+ Hz/.test(pf.text) && /Estado (Normal|Ocupado|Alto)/.test(pf.text), pf && pf.text);
+  check('Rendimiento: nunca en blanco (CPU, GPU «No disponible», RAM, Hz y estado)', pf && /CPU\s*\d+%/.test(pf.text) && /GPU\s*No disponible/.test(pf.text) && /RAM\s*[\d.]+ GB/.test(pf.text) && /Pantalla\s*\d+ Hz/.test(pf.text) && /Estado\s*(Normal|Ocupado|Alto)/.test(pf.text), pf && pf.text);
   await app.evaluate(() => { const c = globalThis.__DIM__; c.store.patch({ components: c.store.get('components').map((x) => (x.id === 'performance' ? { ...x, enabled: false } : x.id === 'camera' ? { ...x, enabled: true } : x)) }); });
   await page.waitForTimeout(400);
 

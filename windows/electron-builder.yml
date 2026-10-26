@@ -26,7 +26,7 @@ win:
       arch: [x64]
     - target: zip
       arch: [x64]
-  icon: build/icon.png
+  icon: assets/icon.png
   requestedExecutionLevel: asInvoker # never asks for administrator
 nsis:
   oneClick: true # one click, no wizard

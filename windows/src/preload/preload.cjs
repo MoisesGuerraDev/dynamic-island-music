@@ -126,6 +126,7 @@ contextBridge.exposeInMainWorld('dim', {
   app: {
     info: () => invoke('app:info'),
     openExternal: (url) => ipcRenderer.send('app:openExternal', url),
+    cameraIntent: () => ipcRenderer.send('app:cameraIntent'),
     pickFile: (kind) => invoke('app:pickFile', kind),
     shortcutStatus: () => invoke('app:shortcutStatus'),
     onShortcutStatus: (cb) => on('app:shortcutStatus', cb),

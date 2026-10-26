@@ -610,6 +610,7 @@ function syncPerf() {
 let camStream = null;
 
 async function startCam() {
+  dim.app.cameraIntent(); // the person pressed the mirror: the camera is allowed for a few seconds
   try {
     camStream = await navigator.mediaDevices.getUserMedia({ video: { width: 240, height: 240 }, audio: false });
     S.ui.camOn = true;

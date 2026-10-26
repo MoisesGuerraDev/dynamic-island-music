@@ -13,7 +13,7 @@ import { PerfMonitor } from './perf.js';
 import { SystemInfo } from './system.js';
 import { CalendarStore } from './calendar.js';
 import { Shelf } from './shelf.js';
-import { IslandManager } from './windows.js';
+import { IslandManager, setExternalOpener } from './windows.js';
 import { Shortcuts } from './shortcuts.js';
 import { AppTray } from './tray.js';
 import { PsRpc } from './psrpc.js';
@@ -51,6 +51,7 @@ if (process.env.DIM_USER_DATA && !app.isPackaged) app.setPath('userData', proces
 
 app.setAppUserModelId('app.dynamicislandmusic.windows');
 app.commandLine.appendSwitch('disable-features', 'CalculateNativeWinOcclusion'); // keep the island repainting under full-screen windows
+app.commandLine.appendSwitch('disable-background-networking'); // no update, telemetry or prediction traffic from Chromium
 
 if (!app.requestSingleInstanceLock()) {
   app.quit();
@@ -66,6 +67,7 @@ function start() {
   const ctx = {};
   app.dock?.hide(); // no Dock icon, not even for a moment
 
+  app.on('web-contents-created', (_e, contents) => contents.setWindowOpenHandler(() => ({ action: 'deny' }))); // our windows and the AI pages set their own rules after this
   app.on('second-instance', () => ctx.islands?.openSettings());
   app.on('window-all-closed', () => {
     /* the island lives in the background; the tray icon or Ctrl+Shift+N reach it */
@@ -88,6 +90,7 @@ async function boot(ctx) {
   Menu.setApplicationMenu(null);
   app.dock?.hide();
 
+  if (isTest) setExternalOpener((url) => (globalThis.__opened ||= []).push(url)); // tests never open a browser
   const store = new Store(path.join(userData, 'settings.json'));
   const secrets = new Secrets(path.join(userData, 'secrets.json'), { testMode: isTest });
   const helper = process.platform === 'win32' ? new PsRpc(resourcePath(app.isPackaged ? 'ps' : 'src/main/ps', 'helper.ps1'), { name: 'El asistente de Windows', timeoutMs: 8000 }) : null;
@@ -172,12 +175,16 @@ async function boot(ctx) {
   ctx.tray = isTest ? { update() {}, destroy() {} } : new AppTray({ iconPath, store, handlers: actions, getPomodoro: () => pomodoro.snapshot() });
 
   // --- Security: nothing from the web may open, load or ask for powers ---
-  session.defaultSession.setPermissionRequestHandler((wc, permission, cb, details) => {
-    const ours = !!islands.find(wc);
-    const videoOnly = permission === 'media' && Array.isArray(details?.mediaTypes) && details.mediaTypes.every((t) => t === 'video');
-    cb(ours && videoOnly);
-  });
-  session.defaultSession.setPermissionCheckHandler((wc, permission) => permission === 'media' && !!wc && !!islands.find(wc));
+  // Everything is denied. The one exception: the camera, for the island page only, and only for a few seconds after the
+  // person pressed the mirror button (cameraIntent). Microphone, location, notifications... are never granted.
+  let cameraIntentAt = 0;
+  ctx.cameraIntent = () => {
+    cameraIntentAt = Date.now();
+  };
+  const cameraOk = (wc, permission, mediaTypes) =>
+    permission === 'media' && !!wc && !!islands.find(wc) && Date.now() - cameraIntentAt < 15_000 && (!mediaTypes || (mediaTypes.length > 0 && mediaTypes.every((t) => t === 'video')));
+  session.defaultSession.setPermissionRequestHandler((wc, permission, cb, details) => cb(cameraOk(wc, permission, details?.mediaTypes)));
+  session.defaultSession.setPermissionCheckHandler((wc, permission) => cameraOk(wc, permission, null));
 
   registerIpc({ ...ctx, playPomodoroSound });
 

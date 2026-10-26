@@ -369,6 +369,64 @@ try {
   });
   check('isla cerrada: píldora de 28 px con música y Pomodoro, lados simétricos', !pill.off && pill.h === 28 && pill.l > 0 && Math.abs(pill.l - pill.r) < 2, JSON.stringify(pill));
 
+  // Security: every window and page is isolated, sandboxed and without Node; the AI pages only go to the AI sites.
+  await app.evaluate(() => { const c = globalThis.__DIM__; const i = c.islands.first(); i.pins.add('toggle'); c.islands.setOpen(i, true); });
+  await page.waitForTimeout(700);
+  const audit = await app.evaluate(async ({ webContents }) => {
+    const bad = [];
+    const all = webContents.getAllWebContents();
+    for (const wc of all) {
+      const w = wc.getLastWebPreferences ? wc.getLastWebPreferences() : {};
+      const name = `${wc.getType()}:${(wc.getURL() || '').split('/').pop().slice(0, 24)}`;
+      if (w.contextIsolation === false) bad.push(`${name} sin aislamiento`);
+      if (w.sandbox !== true) bad.push(`${name} sin sandbox`);
+      if (w.nodeIntegration === true) bad.push(`${name} con Node`);
+      if (w.webSecurity === false) bad.push(`${name} sin webSecurity`);
+      if (w.allowRunningInsecureContent === true) bad.push(`${name} con contenido inseguro`);
+      if (w.enableRemoteModule === true) bad.push(`${name} con remote`);
+    }
+    return { count: all.length, bad };
+  });
+  check('todas las ventanas y páginas: aislamiento, sandbox, sin Node, sin remote, webSecurity', audit.count >= 2 && audit.bad.length === 0, `${audit.count} páginas · ${audit.bad.join('; ') || 'sin problemas'}`);
+  const csp = await page.evaluate(async () => {
+    const violations = [];
+    document.addEventListener('securitypolicyviolation', (e) => violations.push(e.violatedDirective));
+    const inline = document.createElement('script'); inline.textContent = 'window.__cspInline = 1'; document.head.appendChild(inline); // an inline script
+    const remote = document.createElement('script'); remote.src = 'https://example.com/x.js'; document.head.appendChild(remote); // a remote script
+    await new Promise((r) => setTimeout(r, 400));
+    return { ranInline: window.__cspInline === 1, violations, csp: document.querySelector('meta[http-equiv="Content-Security-Policy"]').content };
+  });
+  errors.length = 0; // the two violations above were provoked on purpose
+  const scriptSrc = (csp.csp.match(/script-src ([^;]*)/) || [])[1] || '';
+  check('CSP estricta: ningún script inline ni remoto corre, sin unsafe-eval ni unsafe-inline en scripts', !csp.ranInline && csp.violations.some((v) => v.startsWith('script-src')) && scriptSrc === "'self'" && !csp.csp.includes('unsafe-eval'), `script-src ${scriptSrc} · violaciones: ${csp.violations.join(',')}`);
+  const cam = await page.evaluate(async () => { const t = (p) => Promise.race([p.then(() => 'permitido', (e) => e.name), new Promise((r) => setTimeout(() => r('sin respuesta'), 6000))]); return { video: await t(navigator.mediaDevices.getUserMedia({ video: true })), audio: await t(navigator.mediaDevices.getUserMedia({ audio: true })) }; });
+  check('cámara y micrófono denegados si la persona no pulsó el espejo', cam.video === 'NotAllowedError' && cam.audio === 'NotAllowedError', JSON.stringify(cam));
+  await page.click('[data-act="tab"][data-v="chat"]');
+  await page.waitForTimeout(2500);
+  const nav = await app.evaluate(async ({ webContents }) => {
+    const guest = webContents.getAllWebContents().find((w) => w.getType() === 'webview');
+    const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+    if (!guest) return { skip: 'no hay webview' };
+    for (let i = 0; i < 40 && guest.isLoading(); i++) await sleep(250);
+    const start = guest.getURL();
+    if (!/^https:\/\/(claude\.ai|chatgpt\.com)/.test(start)) return { skip: `sin red (${start.slice(0, 30)})` };
+    globalThis.__opened = [];
+    await guest.executeJavaScript(`window.location.assign('https://example.com/navegacion')`, true).catch(() => {});
+    await sleep(700);
+    const afterNav = guest.getURL();
+    await guest.executeJavaScript(`window.open('http://insecure.test/'); window.open('javascript:void(0)'); window.open('file:///etc/hosts'); window.open('data:text/html,hi'); window.open('https://example.org/abrir')`, true).catch(() => {});
+    await sleep(700);
+    return { start, afterNav, opened: globalThis.__opened.slice() };
+  });
+  if (nav.skip) console.log('• navegación de las IA: omitido (' + nav.skip + ')');
+  else {
+    check('una IA no puede navegar a un sitio ajeno: se queda y se abre en el navegador (https)', nav.afterNav === nav.start && nav.opened.includes('https://example.com/navegacion'), JSON.stringify(nav).slice(0, 200));
+    check('window.open: http, javascript:, file: y data: se ignoran; solo https sale al navegador', JSON.stringify(nav.opened.filter((u) => u !== 'https://example.com/navegacion')) === JSON.stringify(['https://example.org/abrir']), JSON.stringify(nav.opened));
+  }
+  const audit2 = await app.evaluate(async ({ webContents }) => webContents.getAllWebContents().filter((w) => w.getType() === 'webview').map((wc) => { const w = wc.getLastWebPreferences(); return { iso: w.contextIsolation, sb: w.sandbox, node: w.nodeIntegration, ws: w.webSecurity, insecure: w.allowRunningInsecureContent, preload: String(w.preload || '').split(/[\\/]/).pop() }; }));
+  check('el webview de la IA: aislado, con sandbox, sin Node, con webSecurity', audit2.length >= 1 && audit2.every((w) => w.iso === true && w.sb === true && w.node === false && w.ws !== false && w.insecure !== true), JSON.stringify(audit2));
+  await page.click('[data-act="tab"][data-v="home"]');
+
   // Colors and the two lights, from the little panel next to the pencil.
   await app.evaluate(() => { const c = globalThis.__DIM__; const i = c.islands.first(); i.pins.add('toggle'); c.islands.setOpen(i, true); });
   await page.waitForTimeout(800);

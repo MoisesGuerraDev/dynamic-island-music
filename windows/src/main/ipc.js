@@ -1,7 +1,9 @@
 import { app, dialog, ipcMain, shell, nativeImage } from 'electron';
 import fs from 'node:fs';
 import path from 'node:path';
+import { pathToFileURL } from 'node:url';
 import { AI_META } from '../shared/defaults.js';
+import { openExternalSafe } from './windows.js';
 
 const WEB_AI = {
   claude: { url: 'https://claude.ai/new', partition: 'persist:ai' },
@@ -15,14 +17,17 @@ export function registerIpc(ctx) {
   const { store, islands, media, pomodoro, notes, clip, ai, perf, system, calendar, shelf, shortcuts, secrets, aiSession, aiLock, sessionBackup, hdCover } = ctx;
 
   const trusted = (sender) => !!islands.find(sender) || (islands.settingsWin && !islands.settingsWin.isDestroyed() && islands.settingsWin.webContents === sender);
+  // Only the app's own pages (files of the renderer folder) may call, never a page from the web.
+  const ownBase = pathToFileURL(`${islands.rendererDir}${path.sep}`).href;
+  const ownFrame = (event) => typeof event.senderFrame?.url === 'string' && event.senderFrame.url.startsWith(ownBase);
   const handle = (channel, fn) =>
     ipcMain.handle(channel, async (event, ...args) => {
-      if (!trusted(event.sender)) return null;
+      if (!trusted(event.sender) || !ownFrame(event)) return null;
       return fn(event, ...args);
     });
   const listen = (channel, fn) =>
     ipcMain.on(channel, (event, ...args) => {
-      if (trusted(event.sender)) fn(event, ...args);
+      if (trusted(event.sender) && ownFrame(event)) fn(event, ...args);
     });
   const parentFor = (event) => (islands.settingsWin && !islands.settingsWin.isDestroyed() && islands.settingsWin.webContents === event.sender ? islands.settingsWin : undefined);
 
@@ -251,7 +256,7 @@ export function registerIpc(ctx) {
     if (p) shell.showItemInFolder(p);
   });
   ipcMain.on('shelf:drag', async (event, id) => {
-    if (!trusted(event.sender)) return;
+    if (!trusted(event.sender) || !ownFrame(event)) return;
     const p = shelf.pathOf(String(id));
     if (!p || !fs.existsSync(p)) return;
     let icon = nativeImage.createEmpty();
@@ -278,9 +283,8 @@ export function registerIpc(ctx) {
     const pages = { camera: 'ms-settings:privacy-webcam', sound: 'ms-settings:sound' };
     if (pages[which]) shell.openExternal(pages[which]);
   });
-  listen('app:openExternal', (_e, url) => {
-    if (/^https:\/\/[^\s]+$/i.test(String(url))) shell.openExternal(String(url));
-  });
+  listen('app:openExternal', (_e, url) => openExternalSafe(url));
+  listen('app:cameraIntent', () => ctx.cameraIntent());
   handle('app:pickFile', async (e, kind) => {
     const filters = kind === 'sound' ? [{ name: 'Audio', extensions: ['mp3', 'wav', 'ogg', 'm4a', 'flac'] }] : [];
     const r = await dialog.showOpenDialog(parentFor(e) ?? undefined, { properties: ['openFile'], filters });

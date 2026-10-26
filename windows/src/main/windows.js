@@ -2,6 +2,7 @@ import { app, BrowserWindow, screen, session, shell } from 'electron';
 import os from 'node:os';
 import { capWidth, displayKey, autoScale } from '../shared/layout.js';
 import { AI_PARTITION } from '../shared/cookies.js';
+import { isHttpsUrl, navAllowed } from '../shared/navigation.js';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -14,8 +15,18 @@ const HEADLESS = process.env.DIM_TEST === '1' && process.env.DIM_SHOW !== '1' &&
 const inRect = (r, p) => !!r && p.x >= r.x && p.x <= r.x + r.w && p.y >= r.y && p.y <= r.y + r.h;
 const grow = (r, m) => (r ? { x: r.x - m, y: r.y - m, w: r.w + 2 * m, h: r.h + 2 * m } : null);
 
-function isHttp(url) {
-  return /^https?:\/\//i.test(url);
+let externalOpener = (url) => shell.openExternal(url);
+
+/** Tests replace this so nothing opens on the person's screen. */
+export function setExternalOpener(fn) {
+  externalOpener = fn;
+}
+
+/** The only way anything leaves the app for the browser: https addresses, nothing else. */
+export function openExternalSafe(url) {
+  if (!isHttpsUrl(url)) return false;
+  externalOpener(String(url));
+  return true;
 }
 
 /**
@@ -152,6 +163,7 @@ export class IslandManager {
         backgroundThrottling: false,
         spellcheck: false,
         webviewTag: true, // the AI tab shows the official site of Claude, ChatGPT, Gemini or DeepSeek
+        devTools: !app.isPackaged,
       },
     });
     guardWebviews(win.webContents);
@@ -404,6 +416,7 @@ export class IslandManager {
         sandbox: true,
         nodeIntegration: false,
         spellcheck: false,
+        devTools: !app.isPackaged,
       },
     });
     this.settingsWin = win;
@@ -433,10 +446,7 @@ export class IslandManager {
       backgroundColor: '#101218',
       webPreferences: { partition, contextIsolation: true, sandbox: true, nodeIntegration: false, preload: AI_GUEST_PRELOAD },
     });
-    win.webContents.setWindowOpenHandler(({ url: u }) => {
-      if (isHttp(u)) shell.openExternal(u);
-      return { action: 'deny' };
-    });
+    guardAiContents(win.webContents);
     win.loadURL(url);
   }
 }
@@ -455,6 +465,11 @@ function guardWebviews(host) {
     webPreferences.contextIsolation = true;
     webPreferences.sandbox = true;
     webPreferences.webSecurity = true;
+    webPreferences.allowRunningInsecureContent = false;
+    webPreferences.nodeIntegrationInSubFrames = false;
+    delete webPreferences.preloadURL;
+    params.nodeintegration = false; // whatever the element asked for
+    params.disablewebsecurity = false;
     if (!WEB_AI_URL.test(String(params.src)) || params.partition !== AI_PARTITION) event.preventDefault();
   });
   host.on('did-attach-webview', (_event, guest) => {
@@ -465,21 +480,39 @@ function guardWebviews(host) {
       ses.setPermissionCheckHandler(() => false);
       ses.setUserAgent(ses.getUserAgent().replace(/ Electron\/\S+/, '').replace(/ dynamic-island-music\/\S+/i, '').replace(/ Dynamic Island Music\/\S+/i, ''));
     }
-    guest.setWindowOpenHandler(({ url }) => {
-      // "Continue with Google" opens a small sign-in window: allow https ones, same saved session.
-      if (/^https:\/\//i.test(url)) {
-        return { action: 'allow', overrideBrowserWindowOptions: { width: 520, height: 700, autoHideMenuBar: true, backgroundColor: '#101218', webPreferences: { sandbox: true, contextIsolation: true, nodeIntegration: false, preload: AI_GUEST_PRELOAD } } };
-      }
-      return { action: 'deny' };
-    });
+    guardAiContents(guest);
   });
+}
+
+/**
+ * AI pages (the embedded site, the sign-in windows it opens, the pop-out window) may only go to the AI sites and their
+ * sign-in providers. Any other https address opens in the person's browser; anything that is not https is refused.
+ */
+function guardAiContents(contents) {
+  const check = (event, url) => {
+    if (navAllowed(url)) return;
+    event.preventDefault();
+    openExternalSafe(url);
+  };
+  contents.on('will-navigate', check);
+  contents.on('will-redirect', check);
+  contents.setWindowOpenHandler(({ url }) => {
+    if (navAllowed(url)) {
+      // "Continue with Google" opens a small sign-in window: same saved session, same rules.
+      return { action: 'allow', overrideBrowserWindowOptions: { width: 520, height: 700, autoHideMenuBar: true, backgroundColor: '#101218', webPreferences: { sandbox: true, contextIsolation: true, nodeIntegration: false, webSecurity: true, preload: AI_GUEST_PRELOAD } } };
+    }
+    openExternalSafe(url);
+    return { action: 'deny' };
+  });
+  contents.on('did-create-window', (child) => guardAiContents(child.webContents));
 }
 
 /** No page of ours may navigate away or open windows: links go to the system browser. */
 export function lockDown(contents) {
   contents.on('will-navigate', (e) => e.preventDefault());
+  contents.on('will-redirect', (e) => e.preventDefault());
   contents.setWindowOpenHandler(({ url }) => {
-    if (isHttp(url)) shell.openExternal(url);
+    openExternalSafe(url);
     return { action: 'deny' };
   });
 }

@@ -44,3 +44,19 @@ Cuéntame qué hiciste y qué pasó. Tus datos y ajustes están en `%APPDATA%\Dy
 > El baile de colores usa un pulso simulado con el tempo de cada canción (no escucha el audio). Seguir el volumen real con el audio del sistema (loopback) queda pendiente.
 
 > Lo de Windows se escribió y probó solo en un Mac con música simulada: la música real (SMTC), GPU/pantalla completa, el cifrado de claves y el inicio con Windows se prueban por primera vez en tu PC.
+
+## Seguridad: qué hace y qué no hace
+**Qué hace**
+- Corre solo con tu usuario: el instalador (NSIS) no pide administrador, no toca `HKLM`, no crea servicios ni tareas programadas y solo copia archivos y crea el acceso directo del menú Inicio. Al terminar abre la propia app.
+- Inicio con Windows: **apagado** por defecto; solo si lo activas (Ajustes › General).
+- Todas las ventanas van aisladas y con sandbox, sin Node dentro de las páginas. Las páginas propias tienen una política CSP estricta (sin `eval`, sin scripts remotos ni inline). Las páginas de las IA solo pueden ir a las IA y a sus inicios de sesión (Claude, ChatGPT, Gemini, DeepSeek, Google, Apple, Microsoft); cualquier otro enlace se abre en tu navegador y solo si es `https`.
+- Permisos: todo denegado. La cámara solo se abre unos segundos después de que pulses el espejo; micrófono, ubicación y notificaciones de los sitios nunca.
+- Tus claves de API (si las usas) se guardan cifradas con Windows (DPAPI). Las sesiones de las IA viven en una carpeta de la app y la copia es un archivo cifrado.
+- Conexiones: solo a las IA que tú abres, a `itunes.apple.com` para la carátula en HD (se apaga en Ajustes › Reproductor) y al proveedor de IA cuando usas el mini chat con tu clave. Sin telemetría, sin actualizaciones automáticas.
+- Dependencias: ninguna de producción; versiones fijadas en `package-lock.json` y `npm audit` sin avisos.
+
+**Qué no hace**
+- No guarda ni envía tus contraseñas, no lee tu pantalla, no abre puertos y no se actualiza sola.
+- `install.ps1` comprueba el SHA-256 del instalador antes de ejecutarlo, no usa `Invoke-Expression` con nada descargado y no desactiva ninguna protección de Windows.
+
+**Una cosa a saber:** la app usa dos scripts de PowerShell pequeños (`resources\ps`) para la música del sistema y el estado del juego. Se lanzan con `-NoProfile -NonInteractive`, con una ruta fija y hablan por JSON, nunca con texto tuyo en la línea de comandos. Llevan `-ExecutionPolicy Bypass` porque Windows bloquea por defecto cualquier archivo `.ps1`; es un archivo local de la app, de solo lectura, que no descarga ni ejecuta código de fuera. Algunos antivirus pueden avisar por eso: es un falso positivo.

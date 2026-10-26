@@ -283,6 +283,7 @@ const dim = {
   app: {
     info: async () => ({ name: 'Dynamic Island Music', version: '0.1.0-dev', platform: 'win32', packaged: false, electron: 'dev', chrome: navigator.userAgent.match(/Chrome\/([\d.]+)/)?.[1] || '?', userData: '' }),
     openExternal: () => {},
+    cameraIntent: () => {},
     pickFile: async () => '',
     shortcutStatus: async () => ({ shortcutToggle: 'ok', shortcutPlayer: 'ok', shortcutPomodoro: 'ok', shortcutChat: 'busy', shortcutPeek: 'ok' }),
     onShortcutStatus: (cb) => on('app:shortcutStatus', cb),

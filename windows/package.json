@@ -20,8 +20,8 @@
     "dist:mac": "electron-builder --win zip --x64 --publish never -c.win.signAndEditExecutable=false"
   },
   "devDependencies": {
-    "electron": "^45.0.0",
-    "electron-builder": "^26.18.0",
-    "playwright-core": "^1.64.1"
+    "electron": "45.0.0",
+    "electron-builder": "26.18.0",
+    "playwright-core": "1.64.1"
   }
 }

@@ -11,6 +11,9 @@ export class AiSession {
   constructor() {
     this.ses = session.fromPartition(AI_PARTITION);
     this.cookies = this.ses.cookies;
+    // The AI sites get no powers at all: no camera, microphone, location, notifications, clipboard reading...
+    this.ses.setPermissionRequestHandler((_wc, _permission, cb) => cb(false));
+    this.ses.setPermissionCheckHandler(() => false);
   }
 
   start() {

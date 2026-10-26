@@ -35,7 +35,7 @@ fi
 
 HERE="$(cd "$(dirname "$0")" 2>/dev/null && pwd || true)"
 IN_REPO=0
-[ -n "$HERE" ] && [ -f "$HERE/boringNotch.xcodeproj/project.pbxproj" ] && IN_REPO=1
+[ -n "$HERE" ] && [ -f "$HERE/DynamicIslandMusic.xcodeproj/project.pbxproj" ] && IN_REPO=1
 
 BASE="${DIM_BASE_URL:-https://github.com/$REPO/releases/latest/download}"
 

@@ -1,4 +1,4 @@
-// Default settings. Same component ids and widths as the macOS app (boringNotch/islandmusic/IslandDefaults.swift),
+// Default settings. Same component ids and widths as the macOS app (DynamicIslandMusic/islandmusic/IslandDefaults.swift),
 // so the two apps feel the same. Everything here is configurable from the settings window.
 
 export const COMPONENTS = ['player', 'calendar', 'notes', 'pomodoro', 'camera', 'chat', 'clipboard', 'shelf', 'game', 'performance'];

@@ -3,7 +3,7 @@
 # Needs: rsvg-convert (brew install librsvg)
 set -euo pipefail
 cd "$(dirname "$0")/.."
-SET="boringNotch/Assets.xcassets/AppIcon.appiconset"
+SET="DynamicIslandMusic/Assets.xcassets/AppIcon.appiconset"
 rm -f "$SET"/*.png
 for s in 16 32 64 128 256 512 1024; do
   rsvg-convert -w $s -h $s branding/app-icon.svg -o "$SET/icon_$s.png"

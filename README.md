@@ -48,14 +48,14 @@ Sin telemetría. Todo se guarda en tu equipo. Detalles en [SECURITY.md](SECURITY
 ```bash
 git clone https://github.com/MoisesGuerraDev/dynamic-island-music.git
 cd dynamic-island-music
-xcodebuild -project boringNotch.xcodeproj -scheme boringNotch -configuration Release \
+xcodebuild -project DynamicIslandMusic.xcodeproj -scheme boringNotch -configuration Release \
   -derivedDataPath build -destination 'platform=macOS' \
   CODE_SIGN_IDENTITY="-" ENABLE_HARDENED_RUNTIME=NO DEVELOPMENT_TEAM="" CODE_SIGN_STYLE=Manual \
   -skipMacroValidation -skipPackagePluginValidation build
 ```
 
 La app queda en `build/Build/Products/Release/Dynamic Island Music.app`. Para generar el `.dmg`: `scripts/make-dmg.sh`.
-El código nuevo está en `boringNotch/islandmusic/`. El logo se regenera con `branding/make-icons.sh`.
+El código nuevo está en `DynamicIslandMusic/islandmusic/`. El logo se regenera con `branding/make-icons.sh`.
 
 ## Licencia y créditos
 

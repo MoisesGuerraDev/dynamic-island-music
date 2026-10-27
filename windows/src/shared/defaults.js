@@ -68,7 +68,8 @@ export const DEFAULTS = {
   // Style
   glowStyle: 'glass', // off | soft | strong | glass
   panelOpacity: 100, // 100 = all black, lower = more glass
-  colorsDance: true, // the colored light pulses with a simulated beat of the song
+  colorsDance: true, // the colored lights pulse with a simulated beat of the song
+  coverDance: true, // the cover swells with the beat while music plays (independent of the lights)
   borderStyle: 'none', // none | open | always: thin outline of the island
   // Two lights: inside = the open island, outside = the closed island and the halo around it.
   inLightIntensity: 260, // 40 to 500 %
@@ -91,6 +92,7 @@ export const DEFAULTS = {
   // Player
   preferredPlayer: 'auto', // auto | spotify | apple | browser
   coverColors: true,
+  watchBrowserSound: true, // warn when the browser plays but no sound comes out, with a switch to turn it on
   coverHD: true, // look for the official HD cover when the picture is small (sends title and artist to Apple)
   visualizer: true,
   hideMusicAfterPause: 30,
@@ -105,6 +107,8 @@ export const DEFAULTS = {
   pomoSoundRepeat: 2,
   pomoCustomSound: '',
   pomoNotify: true,
+  remindNotify: true,
+  remindLead: '10', // minutes before events and tasks with a time; '' = no warning by default
   pomoAutoNext: false,
   pomoOpenOnFinish: true,
 

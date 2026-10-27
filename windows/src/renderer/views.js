@@ -1,11 +1,88 @@
-// Full tabs of the island: tray, clipboard, chat and the snake game.
+// Full tabs of the island: agenda, tray, clipboard, chat and the snake game.
 import { S, bus, aiMeta, enabledAI, defaultAI, enabledWebAI, defaultWebAI, WEB_AI_META } from './state.js';
-import { esc } from './util.js';
+import { esc, dayKey, addDays, dayName, monthName } from './util.js';
 import { ic, fi } from './icons.js';
-import { fileColor } from './components.js';
+import { fileColor, leadSelect, dueText } from './components.js';
 import { GRID, KEYS, draw, newGame, speedFor, step, turn } from './snake.js';
+import { relativeAge } from '../shared/time.js';
 
 const dim = () => window.dim;
+
+// ---------- Agenda: every task, note and upcoming event ----------
+const AG_FILTERS = [['all', 'Todo'], ['tasks', 'Tareas'], ['notes', 'Notas'], ['events', 'Eventos']];
+
+function agendaTasks() {
+  return S.notes.items
+    .filter((n) => n.isTask)
+    .sort((a, b) => (a.done !== b.done ? (a.done ? 1 : -1) : (a.due || Infinity) - (b.due || Infinity) || b.created - a.created));
+}
+
+function agendaNotes() {
+  return S.notes.items.filter((n) => !n.isTask).sort((a, b) => b.created - a.created);
+}
+
+/** Events from today on; one with a time that is more than an hour old is over. */
+function agendaEvents(now = Date.now()) {
+  const today = dayKey(new Date(now));
+  return S.cal
+    .filter((e) => e.date > today || (e.date === today && (!e.time || new Date(`${e.date}T${e.time}`).getTime() + 3_600_000 > now)))
+    .sort((a, b) => (a.date + (a.time || '24')).localeCompare(b.date + (b.time || '24')));
+}
+
+function eventWhen(e) {
+  if (e.time) return dueText(new Date(`${e.date}T${e.time}`).getTime());
+  const d = new Date(`${e.date}T00:00`);
+  const today = new Date();
+  if (e.date === dayKey(today)) return 'hoy · todo el día';
+  if (e.date === dayKey(addDays(today, 1))) return 'mañana · todo el día';
+  return `${dayName(d)} ${d.getDate()} ${monthName(d)} · todo el día`;
+}
+
+const agTrash = (act, id, title) => `<button class="ag-x" data-act="${act}" data-id="${esc(id)}" aria-label="${title}" title="${title}">${ic('trash')}</button>`;
+
+function agTaskRow(n) {
+  const sub = n.due && !n.done ? `<em class="due${n.due < Date.now() ? ' late' : ''}">⏰ ${dueText(n.due)}</em>` : `<em>${relativeAge(n.created)}</em>`;
+  return `<div class="ag-r${n.done ? ' done' : ''}"><button class="ag-cb" data-act="note-toggle" data-id="${esc(n.id)}" data-task="1" aria-label="${n.done ? 'Marcar como pendiente' : 'Marcar como hecha'}" title="${n.done ? 'Marcar como pendiente' : 'Marcar como hecha'}">${ic('check')}</button><span class="ag-t"><b>${esc(n.text)}</b>${sub}</span>${agTrash('note-del', n.id, 'Mandar a la Papelera')}</div>`;
+}
+
+function agNoteRow(n) {
+  return `<div class="ag-r"><span class="ag-dot"></span><span class="ag-t"><b>${esc(n.text)}</b><em>${relativeAge(n.created)}</em></span>${agTrash('note-del', n.id, 'Mandar a la Papelera')}</div>`;
+}
+
+function agEventRow(e) {
+  const end = S.ui.agendaConfirm === e.id
+    ? `<span class="ag-q">¿Borrar el evento?</span><button class="ag-b red" data-act="ag-ev-yes" data-id="${esc(e.id)}">Borrar</button><button class="ag-b" data-act="ag-ev-no">No</button>`
+    : agTrash('ag-ev-del', e.id, 'Borrar evento');
+  const bell = e.lead != null ? ` · avisa ${e.lead ? `${e.lead} min antes` : 'a la hora'}` : '';
+  return `<div class="ag-r"><span class="ag-bar"></span><span class="ag-t"><b class="ev">${esc(e.title)}</b><em>${esc(eventWhen(e))}${bell}</em></span>${end}</div>`;
+}
+
+export function agendaHTML() {
+  const f = S.ui.agendaFilter;
+  const tasks = agendaTasks();
+  const notes = agendaNotes();
+  const events = agendaEvents();
+  const counts = { all: tasks.length + notes.length + events.length, tasks: tasks.length, notes: notes.length, events: events.length };
+  const done = tasks.filter((n) => n.done).length;
+  const filters = AG_FILTERS.map(([k, t]) => `<button aria-pressed="${f === k}" data-act="ag-filter" data-f="${k}">${t}<i>${counts[k]}</i></button>`).join('');
+  let clear = '';
+  if (done && (f === 'all' || f === 'tasks')) {
+    clear = S.ui.agendaClear
+      ? `<span class="ag-q">¿Mandar ${done} a la Papelera?</span><button class="ag-b red" data-act="ag-clear-yes">Sí</button><button class="ag-b" data-act="ag-clear-no">No</button>`
+      : `<button class="ag-b" data-act="ag-clear" title="Manda a la Papelera las ${done} tareas hechas">Borrar completadas</button>`;
+  }
+  const add = S.ui.noteAdding
+    ? `<div class="ag-add"><input class="inl" id="note-in" placeholder="Tarea (18:30 Tarea = con aviso) · Ctrl+Intro = nota" aria-label="Nueva nota o tarea" autocomplete="off">${leadSelect('note-lead')}</div>`
+    : '';
+  const section = (title, n, rows, empty) => `<div class="ag-s">${title} <i>${n}</i></div>${rows.length ? rows.join('') : `<div class="ag-e">${empty}</div>`}`;
+  let list = '';
+  if (f === 'all' || f === 'tasks') list += section('Tareas', tasks.length, tasks.map(agTaskRow), 'No hay tareas. Pulsa + para crear una.');
+  if (f === 'all' || f === 'notes') list += section('Notas', notes.length, notes.map(agNoteRow), 'No hay notas.');
+  if (f === 'all' || f === 'events') list += section('Próximos eventos', events.length, events.map(agEventRow), 'Sin eventos. Créalos con el + del calendario.');
+  return `<div class="agenda"><div class="clip-h"><b>Agenda</b><div class="pv">${filters}</div>
+    <span class="sp">${clear}<button class="nbtn" data-act="ag-add" aria-label="Añadir tarea o nota" title="Añadir tarea o nota">${ic('plus')}</button></span></div>
+    ${add}<div class="ag-l">${list}</div></div>`;
+}
 
 // ---------- Tray ----------
 export function trayHTML() {

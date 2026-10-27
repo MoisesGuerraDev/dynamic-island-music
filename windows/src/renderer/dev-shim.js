@@ -170,6 +170,8 @@ const dim = {
       return true;
     },
   },
+  reminders: { onDue: (cb) => on('reminder:due', cb) },
+  silent: { get: async () => ({ visible: false }), onState: (cb) => on('silent:state', cb), turnOn: async () => {}, dismiss: async () => {} },
   pomo: { get: async () => pomoSnap(), onState: (cb) => on('pomo:state', cb), onFinished: (cb) => on('pomo:finished', cb), onSound: (cb) => on('pomo:sound', cb), act: async (a, arg) => pomoAct(a, arg), previewSound: () => emit('pomo:sound', { name: set.pomoSoundName, volume: set.pomoSoundVolume / 100, repeat: 1, custom: '' }) },
   notes: {
     get: async () => notesPayload(),

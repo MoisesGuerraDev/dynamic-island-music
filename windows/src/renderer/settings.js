@@ -132,7 +132,8 @@ const TABS = [
       sec('Apariencia', [
         SEL('uiSize', 'Tamaño de la isla', [['s', 'Chico (75 %)'], ['m', 'Mediano (100 %)'], ['l', 'Grande (120 %)']], 'La isla ya se adapta sola al tamaño de tu pantalla; esto la hace un poco más chica o más grande. A 1920 × 1080 y Mediano mide 1077 × 187 px.'),
         SEL('borderStyle', 'Contorno de la isla', [['none', 'Sin borde'], ['open', 'Solo abierta'], ['always', 'Siempre']], 'Sin borde: isla negra lisa y solo se ve el brillo de color alrededor'),
-        T('colorsDance', 'Los colores bailan con la música', 'El brillo de color late al ritmo de la canción (un pulso simulado con el tempo de cada tema)'),
+        T('colorsDance', 'Las luces bailan con la música', 'El brillo de color late al ritmo de la canción (un pulso simulado con el tempo de cada tema). Sin música o en pausa nunca bailan'),
+        T('coverDance', 'La carátula baila con la música', 'La carátula late con la canción mientras suena. Se puede apagar aparte de las luces'),
         SEL('glowStyle', 'Brillo alrededor (apagado = sin luz de afuera)', [['glass', 'Liquid Glass'], ['soft', 'Sutil'], ['strong', 'Fuerte'], ['off', 'Apagado']]),
         RNG('panelOpacity', 'Fondo: de vidrio a negro total', 30, 100, 1, '%', '100 % es negro total; bájalo para ver más vidrio. Windows no puede difuminar lo que hay detrás de la isla.'),
         T('liquidButtons', 'Refracción extra en los botones (experimental)', 'Los botones ya tienen el vidrio de la Mac. Esto añade una lente de refracción; gasta más gráficos.'),
@@ -159,6 +160,7 @@ const TABS = [
       ]),
       sec('Aspecto', [
         T('coverColors', 'Colores según la carátula'),
+        T('watchBrowserSound', 'Avisar si el navegador toca música pero sin sonido', 'Si Chrome, Edge u otro navegador dice que suena pero no sale audio, la isla te avisa y un interruptor intenta activarlo'),
         T('coverHD', 'Carátulas en HD desde Apple', 'Si la imagen del reproductor es chica (como en los videos del navegador), busca la portada oficial en iTunes. Envía el título y el artista a Apple.'),
         T('visualizer', 'Visualizador de audio'),
         T('liveMusic', 'Actividad en vivo con la isla cerrada'),
@@ -191,6 +193,8 @@ const TABS = [
       ]),
       sec('Notificaciones y sonidos', [
         T('pomoNotify', 'Activar notificaciones'),
+        T('remindNotify', 'Avisos de eventos y tareas con hora'),
+        SEL('remindLead', 'Aviso por defecto', [['', 'Sin aviso'], ['0', 'A la hora'], ['5', '5 min antes'], ['10', '10 min antes'], ['15', '15 min antes'], ['30', '30 min antes'], ['60', '1 h antes']], 'Al crear un evento con hora (15:30 Reunión) o una tarea con hora (18:30 Llamar) puedes cambiarlo.'),
         T('pomoOpenOnFinish', 'Abrir la isla un momento al terminar'),
         T('pomoSoundEnabled', 'Activar sonidos', null, { rr: true }),
         { ...SEL('pomoSoundName', 'Sonido del temporizador', POMO_SOUNDS.map((s) => [s, s])), when: (s) => s.pomoSoundEnabled },

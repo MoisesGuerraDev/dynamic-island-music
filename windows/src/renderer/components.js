@@ -55,6 +55,22 @@ export function aiButton() {
   return `<button class="nbtn aib" data-act="ai-open" data-ai="${p}" aria-label="Abrir ${esc(m.name)}" title="${esc(m.name)} (dentro del chat cambias de IA)" style="--ac:${m.color}">${esc(m.letter)}</button>`;
 }
 
+const LEADS = [['', 'Sin aviso'], ['0', 'A la hora'], ['5', '5 min antes'], ['10', '10 min antes'], ['15', '15 min antes'], ['30', '30 min antes'], ['60', '1 h antes']];
+
+export function leadSelect(id) {
+  const cur = String(S.set.remindLead ?? '10');
+  return `<select class="lead" id="${id}" aria-label="Avisar">${LEADS.map(([v, t]) => `<option value="${v}"${v === cur ? ' selected' : ''}>${t}</option>`).join('')}</select>`;
+}
+
+export function dueText(ms) {
+  const d = new Date(ms);
+  const today = new Date();
+  const hm = `${String(d.getHours()).padStart(2, '0')}:${String(d.getMinutes()).padStart(2, '0')}`;
+  if (dayKey(d) === dayKey(today)) return `hoy ${hm}`;
+  if (dayKey(d) === dayKey(addDays(today, 1))) return `mañana ${hm}`;
+  return `${dayName(d)} ${d.getDate()}, ${hm}`;
+}
+
 function calendar() {
   const today = new Date();
   const sel = addDays(today, S.ui.calDay);
@@ -62,11 +78,10 @@ function calendar() {
   const evs = S.cal.filter((e) => e.date === key).sort((a, b) => (a.time || '24').localeCompare(b.time || '24'));
   let body;
   if (S.ui.calAdding) {
-    body = `<div class="cal-list"><input class="inl" id="cal-in" placeholder="15:30 Reunión" aria-label="Nuevo evento: hora y título" autocomplete="off"><span class="chat-f">Intro para guardar · Esc cancela</span></div>`;
+    body = `<div class="cal-list"><input class="inl" id="cal-in" placeholder="15:30 Reunión" aria-label="Nuevo evento: hora y título" autocomplete="off">${leadSelect('cal-lead')}<span class="chat-f">Intro para guardar · Esc cancela</span></div>`;
   } else if (evs.length) {
     body = `<div class="cal-list">${evs
-      .slice(0, 6)
-      .map((e) => `<button class="ev" data-act="cal-del" data-id="${esc(e.id)}" title="Clic para quitar"><b>${esc(e.time || '··:··')}</b><span>${esc(e.title)}</span></button>`)
+      .map((e) => `<button class="ev" data-act="cal-del" data-id="${esc(e.id)}" title="${e.lead != null ? `Avisa ${e.lead ? `${e.lead} min antes` : 'a la hora'} · ` : ''}Clic para quitar"><b>${esc(e.time || '··:··')}</b><span>${esc(e.title)}</span>${e.lead != null ? ic('bell').replace('<svg', '<svg class="evbell" width="11" height="11"') : ''}</button>`)
       .join('')}</div>`;
   } else {
     body = '<div class="cal-empty">Sin eventos</div>';
@@ -93,20 +108,20 @@ function notes() {
   const items = visibleNotes();
   const cloud = S.notes.info && S.notes.info.isICloud ? `<span title="Sincronizado con iCloud Drive">${ic('cloud')}</span>` : '';
   const add = S.ui.noteAdding
-    ? '<input class="inl" id="note-in" placeholder="Nueva tarea · Ctrl+Intro = nota" aria-label="Nueva nota o tarea" autocomplete="off">'
+    ? `<input class="inl" id="note-in" placeholder="Tarea (18:30 Tarea = con aviso) · Ctrl+Intro = nota" aria-label="Nueva nota o tarea" autocomplete="off">${leadSelect('note-lead')}`
     : '';
+  const count = items.length > 3 ? `<span class="cnt" title="${items.length} en total. Desliza para ver todas">${items.length}</span>` : '';
   const list = items.length
     ? items
-        .slice(0, 30)
         .map((n) => {
-          const age = S.set.notesShowAge ? `<em>${relativeAge(n.created)}</em>` : '';
+          const age = n.due && !n.done ? `<em class="due${n.due < Date.now() ? ' late' : ''}">⏰ ${dueText(n.due)}</em>` : S.set.notesShowAge ? `<em>${relativeAge(n.created)}</em>` : '';
           const cls = `todo${n.done ? ' done' : ''}${n.isTask ? '' : ' plain'}`;
           const cb = n.isTask ? `<span class="cb">${ic('check')}</span>` : '<span class="cb"></span>';
           return `<div class="${cls}" role="button" tabindex="0" data-act="note-toggle" data-id="${esc(n.id)}" data-task="${n.isTask ? 1 : 0}">${cb}<span class="t">${esc(n.text)}${age}</span><i class="x" data-act="note-del" data-id="${esc(n.id)}" title="Mandar a la Papelera">${ic('x').replace('<svg', '<svg width="12" height="12"')}</i></div>`;
         })
         .join('')
     : '<span class="chat-f">Sin notas todavía. Pulsa + para añadir una.</span>';
-  return `<div class="notes"><h4>¿Qué tienes en mente?<span class="hb">${cloud}<button data-act="note-add" aria-label="Añadir nota">${ic('plus')}</button></span></h4>${add}<div class="nlist">${list}</div></div>`;
+  return `<div class="notes"><h4>¿Qué tienes en mente?<span class="hb">${count}${cloud}<button data-act="open-view" data-v="agenda" aria-label="Ver todas las notas, tareas y eventos" title="Ver todo">${ic('list')}</button><button data-act="note-add" aria-label="Añadir nota">${ic('plus')}</button></span></h4>${add}<div class="nlist">${list}</div></div>`;
 }
 
 function timer() {

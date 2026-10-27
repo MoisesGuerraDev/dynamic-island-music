@@ -145,6 +145,32 @@ export class MediaService extends EventEmitter {
     if (changed) this.emit('state', next);
   }
 
+  /** Sound sent by the programs called `procs`: { found, peak, muted, changed }. With `unmute` it also lifts their mute in the Windows mixer. */
+  async audio(procs, unmute = false) {
+    if (this.mock) {
+      const quiet = !!process.env.DIM_MOCK_SILENT;
+      return { found: true, peak: quiet ? 0 : 0.3, muted: quiet && !this.mockUnmuted, changed: 0 };
+    }
+    if (!this.rpc || this.rpc.dead) return null;
+    try {
+      const r = await this.rpc.call('audio', { names: procs, unmute: !!unmute }, { timeoutMs: 6000 });
+      return { found: !!r.found, peak: Number(r.peak) || 0, muted: !!r.muted, changed: Number(r.changed) || 0 };
+    } catch {
+      return null;
+    }
+  }
+
+  /** Brings the window of the programs called `procs` to the front. */
+  async focus(procs) {
+    if (this.mock || !this.rpc || this.rpc.dead) return false;
+    try {
+      const r = await this.rpc.call('focus', { names: procs }, { timeoutMs: 6000 });
+      return !!r.done;
+    } catch {
+      return false;
+    }
+  }
+
   async control(cmd, arg) {
     if (!['toggle', 'play', 'pause', 'next', 'prev', 'seek'].includes(cmd)) return false;
     if (this.mock) {

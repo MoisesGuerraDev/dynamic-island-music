@@ -24,10 +24,13 @@ export class CalendarStore extends EventEmitter {
     return this.events;
   }
 
-  add({ title, date, time }) {
+  /** lead: minutes before the event to warn (only for events with a time), or null for no warning. */
+  add({ title, date, time, lead }) {
     const t = String(title ?? '').trim().slice(0, 200);
     if (!t || !DATE_RE.test(date || '')) return null;
-    const ev = { id: crypto.randomUUID(), title: t, date, time: TIME_RE.test(time || '') ? time : '' };
+    const hasTime = TIME_RE.test(time || '');
+    const minutes = Number(lead);
+    const ev = { id: crypto.randomUUID(), title: t, date, time: hasTime ? time : '', lead: hasTime && Number.isFinite(minutes) && minutes >= 0 ? Math.min(1440, Math.round(minutes)) : null };
     this.events.push(ev);
     this.events.sort((a, b) => (a.date + a.time).localeCompare(b.date + b.time));
     this.json.save(this.events);

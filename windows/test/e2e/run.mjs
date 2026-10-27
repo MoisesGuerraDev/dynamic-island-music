@@ -110,6 +110,54 @@ try {
   const clipN2 = await app.evaluate(() => globalThis.__DIM__.clip.list().map((i) => i.text));
   check('portapapeles ignora una clave de API', !clipN2.some((t) => t.startsWith('sk-ant')));
 
+  // Agenda: every task, note and upcoming event in one tab, with filters, check, delete and "delete finished".
+  await app.evaluate(() => {
+    const c = globalThis.__DIM__;
+    c.notes.add('Nota de la agenda', false);
+    c.notes.add('Tarea hecha de la agenda', true);
+    const tomorrow = new Date(Date.now() + 86_400_000);
+    const p = (n) => String(n).padStart(2, '0');
+    c.calendar.add({ title: 'Evento de la agenda', date: `${tomorrow.getFullYear()}-${p(tomorrow.getMonth() + 1)}-${p(tomorrow.getDate())}`, time: '10:30', lead: 10 });
+  });
+  await page.waitForTimeout(500);
+  await page.click('[data-act="open-view"][data-v="agenda"]');
+  await page.waitForTimeout(400);
+  const agText = () => page.textContent('.agenda');
+  const ag1 = await agText();
+  check('Ver todo abre la Agenda con tareas, notas y eventos', ['Probar la isla de Windows', 'Nota de la agenda', 'Tarea hecha de la agenda', 'Evento de la agenda'].every((t) => ag1.includes(t)));
+  check('la pestaña Agenda está en la franja', await page.evaluate(() => !!document.querySelector('[data-act="tab"][data-v="agenda"].on')));
+  await page.click('[data-act="ag-filter"][data-f="events"]');
+  await page.waitForTimeout(200);
+  const ag2 = await agText();
+  check('filtro Eventos muestra solo eventos', ag2.includes('Evento de la agenda') && !ag2.includes('Nota de la agenda'));
+  await page.click('.ag-r [data-act="ag-ev-del"]');
+  await page.waitForTimeout(200);
+  check('borrar un evento pide confirmación', (await agText()).includes('¿Borrar el evento?') && (await app.evaluate(() => globalThis.__DIM__.calendar.list().length)) === 1);
+  await page.click('[data-act="ag-ev-yes"]');
+  await page.waitForTimeout(400);
+  check('el evento se borra al confirmar', (await app.evaluate(() => globalThis.__DIM__.calendar.list().length)) === 0 && !(await agText()).includes('Evento de la agenda'));
+  await page.click('[data-act="ag-filter"][data-f="tasks"]');
+  await page.waitForTimeout(200);
+  const doneId = await app.evaluate(() => globalThis.__DIM__.notes.list().find((n) => n.text === 'Tarea hecha de la agenda').id);
+  await page.click(`.ag-cb[data-id="${doneId}"]`);
+  await page.waitForTimeout(500);
+  check('marcar una tarea como hecha desde la Agenda', await app.evaluate((_e, id) => globalThis.__DIM__.notes.list().find((n) => n.id === id).done, doneId));
+  await page.click('[data-act="ag-clear"]');
+  await page.waitForTimeout(200);
+  await page.click('[data-act="ag-clear-yes"]');
+  await page.waitForTimeout(800);
+  const left = await app.evaluate(() => globalThis.__DIM__.notes.list().map((n) => n.text));
+  check('Borrar completadas manda solo las hechas a la Papelera', !left.includes('Tarea hecha de la agenda') && left.includes('Probar la isla de Windows') && left.includes('Nota de la agenda'), JSON.stringify(left));
+  await page.click('[data-act="ag-filter"][data-f="notes"]');
+  await page.waitForTimeout(200);
+  const noteId = await app.evaluate(() => globalThis.__DIM__.notes.list().find((n) => n.text === 'Nota de la agenda').id);
+  await page.click(`.ag-r [data-act="note-del"][data-id="${noteId}"]`);
+  await page.waitForTimeout(800);
+  check('borrar una nota desde la Agenda', !(await app.evaluate(() => globalThis.__DIM__.notes.list().map((n) => n.text))).includes('Nota de la agenda'));
+  await page.click('[data-act="ag-filter"][data-f="all"]');
+  await page.click('[data-act="tab"][data-v="home"]');
+  await page.waitForTimeout(300);
+
   // Settings window.
   await app.evaluate(() => globalThis.__DIM__.islands.openSettings('pomodoro'));
   let settings;
@@ -465,11 +513,45 @@ try {
   await app.evaluate(() => globalThis.__DIM__.store.patch({ borderStyle: 'always' }));
   await page.waitForTimeout(300);
   check('contorno «Siempre» muestra el borde', await page.evaluate(() => getComputedStyle(document.querySelector('.rim')).display !== 'none'));
-  await app.evaluate(() => globalThis.__DIM__.store.patch({ borderStyle: 'none', colorsDance: false }));
+  await app.evaluate(() => globalThis.__DIM__.store.patch({ borderStyle: 'none', colorsDance: false, coverDance: false }));
   await page.waitForTimeout(500);
   const idle = await page.evaluate(() => Number(document.getElementById('stage').style.getPropertyValue('--pulse')));
-  check('con «bailan» apagado el brillo queda quieto', idle <= 0.2, String(idle));
-  await app.evaluate(() => globalThis.__DIM__.store.patch({ colorsDance: true }));
+  check('con luces y carátula sin bailar todo queda quieto', idle <= 0.2, String(idle));
+  // The two switches are independent: lights still, cover dancing.
+  await app.evaluate(() => globalThis.__DIM__.store.patch({ colorsDance: false, coverDance: true }));
+  await page.waitForTimeout(500);
+  const split = await page.evaluate(async () => {
+    const st = document.getElementById('stage').style;
+    const pulse = [], pin = [];
+    for (let i = 0; i < 14; i++) {
+      pulse.push(Number(st.getPropertyValue('--pulse')));
+      pin.push(Number(st.getPropertyValue('--pin')));
+      await new Promise((r) => setTimeout(r, 70));
+    }
+    return { pulseMove: Math.max(...pulse) - Math.min(...pulse), pinMove: Math.max(...pin) - Math.min(...pin) };
+  });
+  check('luces quietas y carátula bailando: solo se mueve la carátula', split.pinMove < 0.01 && split.pulseMove > 0.05, JSON.stringify(split));
+  await app.evaluate(() => globalThis.__DIM__.store.patch({ colorsDance: true, coverDance: true }));
+
+  // A reminder that is due shows under the closed island for a while.
+  await app.evaluate(() => { const c = globalThis.__DIM__; const i = c.islands.first(); i.pins.clear(); c.islands.setOpen(i, false); });
+  await page.waitForTimeout(900);
+  await app.evaluate(() => globalThis.__DIM__.islands.send('reminder:due', { title: 'reunión con el equipo', body: 'En 10 min, hoy 11:00' }));
+  await page.waitForTimeout(500);
+  const rem = await page.evaluate(() => { const t = document.getElementById('toast'); return { hidden: t.hidden, text: t.textContent }; });
+  check('un recordatorio que llega se ve bajo la isla', !rem.hidden && rem.text.includes('reunión con el equipo') && rem.text.includes('En 10 min'), JSON.stringify(rem));
+
+  // "The browser plays but no sound comes out": a card with a switch and an X, and it hides when the sound returns.
+  await app.evaluate(() => globalThis.__DIM__.islands.send('silent:state', { visible: true, browser: 'Chrome', cause: 'page', message: '', working: false }));
+  await page.waitForTimeout(400);
+  const sil = await page.evaluate(() => { const t = document.getElementById('silent'); return { hidden: t.hidden, text: t.textContent, toggle: !!t.querySelector('.sw input'), x: !!t.querySelector('.sx') }; });
+  check('aviso de «sin sonido»: interruptor, X y texto simple', !sil.hidden && sil.toggle && sil.x && sil.text.includes('te llevo al navegador'), JSON.stringify(sil).slice(0, 200));
+  await app.evaluate(() => globalThis.__DIM__.islands.send('silent:state', { visible: true, browser: 'Chrome', cause: 'mixer', message: '', working: false }));
+  await page.waitForTimeout(300);
+  check('aviso de «sin sonido»: con el mezclador en mudo avisa de Windows', await page.evaluate(() => document.getElementById('silent').textContent.includes('Windows lo tiene en silencio')));
+  await app.evaluate(() => globalThis.__DIM__.islands.send('silent:state', { visible: false }));
+  await page.waitForTimeout(300);
+  check('aviso de «sin sonido»: se oculta cuando vuelve el sonido', await page.evaluate(() => document.getElementById('silent').hidden));
 
   // Settings changes reach the island.
   await app.evaluate(() => globalThis.__DIM__.store.set('glowStyle', 'strong'));

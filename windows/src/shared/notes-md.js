@@ -24,18 +24,40 @@ export function makeFileName(text, date = new Date()) {
   return `${stamp}-${slug || 'nota'}.md`;
 }
 
-export function newBody(text, task) {
-  const clean = String(text).trim();
-  return task ? `- [ ] ${clean}\n` : `${clean}\n`;
+// A task can carry a reminder on its own line, the same on Mac and Windows: "⏰ 2026-10-27 10:00 · 10"
+// (date and time of the task, then how many minutes before to warn).
+const REMIND_RE = /^⏰\s*(\d{4}-\d{2}-\d{2}) ([01]\d|2[0-3]):([0-5]\d)(?:\s*·\s*(\d{1,4}))?\s*$/;
+
+export function reminderLine(date, time, lead = 0) {
+  return `⏰ ${date} ${time} · ${Math.max(0, Math.round(Number(lead) || 0))}`;
 }
 
-/** Returns { text, isTask, done } from the first non-empty line, like the macOS app. */
+/** Returns { due, lead } (due in ms, local time) from a reminder line, or null. */
+export function parseReminder(line) {
+  const m = REMIND_RE.exec(String(line).trim());
+  if (!m) return null;
+  const [y, mo, d] = m[1].split('-').map(Number);
+  const due = new Date(y, mo - 1, d, Number(m[2]), Number(m[3])).getTime();
+  return Number.isFinite(due) ? { due, lead: Number(m[4] || 0) } : null;
+}
+
+export function newBody(text, task, remind = null) {
+  const clean = String(text).trim();
+  if (!task) return `${clean}\n`;
+  const extra = remind && remind.date && remind.time ? `${reminderLine(remind.date, remind.time, remind.lead)}\n` : '';
+  return `- [ ] ${clean}\n${extra}`;
+}
+
+/** Returns { text, isTask, done, due, lead } from the first non-empty line (and the reminder line), like the macOS app. */
 export function parseNote(content) {
   const lines = String(content).split(/\r?\n/).map((l) => l.trim());
   const first = lines.find((l) => l.length > 0) ?? '';
   const m = TASK_RE.exec(first);
-  if (m) return { text: m[3].trim(), isTask: true, done: m[2].toLowerCase() === 'x' };
-  return { text: first.replace(/^[#\s]+/, ''), isTask: false, done: false };
+  if (m) {
+    const r = lines.map(parseReminder).find(Boolean) || null;
+    return { text: m[3].trim(), isTask: true, done: m[2].toLowerCase() === 'x', due: r ? r.due : null, lead: r ? r.lead : 0 };
+  }
+  return { text: first.replace(/^[#\s]+/, ''), isTask: false, done: false, due: null, lead: 0 };
 }
 
 /** Flips the checkbox of the first task line and keeps the rest of the file as it was. */

@@ -4,7 +4,7 @@ import { S, bus, coverOf, comps, activeComps, pages, metaOf, tabsAvailable, enab
 import { esc, $, $$, dayKey } from './util.js';
 import { ic, fi } from './icons.js';
 import { colHTML, musicPos, pomoRemaining, timeFontSize, perfHTML } from './components.js';
-import { trayHTML, clipHTML, chatHTML, bindChat, gameHTML, bindGame, stopGame, focusChatInput, focusWebview, lockHTML, bindLock, webBarHTML, showWebview, reloadWebview, resetWebviews } from './views.js';
+import { agendaHTML, trayHTML, clipHTML, chatHTML, bindChat, gameHTML, bindGame, stopGame, focusChatInput, focusWebview, lockHTML, bindLock, webBarHTML, showWebview, reloadWebview, resetWebviews } from './views.js';
 import { editBarHTML, bindEdit, setComps } from './edit.js';
 import { setLensEnabled, startLens } from './lens.js';
 import { startAmbient } from './ambient.js';
@@ -16,8 +16,8 @@ import { bpmFor, pulseAt } from '../shared/pulse.js';
 import { formatDuration, parseDuration } from '../shared/time.js';
 
 let dim;
-const TABN = { home: 'Inicio', tray: 'Bandeja', game: 'Juego', clip: 'Portapapeles', chat: 'Mini chat' };
-const TABI = { home: 'home', tray: 'tray', game: 'game', clip: 'clip', chat: 'spark' };
+const TABN = { home: 'Inicio', agenda: 'Agenda', tray: 'Bandeja', game: 'Juego', clip: 'Portapapeles', chat: 'Mini chat' };
+const TABI = { home: 'home', agenda: 'list', tray: 'tray', game: 'game', clip: 'clip', chat: 'spark' };
 
 // ---------- Style ----------
 
@@ -97,15 +97,16 @@ function setPulse(base) {
   const on = S.set.colorsDance;
   const amp = (k) => (on ? (DANCE_AMP[S.set[k]] ?? 1) : 0);
   const val = (a) => (a === 0 ? STILL_PULSE : base * a);
-  st.setProperty('--pulse', base.toFixed(3)); // the cover grows 3 % with the plain beat
+  st.setProperty('--pulse', (S.set.coverDance ? base : IDLE_PULSE).toFixed(3)); // the cover grows 3 % with the plain beat
   st.setProperty('--pin', val(amp('inLightDance')).toFixed(3));
   st.setProperty('--pout', val(amp('outLightDance')).toFixed(3));
 }
 
 function danceWanted() {
   const m = S.music;
-  if (!S.set.colorsDance || !m || !m.session || !m.playing) return false;
-  if (S.set.inLightDance === 'still' && S.set.outLightDance === 'still') return false;
+  if (!m || !m.session || !m.playing) return false;
+  const lights = S.set.colorsDance && !(S.set.inLightDance === 'still' && S.set.outLightDance === 'still');
+  if (!lights && !S.set.coverDance) return false;
   return S.open || $('#pill').classList.contains('glow');
 }
 
@@ -259,6 +260,8 @@ function syncHalo() {
   });
 }
 
+let agendaFilterShown = null;
+
 function renderRow() {
   const web = S.view === 'chat' && webMode() && !S.lock.locked;
   $('#row').hidden = web;
@@ -294,7 +297,7 @@ function renderRow() {
     const row = $('#row');
     stopGame();
     row.className = `row${S.set.separators ? ' seps' : ''}`;
-    row.style.height = S.view === 'chat' ? '188px' : '';
+    row.style.height = S.view === 'chat' ? '188px' : S.view === 'agenda' ? '240px' : '';
     $('#ntabs-m').innerHTML = '';
     $('#editbar').hidden = true;
     const cap = S.info.cap;
@@ -302,7 +305,14 @@ function renderRow() {
     if (S.view !== 'home') {
       const homeW = openWidth((pages()[Math.min(S.page, pages().length - 1)] || []), cap);
       setWidth(Math.min(cap, Math.max(680, homeW)));
-      if (S.view === 'tray') row.innerHTML = trayHTML();
+      if (S.view === 'agenda') {
+        // A redraw (checking a task, asking to confirm a delete) keeps the list where it was; a new filter starts at the top.
+        const list = $('.ag-l');
+        const top = list && agendaFilterShown === S.ui.agendaFilter ? list.scrollTop : 0;
+        row.innerHTML = agendaHTML();
+        agendaFilterShown = S.ui.agendaFilter;
+        $('.ag-l').scrollTop = top;
+      } else if (S.view === 'tray') row.innerHTML = trayHTML();
       else if (S.view === 'clip') row.innerHTML = clipHTML();
       else if (S.view === 'game') {
         row.innerHTML = gameHTML();
@@ -361,12 +371,26 @@ function renderEditBar() {
 /** Things to do after any redraw of the row: focus inputs, attach the camera, refresh the rectangle. */
 function afterRender() {
   bindInputs();
+  markFades();
   const v = $('#camv');
   if (v && camStream) v.srcObject = camStream;
   renderPill();
   syncPerf();
   scheduleRect();
 }
+
+/** Lists that do not fit fade out at the bottom, until the end is reached. */
+function markFade(el) {
+  el.classList.toggle('fade', el.scrollHeight - el.scrollTop - el.clientHeight > 2);
+}
+
+function markFades() {
+  for (const el of document.querySelectorAll('.nlist, .cal-list, .ag-l')) markFade(el);
+}
+
+document.addEventListener('scroll', (e) => {
+  if (e.target instanceof Element && e.target.matches('.nlist, .cal-list, .ag-l')) markFade(e.target);
+}, true);
 
 function bindInputs() {
   const nin = $('#note-in');
@@ -375,8 +399,21 @@ function bindInputs() {
     nin.onkeydown = (e) => {
       if (e.key === 'Enter') {
         const v = nin.value.trim();
+        const task = !(e.ctrlKey || e.metaKey);
         S.ui.noteAdding = false;
-        if (v) dim.notes.add(v, !(e.ctrlKey || e.metaKey));
+        if (v) {
+          // "18:30 Llamar a Ana" = a task with a reminder today at 18:30 (tomorrow if that time already passed).
+          const m = task ? /^(\d{1,2}):(\d{2})\s+(.+)$/.exec(v) : null;
+          const lead = $('#note-lead') ? $('#note-lead').value : '';
+          if (m && Number(m[1]) < 24 && Number(m[2]) < 60 && lead !== '') {
+            const when = new Date();
+            when.setHours(Number(m[1]), Number(m[2]), 0, 0);
+            if (when.getTime() < Date.now()) when.setDate(when.getDate() + 1);
+            dim.notes.add(m[3], true, { date: dayKey(when), time: `${m[1].padStart(2, '0')}:${m[2]}`, lead: Number(lead) });
+          } else {
+            dim.notes.add(v, task);
+          }
+        }
         renderRow();
       } else if (e.key === 'Escape') {
         e.stopPropagation();
@@ -386,7 +423,7 @@ function bindInputs() {
     };
     nin.onblur = () => setTimeout(() => {
       const cur = $('#note-in');
-      if (S.ui.noteAdding && (!cur || document.activeElement !== cur)) {
+      if (S.ui.noteAdding && (!cur || (document.activeElement !== cur && document.activeElement !== $('#note-lead')))) {
         S.ui.noteAdding = false;
         renderRow();
       }
@@ -400,8 +437,9 @@ function bindInputs() {
         const v = cin.value.trim();
         const m = /^(\d{1,2}):(\d{2})\s+(.+)$/.exec(v);
         const date = dayKey(new Date(Date.now() + S.ui.calDay * 86_400_000));
+        const lead = $('#cal-lead') ? $('#cal-lead').value : '';
         S.ui.calAdding = false;
-        if (v) dim.calendar.add(m ? { title: m[3], time: `${m[1].padStart(2, '0')}:${m[2]}`, date } : { title: v, time: '', date });
+        if (v) dim.calendar.add(m ? { title: m[3], time: `${m[1].padStart(2, '0')}:${m[2]}`, date, lead: lead === '' ? null : Number(lead) } : { title: v, time: '', date });
         renderRow();
       } else if (e.key === 'Escape') {
         e.stopPropagation();
@@ -411,7 +449,7 @@ function bindInputs() {
     };
     cin.onblur = () => setTimeout(() => {
       const cur = $('#cal-in');
-      if (S.ui.calAdding && (!cur || document.activeElement !== cur)) {
+      if (S.ui.calAdding && (!cur || (document.activeElement !== cur && document.activeElement !== $('#cal-lead')))) {
         S.ui.calAdding = false;
         renderRow();
       }
@@ -555,6 +593,40 @@ function showToast(item) {
   }, 2400);
 }
 
+/** "The browser plays but no sound comes out": a card under the island with a switch, or the steps for Windows. */
+function renderSilent(v) {
+  const el = $('#silent');
+  if (!v || !v.visible) {
+    el.hidden = true;
+    scheduleRect();
+    return;
+  }
+  const b = esc(v.browser);
+  const fallback = v.cause === 'mixer' ? 'Windows lo tiene en silencio. Actívalo aquí.' : 'Pulsa el interruptor y te llevo al navegador.';
+  el.innerHTML = `<div class="sh"><span class="si">🔇</span><div class="st"><b>Sonido de ${b} desactivado</b>` +
+    `<span class="sm">${esc(v.message || fallback)}</span></div>` +
+    (v.working ? '<span class="sp"></span>' : '<label class="sw"><input type="checkbox" aria-label="Ir al navegador"><i></i></label>') +
+    '<button class="sx" type="button" aria-label="Cerrar" title="Cerrar">✕</button></div>';
+  el.hidden = false;
+  el.querySelector('.sx')?.addEventListener('click', () => dim.silent.dismiss());
+  el.querySelector('.sw input')?.addEventListener('change', (e) => {
+    if (e.target.checked) dim.silent.turnOn();
+  });
+  scheduleRect();
+}
+
+/** A reminder that is due: shown under the island for a while, whatever Windows does with its own notification. */
+function showReminder(item) {
+  if (S.open) return; // the open island is already on screen with the Agenda
+  const t = $('#toast');
+  t.innerHTML = `<span class="ck">🔔 Recordatorio</span><span class="tx">${esc(String(item.title || '').slice(0, 80))}</span><span class="rb2">${esc(String(item.body || '').slice(0, 80))}</span>`;
+  t.hidden = false;
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => {
+    t.hidden = true;
+  }, 12000);
+}
+
 // ---------- Pointer rectangle for the main process ----------
 
 let rectTimer = null;
@@ -579,6 +651,17 @@ function reportRect() {
   } else if (!pill.classList.contains('off')) {
     // Layout values times the scale (a transition in progress must not change what is reported).
     r = { x: pill.offsetLeft - (pill.offsetWidth * ui) / 2, y: pill.offsetTop, w: pill.offsetWidth * ui, h: pill.offsetHeight * ui };
+  }
+  // The "no sound" card has buttons, so it must be clickable too.
+  const sc = $('#silent');
+  if (sc && !sc.hidden) {
+    const b = sc.getBoundingClientRect();
+    if (r.w <= 0 || r.h <= 0) r = { x: b.left, y: b.top, w: b.width, h: b.height };
+    else {
+      const x1 = Math.min(r.x, b.left), y1 = Math.min(r.y, b.top);
+      const x2 = Math.max(r.x + r.w, b.right), y2 = Math.max(r.y + r.h, b.bottom);
+      r = { x: x1, y: y1, w: x2 - x1, h: y2 - y1 };
+    }
   }
   dim.island.reportRect(r);
 }
@@ -635,6 +718,9 @@ function setView(v) {
   if (S.view === v) return;
   const wasWeb = S.view === 'chat' && webMode();
   S.view = v;
+  S.ui.noteAdding = false;
+  S.ui.agendaConfirm = '';
+  S.ui.agendaClear = false;
   if (v === 'chat' && webMode()) {
     // Typing into the site needs the keyboard: take it while this tab is showing.
     dim.island.pin('web', true);
@@ -657,6 +743,8 @@ function setOpenLocal(open) {
   if (!open) {
     S.editing = false;
     S.ui.noteAdding = S.ui.calAdding = S.ui.timeEditing = false;
+    S.ui.agendaConfirm = '';
+    S.ui.agendaClear = false;
     S.ui.lightsOpen = false;
     renderLightPanel();
     S.ui.welcome = false;
@@ -792,6 +880,42 @@ const actions = {
   'note-del': (t, e) => {
     e.stopPropagation();
     dim.notes.remove(t.dataset.id);
+  },
+  // agenda
+  'ag-filter': (t) => {
+    S.ui.agendaFilter = t.dataset.f;
+    S.ui.agendaConfirm = '';
+    S.ui.agendaClear = false;
+    renderRow();
+  },
+  'ag-add': () => {
+    S.ui.noteAdding = !S.ui.noteAdding;
+    renderRow();
+  },
+  'ag-ev-del': (t) => {
+    S.ui.agendaConfirm = t.dataset.id;
+    renderRow();
+  },
+  'ag-ev-yes': (t) => {
+    S.ui.agendaConfirm = '';
+    dim.calendar.remove(t.dataset.id);
+  },
+  'ag-ev-no': () => {
+    S.ui.agendaConfirm = '';
+    renderRow();
+  },
+  'ag-clear': () => {
+    S.ui.agendaClear = true;
+    renderRow();
+  },
+  'ag-clear-yes': async () => {
+    S.ui.agendaClear = false;
+    for (const n of S.notes.items.filter((x) => x.isTask && x.done)) await dim.notes.remove(n.id);
+    renderRow();
+  },
+  'ag-clear-no': () => {
+    S.ui.agendaClear = false;
+    renderRow();
   },
   // camera
   'cam-toggle': () => {
@@ -1058,6 +1182,9 @@ async function boot() {
     renderRow();
   });
   dim.clip.onToast(showToast);
+  dim.reminders.onDue(showReminder);
+  dim.silent.get().then(renderSilent);
+  dim.silent.onState(renderSilent);
   dim.calendar.onChange((c) => {
     S.cal = c;
     renderRow();

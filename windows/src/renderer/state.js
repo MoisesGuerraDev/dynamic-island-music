@@ -6,7 +6,7 @@ export const S = {
   set: JSON.parse(JSON.stringify(DEFAULTS)),
   info: { cap: 900, auto: 1, displayKey: '', winWidth: 1040, topOffset: 10, screenWidth: 1440 },
   open: false,
-  view: 'home', // home | tray | game | clip | chat
+  view: 'home', // home | agenda | tray | game | clip | chat
   page: 0,
   editing: false,
   music: null,
@@ -21,7 +21,7 @@ export const S = {
   game: { exclusive: false, busy: false },
   chat: { provider: 'claude', web: 'claude', messages: [], sending: false },
   lock: { mode: 'none', locked: false, hello: false, pinSet: false, needsPin: false, retryIn: 0 },
-  ui: { welcome: false, lightsOpen: false, lockMsg: '', noteAdding: false, calAdding: false, timeEditing: false, calDay: 0, camOn: false, camError: '' },
+  ui: { welcome: false, lightsOpen: false, lockMsg: '', noteAdding: false, calAdding: false, timeEditing: false, calDay: 0, camOn: false, camError: '', agendaFilter: 'all', agendaConfirm: '', agendaClear: false },
   hd: {}, // official HD covers found for small pictures, by track key
   lastPlayedAt: 0,
   rot: 0,
@@ -78,7 +78,7 @@ export function aiMeta(p) {
 
 export function tabsAvailable() {
   const s = S.set;
-  const tabs = ['home'];
+  const tabs = ['home', 'agenda'];
   if (s.shelfEnabled) tabs.push('tray');
   if (s.gameTabEnabled) tabs.push('game');
   if (s.clipEnabled) tabs.push('clip');

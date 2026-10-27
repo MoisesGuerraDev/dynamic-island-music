@@ -115,7 +115,7 @@ export class Notes extends EventEmitter {
       try {
         const content = fs.readFileSync(r.full, 'utf8');
         const p = parseNote(content);
-        items.push({ id: r.name, text: p.text, isTask: p.isTask, done: p.done, created: Math.round(r.st.birthtimeMs || r.st.mtimeMs) });
+        items.push({ id: r.name, text: p.text, isTask: p.isTask, done: p.done, created: Math.round(r.st.birthtimeMs || r.st.mtimeMs), due: p.due, lead: p.lead });
       } catch {
         /* unreadable (still downloading from iCloud, for example) */
       }
@@ -129,14 +129,16 @@ export class Notes extends EventEmitter {
     }
   }
 
-  add(text, task = true) {
+  /** remind: { date: 'YYYY-MM-DD', time: 'HH:MM', lead: minutes } for a task that should warn before, or null. */
+  add(text, task = true, remind = null) {
     const clean = String(text ?? '').trim().slice(0, 4000);
     if (!clean) return null;
     const dir = this.#ensureFolder();
     let name = makeFileName(clean);
     let n = 1;
     while (fs.existsSync(path.join(dir, name))) name = makeFileName(clean).replace(/\.md$/, `-${++n}.md`);
-    fs.writeFileSync(path.join(dir, name), newBody(clean, task), 'utf8');
+    const r = remind && /^\d{4}-\d{2}-\d{2}$/.test(remind.date || '') && /^([01]\d|2[0-3]):[0-5]\d$/.test(remind.time || '') ? remind : null;
+    fs.writeFileSync(path.join(dir, name), newBody(clean, task, r), 'utf8');
     this.reload();
     return name;
   }

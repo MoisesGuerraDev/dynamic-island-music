@@ -49,7 +49,7 @@ contextBridge.exposeInMainWorld('dim', {
   notes: {
     get: () => invoke('notes:get'),
     onChange: (cb) => on('notes:changed', cb),
-    add: (text, task) => invoke('notes:add', text, task),
+    add: (text, task, remind) => invoke('notes:add', text, task, remind),
     toggle: (id) => invoke('notes:toggle', id),
     remove: (id) => invoke('notes:remove', id),
     removeAll: () => invoke('notes:removeAll'),
@@ -57,6 +57,15 @@ contextBridge.exposeInMainWorld('dim', {
     useLocalFolder: () => invoke('notes:useLocal'),
     useICloudFolder: () => invoke('notes:useICloud'),
     reveal: () => invoke('notes:reveal'),
+  },
+  silent: {
+    get: () => invoke('silent:get'),
+    onState: (cb) => on('silent:state', cb),
+    turnOn: () => invoke('silent:turnOn'),
+    dismiss: () => invoke('silent:dismiss'),
+  },
+  reminders: {
+    onDue: (cb) => on('reminder:due', cb),
   },
   clip: {
     get: () => invoke('clip:get'),

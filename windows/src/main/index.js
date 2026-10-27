@@ -1,4 +1,5 @@
 import { app, BrowserWindow, ClipboardItem, Menu, Notification, clipboard, nativeImage, screen, session, shell, powerMonitor } from 'electron';
+import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -23,6 +24,8 @@ import { AiLock } from './ailock.js';
 import { PinVault } from './pin.js';
 import { SessionBackup } from './sessionbackup.js';
 import { HdCover } from './hdcover.js';
+import { dueReminders } from '../shared/reminders.js';
+import { SilentSound } from './silentsound.js';
 
 // Automated tests never touch the real clipboard of the person: they use this in-memory one.
 function fakeClipboard() {
@@ -112,8 +115,9 @@ async function boot(ctx) {
 
   const system = new SystemInfo({ screen, helper });
   const media = new MediaService({ store, script: resourcePath(app.isPackaged ? 'ps' : 'src/main/ps', 'media.ps1'), mock: mockMedia });
+  const silent = new SilentSound({ media, store });
   const pomodoro = new Pomodoro(store);
-  const notes = new Notes({ store, defaultFolder: path.join(userData, 'Notas'), trash: (p) => shell.trashItem(p) });
+  const notes = new Notes({ store, defaultFolder: path.join(userData, 'Notas'), trash: isTest ? async (p) => fs.rmSync(p, { force: true }) : (p) => shell.trashItem(p) }); // tests never fill the person's Recycle Bin
   const clip = new ClipboardHistory({
     store,
     clipboard: isTest ? fakeClipboard() : clipboard,
@@ -144,7 +148,7 @@ async function boot(ctx) {
 
   const hdCover = new HdCover({ store });
 
-  Object.assign(ctx, { hdCover, sessionBackup, aiLock, aiSession, store, secrets, helper, islands, system, media, pomodoro, notes, clip, ai, perf, calendar, shelf });
+  Object.assign(ctx, { hdCover, sessionBackup, aiLock, aiSession, store, secrets, helper, islands, system, media, silent, pomodoro, notes, clip, ai, perf, calendar, shelf });
 
   // --- Commands from shortcuts and the tray ---
   const send = (name, extra = {}) => islands.send('cmd', { name, ...extra });
@@ -199,6 +203,8 @@ async function boot(ctx) {
   aiLock.on('state', (s) => everyone('ailock:state', s));
   aiLock.refresh();
   media.on('state', (s) => everyone('music:state', s));
+  silent.on('change', (v) => everyone('silent:state', v));
+  if (!isTest) silent.start();
   pomodoro.on('state', (s) => {
     everyone('pomo:state', s);
     ctx.tray.update();
@@ -215,6 +221,17 @@ async function boot(ctx) {
     if (store.get('pomoOpenOnFinish')) islands.peek(6000);
     everyone('pomo:finished', e);
   });
+  // Warnings of events and tasks with a time, the chosen minutes before.
+  const firedReminders = new Set();
+  // The warning also shows under the island for a few seconds, so it is seen even when Windows hides its notification.
+  setInterval(() => {
+    if (isTest || !store.get('remindNotify')) return;
+    for (const r of dueReminders(Date.now(), calendar.list(), notes.list(), firedReminders)) {
+      firedReminders.add(r.key);
+      if (Notification.isSupported()) new Notification({ title: r.title, body: r.body }).show();
+      islands.send('reminder:due', { title: r.title, body: r.body });
+    }
+  }, 10_000);
   notes.on('change', () => everyone('notes:changed', notesPayload()));
   clip.on('change', () => everyone('clip:changed', clipPayload()));
   clip.on('toast', (item) => {

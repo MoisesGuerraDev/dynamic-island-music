@@ -14,7 +14,7 @@ const WEB_AI = {
 
 /** Wires every call a page can make. A call from anything that is not one of our own windows is ignored. */
 export function registerIpc(ctx) {
-  const { store, islands, media, pomodoro, notes, clip, ai, perf, system, calendar, shelf, shortcuts, secrets, aiSession, aiLock, sessionBackup, hdCover } = ctx;
+  const { store, islands, media, silent, pomodoro, notes, clip, ai, perf, system, calendar, shelf, shortcuts, secrets, aiSession, aiLock, sessionBackup, hdCover } = ctx;
 
   const trusted = (sender) => !!islands.find(sender) || (islands.settingsWin && !islands.settingsWin.isDestroyed() && islands.settingsWin.webContents === sender);
   // Only the app's own pages (files of the renderer folder) may call, never a page from the web.
@@ -69,6 +69,9 @@ export function registerIpc(ctx) {
   handle('music:get', () => media.getState());
   handle('music:hdCover', (_e, track) => hdCover.find({ title: String(track?.title ?? ''), artist: String(track?.artist ?? '') }));
   handle('music:control', (_e, cmd, arg) => media.control(String(cmd), arg));
+  handle('silent:get', () => silent.state());
+  handle('silent:turnOn', () => silent.turnOn());
+  handle('silent:dismiss', () => silent.dismiss());
 
   // --- Pomodoro ---
   handle('pomo:get', () => pomodoro.snapshot());
@@ -88,7 +91,7 @@ export function registerIpc(ctx) {
   // --- Notes ---
   const notesPayload = () => ({ items: notes.list(), info: notes.info() });
   handle('notes:get', notesPayload);
-  handle('notes:add', (_e, text, task) => notes.add(text, task !== false));
+  handle('notes:add', (_e, text, task, remind) => notes.add(text, task !== false, remind && typeof remind === 'object' ? remind : null));
   handle('notes:toggle', (_e, id) => notes.toggle(id));
   handle('notes:remove', (_e, id) => notes.remove(id));
   handle('notes:removeAll', async (e) => {

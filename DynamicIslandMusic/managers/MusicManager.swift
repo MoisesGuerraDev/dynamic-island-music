@@ -757,16 +757,19 @@ class MusicManager: ObservableObject {
     }
 
     func nextTrack() {
-        let before = (title: songTitle, duration: songDuration)
+        let before = songTitle
         let browserID = bundleIdentifier.flatMap { BrowserTabs.browsers[$0] != nil ? $0 : nil }
         Task {
-            await activeController?.nextTrack()
-            // A single YouTube video has no "next": the command is accepted and nothing happens. Give the video its Mix
-            // (the list YouTube builds from it) and skip again, so the button always moves forward.
-            guard let id = browserID else { return }
-            try? await Task.sleep(for: .seconds(2.5))
-            guard songTitle == before.title, songDuration == before.duration, BrowserTabs.startMix(bundleID: id, title: before.title) else { return }
-            try? await Task.sleep(for: .seconds(5))
+            // A single YouTube video has no "next". If that is what is playing, open its Mix (the list YouTube builds from it)
+            // in the same tab right away and skip once the new page is playing; the button always moves forward.
+            if let id = browserID, BrowserTabs.startMix(bundleID: id, title: before) {
+                for delay in [2.4, 1.0, 1.0, 1.0, 1.0, 1.0] {
+                    try? await Task.sleep(for: .seconds(delay))
+                    if !songTitle.isEmpty && songTitle != before { break }
+                    await activeController?.nextTrack()
+                }
+                return
+            }
             await activeController?.nextTrack()
         }
     }

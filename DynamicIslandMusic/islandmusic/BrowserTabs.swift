@@ -66,7 +66,7 @@ enum BrowserTabs {
                 set ti to 0
                 repeat with t in tabs of w
                     set ti to ti + 1
-                    set out to out & wi & "|" & ti & "|" & (\(tabName) of t) & linefeed
+                    set out to out & wi & "|" & ti & "|" & (URL of t) & "|" & (\(tabName) of t) & linefeed
                 end repeat
             end repeat
             return out
@@ -76,8 +76,8 @@ enum BrowserTabs {
         case .failure(let result): return result
         case .success(let text):
             for line in text.split(separator: "\n") {
-                let fields = line.split(separator: "|", maxSplits: 2, omittingEmptySubsequences: false)
-                guard fields.count == 3, let w = Int(fields[0]), let t = Int(fields[1]), normalized(String(fields[2])).contains(wanted) else { continue }
+                let fields = line.split(separator: "|", maxSplits: 3, omittingEmptySubsequences: false)
+                guard fields.count == 4, let w = Int(fields[0]), let t = Int(fields[1]), normalized(String(fields[3])).contains(wanted) else { continue }
                 let select = browser.family == .safari
                     ? "set current tab of window \(w) to tab \(t) of window \(w)"
                     : "set active tab index of window \(w) to \(t)"
@@ -96,6 +96,48 @@ enum BrowserTabs {
             }
             return .noTab
         }
+    }
+
+    /// A single YouTube video has no "next". Opening its Mix (the playlist YouTube builds from it) in the same tab gives it one.
+    /// It only changes the address of that one tab, and only when it is a plain YouTube video. true when the address was changed.
+    static func startMix(bundleID: String, title: String) -> Bool {
+        guard let browser = browsers[bundleID], let appName = scriptName(bundleID), browser.family != .other else { return false }
+        let wanted = normalized(title)
+        guard wanted.count >= 3 else { return false }
+        let tabName = browser.family == .safari ? "name" : "title"
+        let listing = """
+        tell application "\(appName)"
+            set out to ""
+            set wi to 0
+            repeat with w in windows
+                set wi to wi + 1
+                set ti to 0
+                repeat with t in tabs of w
+                    set ti to ti + 1
+                    set out to out & wi & "|" & ti & "|" & (URL of t) & "|" & (\(tabName) of t) & linefeed
+                end repeat
+            end repeat
+            return out
+        end tell
+        """
+        guard case .success(let text) = run(listing) else { return false }
+        for line in text.split(separator: "\n") {
+            let fields = line.split(separator: "|", maxSplits: 3, omittingEmptySubsequences: false)
+            guard fields.count == 4, let w = Int(fields[0]), let t = Int(fields[1]), normalized(String(fields[3])).contains(wanted),
+                  let url = URLComponents(string: String(fields[2])), url.host?.hasSuffix("youtube.com") == true, url.host != "music.youtube.com",
+                  url.path == "/watch", let id = url.queryItems?.first(where: { $0.name == "v" })?.value, !id.isEmpty,
+                  url.queryItems?.contains(where: { $0.name == "list" }) != true,
+                  id.allSatisfy({ $0.isLetter || $0.isNumber || $0 == "-" || $0 == "_" }) else { continue }
+            let mix = "https://www.youtube.com/watch?v=\(id)&list=RD\(id)"
+            let change = """
+            tell application "\(appName)"
+                set URL of tab \(t) of window \(w) to "\(mix)"
+                return "ok"
+            end tell
+            """
+            if case .success = run(change) { return true }
+        }
+        return false
     }
 
     private static func run(_ source: String) -> Swift.Result<String, Result> {

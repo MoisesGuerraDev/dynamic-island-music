@@ -45,7 +45,7 @@ cleanup() { hdiutil detach "$MNT" -quiet 2>/dev/null || true; rm -rf "$TMP"; }
 trap cleanup EXIT
 
 echo "Descargando $APP_NAME…"
-if ! curl -fL --progress-bar "$BASE/DynamicIslandMusic.dmg" -o "$TMP/app.dmg" 2>/dev/null; then
+if ! curl -fL --retry 4 --retry-delay 2 --retry-all-errors --progress-bar "$BASE/DynamicIslandMusic.dmg" -o "$TMP/app.dmg" 2>/dev/null; then
   if [ "$IN_REPO" = 1 ]; then
     echo "Todavía no hay una versión publicada. La compilo desde el código…"
     DIM_DEST="$DEST" exec "$HERE/build-mac.sh"
@@ -54,7 +54,7 @@ if ! curl -fL --progress-bar "$BASE/DynamicIslandMusic.dmg" -o "$TMP/app.dmg" 2>
   echo "Si estás en una copia del repositorio, ejecuta ./build-mac.sh (necesita Xcode)." >&2
   exit 1
 fi
-curl -fsSL "$BASE/DynamicIslandMusic.dmg.sha256" -o "$TMP/app.sha256"
+curl -fsSL --retry 4 --retry-delay 2 --retry-all-errors "$BASE/DynamicIslandMusic.dmg.sha256" -o "$TMP/app.sha256"
 
 echo "Comprobando la descarga…"
 EXPECTED="$(cut -d' ' -f1 "$TMP/app.sha256")"

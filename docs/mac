@@ -1,4 +1,4 @@
 #!/bin/bash
 # Atajo de install.sh:  curl -fsSL https://moisesguerradev.github.io/dynamic-island-music/mac | bash
 set -euo pipefail
-curl -fsSL https://raw.githubusercontent.com/MoisesGuerraDev/dynamic-island-music/main/install.sh | bash -s -- "$@"
+curl -fsSL --retry 4 --retry-delay 2 --retry-all-errors https://raw.githubusercontent.com/MoisesGuerraDev/dynamic-island-music/main/install.sh | bash -s -- "$@"

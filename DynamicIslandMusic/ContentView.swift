@@ -31,6 +31,7 @@ struct ContentView: View {
     @Default(.glowIntensity) var glowIntensity
     @Default(.notchBorder) var notchBorder
     @Default(.glowMotion) var glowMotion
+    @Default(.lightsDance) var lightsDance
     @Default(.glowSpread) var glowSpread
     @Default(.glowColorMode) var glowColorMode
     @Default(.danceSize) var danceSize
@@ -222,7 +223,7 @@ struct ContentView: View {
                     .background {
                         if glowOn {
                             NotchGlow(shape: currentNotchShape, color: Color(nsColor: musicManager.glowColor),
-                                      opacity: glowOpacity, radius: glowRadius, dances: glowMotion && musicManager.isPlaying,
+                                      opacity: glowOpacity * (glowColorMode == .cover ? musicManager.glowColor.glowDampening : 1), radius: glowRadius, dances: glowMotion && lightsDance && musicManager.isPlaying,
                                       amount: danceSize.danceFactor, intensity: glowIntensity,
                                       rainbow: glowColorMode == .rainbow)
                         }
@@ -231,7 +232,7 @@ struct ContentView: View {
                         .bottom,
                         vm.effectiveClosedNotchHeight == 0 ? 10 : 0
                     )
-                
+
                 mainLayout
                     .frame(height: vm.notchState == .open ? vm.notchSize.height : nil)
                     .conditionalModifier(true) { view in
@@ -274,16 +275,12 @@ struct ContentView: View {
                         }
                     }
                     .onReceive(NotificationCenter.default.publisher(for: .pomodoroFinished)) { _ in
+                        peekOpen()
+                    }
+                    .onReceive(NotificationCenter.default.publisher(for: .reminderDue)) { _ in
                         guard vm.notchState == .closed else { return }
-                        doOpen()
-                        hoverTask?.cancel()
-                        hoverTask = Task {
-                            try? await Task.sleep(for: .seconds(8))
-                            guard !Task.isCancelled else { return }
-                            await MainActor.run {
-                                if !isHovering && !SharingStateManager.shared.preventNotchClose { vm.close() }
-                            }
-                        }
+                        coordinator.currentView = .agenda
+                        peekOpen()
                     }
                     .onReceive(NotificationCenter.default.publisher(for: .sharingDidFinish)) { _ in
                         if vm.notchState == .open && !isHovering && !vm.isBatteryPopoverActive {
@@ -337,6 +334,8 @@ struct ContentView: View {
                         //                    }
                         //                    .keyboardShortcut("E", modifiers: .command)
                     }
+                ReminderToastView()
+                SilentSoundToast()
                 if vm.chinHeight > 0 {
                     Rectangle()
                         .fill(Color.black.opacity(0.01))
@@ -348,6 +347,7 @@ struct ContentView: View {
         .padding(.horizontal, windowSidePadding)
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .top)
         .compositingGroup()
+        .mask { WindowEdgeFade() }
         .scaleEffect(
             x: gestureScale,
             y: gestureScale,
@@ -442,10 +442,11 @@ struct ContentView: View {
                        } else if vm.notchState == .open {
                            IslandHeader()
                                .frame(height: max(24, vm.effectiveClosedNotchHeight))
-                               .padding(.top, 6)
+                               .padding(.top, IslandHeader.topInset)
                                .opacity(gestureProgress != 0 ? 1.0 - min(abs(gestureProgress) * 0.1, 0.3) : 1.0)
                        } else {
-                           Rectangle().fill(.clear).frame(width: vm.closedNotchSize.width - 20, height: vm.effectiveClosedNotchHeight)
+                           // The closed shape adds its padding on both sides, so the pill ends up exactly as wide as the notch.
+                           Rectangle().fill(.clear).frame(width: vm.notchHousingWidth - 2 * cornerRadiusInsets.closed.bottom, height: vm.effectiveClosedNotchHeight)
                        }
 
                       if coordinator.sneakPeek.show {
@@ -508,6 +509,8 @@ struct ContentView: View {
                         ClipboardTabView()
                     case .game:
                         SnakeTabView()
+                    case .agenda:
+                        AgendaView()
                     }
                 }
                 .transition(
@@ -563,6 +566,20 @@ struct ContentView: View {
     private func doOpen() {
         withAnimation(animationSpring) {
             vm.open()
+        }
+    }
+
+    /// Opens the closed notch for a few seconds (Pomodoro finished, a reminder is due), unless the pointer stays on it.
+    private func peekOpen() {
+        guard vm.notchState == .closed else { return }
+        doOpen()
+        hoverTask?.cancel()
+        hoverTask = Task {
+            try? await Task.sleep(for: .seconds(8))
+            guard !Task.isCancelled else { return }
+            await MainActor.run {
+                if !isHovering && !SharingStateManager.shared.preventNotchClose { vm.close() }
+            }
         }
     }
 
@@ -722,3 +739,4 @@ struct GeneralDropTargetDelegate: DropDelegate {
         .environmentObject(vm)
         .frame(width: vm.notchSize.width, height: vm.notchSize.height)
 }
+

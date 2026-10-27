@@ -5,6 +5,7 @@
 //  Created by Alexander on 2025-11-16.
 //
 
+import AppKit
 import Foundation
 import ApplicationServices
 import IOKit
@@ -51,6 +52,18 @@ class DynamicIslandMusicXPCHelper: NSObject, DynamicIslandMusicXPCHelperProtocol
             x -= 5
         }
         reply(NSNumber(value: leftGap), NSNumber(value: rightGap))
+    }
+
+    @objc func pressMediaKey(_ code: Int, with reply: @escaping (Bool) -> Void) {
+        guard AXIsProcessTrusted() else { reply(false); return }
+        for down in [true, false] {
+            let data1 = (code << 16) | ((down ? 0xA : 0xB) << 8)
+            let event = NSEvent.otherEvent(
+                with: .systemDefined, location: .zero, modifierFlags: NSEvent.ModifierFlags(rawValue: down ? 0xA00 : 0xB00),
+                timestamp: 0, windowNumber: 0, context: nil, subtype: 8, data1: data1, data2: -1)
+            event?.cgEvent?.post(tap: .cghidEventTap)
+        }
+        reply(true)
     }
 
     @objc func requestAccessibilityAuthorization() {

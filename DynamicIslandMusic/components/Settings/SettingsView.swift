@@ -580,6 +580,7 @@ struct Media: View {
                     )
                 }
                 Defaults.Toggle("Buscar la carátula en HD (envía el título y el artista a Apple)", key: .artworkHD)
+                Defaults.Toggle("Avisar si el navegador toca música pero sin sonido (el interruptor te lleva a la pestaña)", key: .watchBrowserSound)
             } header: {
                 Text("Fuente de música")
             } footer: {

@@ -53,30 +53,12 @@ struct AlbumArtView: View {
 
     private func artwork(cornerRadius: CGFloat) -> some View {
         GeometryReader { geo in
-            // Wide thumbnails (YouTube) are shown whole over a blurred copy of themselves, not cropped and stretched.
-            let img = musicManager.albumArt
-            let ratio = img.size.height > 0 ? img.size.width / img.size.height : 1
-            ZStack {
-                if abs(ratio - 1) > 0.08 {
-                    Image(nsImage: img)
-                        .resizable()
-                        .scaledToFill()
-                        .frame(width: geo.size.width, height: geo.size.width)
-                        .blur(radius: 16)
-                        .opacity(0.9)
-                    Image(nsImage: img)
-                        .resizable()
-                        .interpolation(.high)
-                        .scaledToFit()
-                        .frame(width: geo.size.width, height: geo.size.width)
-                } else {
-                    Image(nsImage: img)
-                        .resizable()
-                        .interpolation(.high)
-                        .scaledToFill()
-                        .frame(width: geo.size.width, height: geo.size.width)
-                }
-            }
+            // Always a full square. A wide thumbnail (YouTube) is cropped from the center instead of sitting in a square
+            // with empty bands above and below.
+            Image(nsImage: musicManager.albumArt)
+                .resizable()
+                .interpolation(.high)
+                .scaledToFill()
                 .frame(width: geo.size.width, height: geo.size.width)
                 .clipped()
                 .cornerRadius(cornerRadius, antialiased: true)
@@ -288,6 +270,7 @@ struct MusicControlsView: View {
                 slotView(for: slot)
                     .frame(alignment: .center)
             }
+            if !slots.contains(.volume) { SystemVolumeControl() }
         }
         .frame(maxWidth: .infinity, alignment: .center)
     }
@@ -654,13 +637,15 @@ struct CustomSlider: View {
 /// The cover swells a little with the beat.
 private struct CoverBeat: ViewModifier {
     let playing: Bool
-    @Default(.innerMotion) private var motion
     @Default(.innerDance) private var danceSize
+    @Default(.coverDances) private var coverDances
 
     func body(content: Content) -> some View {
-        TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: !(playing && motion))) { tl in
-            let beat = (playing && motion) ? BeatPulse.shared.sample(at: tl.date) * danceSize.danceFactor : 0
-            content.scaleEffect((playing ? 1.02 : 1.0) + 0.03 * beat)
+        // Paused, or with the cover's dancing turned off: the cover stays perfectly still.
+        let beating = playing && coverDances
+        TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: !beating)) { tl in
+            let beat = beating ? BeatPulse.shared.sample(at: tl.date) * danceSize.danceFactor : 0
+            content.scaleEffect(beating ? 1.02 + 0.03 * beat : 1.0)
         }
     }
 }

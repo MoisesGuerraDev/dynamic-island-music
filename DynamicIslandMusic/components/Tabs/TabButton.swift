@@ -11,13 +11,14 @@ struct TabButton: View {
     let label: String
     let icon: String
     let selected: Bool
+    var dense = false
     let onClick: () -> Void
     
     var body: some View {
         Button(action: onClick) {
             Image(systemName: icon)
                 .font(.system(size: 12.5, weight: .medium))
-                .frame(width: 34, height: 26)
+                .frame(width: dense ? 24 : 34, height: 26)
                 .contentShape(Capsule())
         }
         .buttonStyle(PlainButtonStyle())

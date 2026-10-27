@@ -2,6 +2,7 @@ import AppKit
 import Defaults
 import SwiftUI
 import UniformTypeIdentifiers
+import UserNotifications
 
 // MARK: - Window with icon tabs on top
 
@@ -273,6 +274,8 @@ struct GlassSettings: View {
     @Default(.innerDance) var innerDance
     @Default(.innerMotion) var innerMotion
     @Default(.realAudioBeat) var realAudio
+    @Default(.lightsDance) var lightsDance
+    @Default(.coverDances) var coverDances
     @Default(.glassAmount) var glassAmount
     @Default(.notchBorder) var notchBorder
 
@@ -321,12 +324,15 @@ struct GlassSettings: View {
             }
 
             Section {
+                Toggle("Las luces bailan con la música", isOn: $lightsDance)
+                Toggle("La carátula baila con la música", isOn: $coverDances)
                 Toggle("Seguir el sonido real del Mac (pide el permiso de audio del sistema)", isOn: $realAudio)
                     .onChange(of: realAudio) { _, _ in BeatPulse.shared.applyPreference() }
+                    .disabled(!lightsDance && !coverDances)
             } header: {
                 Text("Ritmo")
             } footer: {
-                Text("Por defecto el baile sigue el tiempo de la canción. Con el sonido real siguen exactamente los golpes; solo se mide el volumen, no se graba audio.")
+                Text("Tú decides qué baila: solo las luces, solo la carátula, las dos o ninguna. Sin música (o en pausa) nada baila. Con «Quieto» en una luz, esa luz no baila aunque el interruptor esté prendido. Por defecto el baile sigue el tiempo de la canción; con el sonido real siguen exactamente los golpes (solo se mide el volumen, no se graba audio).")
             }
 
             Section {
@@ -452,6 +458,64 @@ struct PomodoroSettings: View {
     }
 }
 
+// MARK: - Reminders and Agenda
+
+/// Warnings of tasks with a time and the Agenda tab. Also tells when macOS blocks or hides the notifications of the app.
+struct RemindersSettingsSection: View {
+    @Default(.remindNotify) var notify
+    @Default(.remindSound) var sound
+    @Default(.remindSoundName) var soundName
+    @Default(.remindLead) var lead
+    @Default(.agendaDays) var days
+    @State private var systemState: String?
+
+    var body: some View {
+        Section {
+            Toggle("Avisar con una notificación", isOn: $notify)
+            Defaults.Toggle("Abrir la isla en la Agenda al avisar", key: .remindOpenIsland)
+            Toggle("Sonar al avisar", isOn: $sound)
+            if sound {
+                Picker("Sonido", selection: $soundName) {
+                    ForEach(PomodoroManager.systemSounds, id: \.self) { Text($0).tag($0) }
+                }
+            }
+            Picker("Aviso por defecto", selection: $lead) {
+                ForEach(Reminders.leads, id: \.minutes) { Text($0.label).tag($0.minutes) }
+            }
+            Stepper("La Agenda muestra los próximos \(days) días", value: $days, in: 1...365)
+            HStack {
+                Button("Probar aviso") {
+                    Reminders.test()
+                    Task { await refreshSystemState() }
+                }
+                if let systemState {
+                    Text(systemState).font(.caption).foregroundStyle(.orange)
+                    Button("Abrir Ajustes del Sistema") {
+                        if let url = URL(string: "x-apple.systempreferences:com.apple.Notifications-Settings.extension") {
+                            NSWorkspace.shared.open(url)
+                        }
+                    }
+                }
+            }
+        } header: {
+            Text("Recordatorios y Agenda")
+        } footer: {
+            Text("Las tareas con hora avisan los minutos que elijas antes. Si no ves el aviso, revisa que en Ajustes del Sistema › Notificaciones esta app tenga el estilo «Avisos» o «Alertas» y que no tengas un modo de concentración activo.")
+        }
+        .task { await refreshSystemState() }
+        .onChange(of: notify) { _, _ in NotesManager.shared.reload() }
+    }
+
+    private func refreshSystemState() async {
+        let s = await UNUserNotificationCenter.current().notificationSettings()
+        systemState = switch s.authorizationStatus {
+        case .denied: "macOS tiene bloqueadas las notificaciones de esta app."
+        case .notDetermined: nil
+        default: s.alertStyle == .none ? "En macOS los avisos de esta app están en «Ninguno»." : nil
+        }
+    }
+}
+
 // MARK: - Notes
 
 struct NotesSettings: View {
@@ -481,6 +545,7 @@ struct NotesSettings: View {
             } header: {
                 Text("Notas y tareas")
             }
+            RemindersSettingsSection()
             Section {
                 Button("Mover todas las notas a la papelera…", role: .destructive) { confirmDelete = true }
                     .confirmationDialog("¿Mover todas las notas a la papelera?", isPresented: $confirmDelete) {
@@ -651,10 +716,26 @@ struct DisplaySettings: View {
     @Default(.fitMenuBar) var fitMenuBar
     @ObservedObject var menuSpace = MenuBarSpace.shared
     @Default(.islandOffsetX) var offsetX
+    @Default(.islandMovable) var movable
     @Default(.manualSize) var manual
     @Default(.manualOpenWidth) var manualWidth
     @Default(.uiScale) var scale
     @State private var screens: [SystemInfo.ScreenInfo] = []
+
+    /// Moving the island is off by default. Turning it on asks first; turning it off puts the island back on the notch.
+    private var moveToggle: Binding<Bool> {
+        Binding(
+            get: { movable },
+            set: { on in
+                guard on else { movable = false; offsetX = 0; return }
+                let alert = NSAlert()
+                alert.messageText = "¿Seguro que quieres mover la isla?"
+                alert.informativeText = "Dejará de estar sobre el notch y puede verse desencajada. Puedes deshacerlo cuando quieras: al apagar esta opción vuelve sola a su sitio."
+                alert.addButton(withTitle: "Sí, permitir moverla")
+                alert.addButton(withTitle: "Cancelar")
+                if alert.runModal() == .alertFirstButtonReturn { offsetX = 0; movable = true }
+            })
+    }
 
     var body: some View {
         Form {
@@ -702,18 +783,20 @@ struct DisplaySettings: View {
                 Text("Con el notch cerrado, la isla ocupa solo el espacio libre al lado del notch para no tapar los menús ni los íconos de arriba. Cuando se mueven, se ajusta sola y se queda en el centro. Si no cabe nada, se queda del tamaño del notch. Para medir el lado izquierdo (los menús de la app que usas) macOS pide el permiso de Accesibilidad.")
             }
 
-            if NSScreen.main?.safeAreaInsets.top == 0 {
-                Section {
+            Section {
+                Toggle("Permitir mover la isla", isOn: moveToggle)
+                if movable {
                     HStack {
                         Text("Izquierda / derecha")
                         Slider(value: $offsetX, in: -600...600, step: 10)
                         Button("Centrar") { offsetX = 0 }
                     }
-                } header: {
-                    Text("Posición de la isla")
-                } footer: {
-                    Text("Tu Mac no tiene notch, así que la isla aparece arriba y al centro. Si prefieres otro lugar, muévela aquí. En un Mac con notch siempre queda sobre el notch.")
+                    Button("Volver a su sitio y bloquearla") { movable = false; offsetX = 0 }
                 }
+            } header: {
+                Text("Posición de la isla")
+            } footer: {
+                Text("La isla queda siempre fija sobre el notch (o arriba al centro si tu Mac no tiene notch). Solo se mueve si activas esta opción y confirmas. Al apagarla vuelve sola a su sitio.")
             }
 
             Section {

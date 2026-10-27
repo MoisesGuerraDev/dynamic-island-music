@@ -188,6 +188,23 @@ class CalendarManager: ObservableObject {
         self.events = eventsResult
     }
     
+    /// Events and reminders of the next days, for the Agenda tab.
+    @Published private(set) var upcoming: [EventModel] = []
+
+    func loadUpcoming(days: Int = 30) async {
+        let start = Calendar.current.startOfDay(for: Date())
+        let end = Calendar.current.date(byAdding: .day, value: days, to: start) ?? start
+        upcoming = await calendarService.events(from: start, to: end, calendars: selectedCalendars.map { $0.id })
+    }
+
+    /// Returns an error message, or nil when it worked.
+    func delete(_ event: EventModel) async -> String? {
+        let error = await calendarService.delete(id: event.id, start: event.start, end: event.end, isReminder: event.type.isReminder)
+        await loadUpcoming(days: Defaults[.agendaDays])
+        await updateEvents()
+        return error
+    }
+
     func setReminderCompleted(reminderID: String, completed: Bool) async {
         await calendarService.setReminderCompleted(reminderID: reminderID, completed: completed)
         // Refresh events after updating

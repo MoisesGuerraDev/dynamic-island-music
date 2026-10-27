@@ -38,7 +38,15 @@ class IslandViewModel: NSObject, ObservableObject {
 
     @Published var notchSize: CGSize = getClosedNotchSize()
     @Published var closedNotchSize: CGSize = getClosedNotchSize()
-    
+
+    /// Width of the camera housing itself. `getClosedNotchSize` reports 4 pt more on screens with a notch (slack for the
+    /// animated shapes). The idle pill is drawn exactly this wide, so it never sticks out of the menu bar.
+    var notchHousingWidth: CGFloat {
+        let screen = screenUUID.flatMap { NSScreen.screen(withUUID: $0) } ?? NSScreen.main
+        let notched = screen?.auxiliaryTopLeftArea != nil && screen?.auxiliaryTopRightArea != nil
+        return closedNotchSize.width - (notched ? 4 : 0)
+    }
+
     let webcamManager = WebcamManager.shared
     @Published var isCameraExpanded: Bool = false
     @Published var isRequestingAuthorization: Bool = false
@@ -228,6 +236,13 @@ class IslandViewModel: NSObject, ObservableObject {
         self.notchSize = getClosedNotchSize(screenUUID: self.screenUUID)
         self.closedNotchSize = self.notchSize
         self.notchState = .closed
+        // A text field left half-written must not ask for the keyboard again on the next hover: that would hold the
+        // notch open after the pointer leaves.
+        Task { @MainActor in
+            NotesManager.shared.adding = false
+            PomodoroManager.shared.editingTime = false
+            KeyboardFocus.shared.release()
+        }
         Task { @MainActor in AILock.shared.lockIfExpired() }
         self.isBatteryPopoverActive = false
         self.coordinator.sneakPeek.show = false

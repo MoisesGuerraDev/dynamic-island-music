@@ -18,18 +18,29 @@ final class SharingStateManager: ObservableObject {
 	static let shared = SharingStateManager()
 
 	private var activeSessions: Int = 0 {
-		didSet {
-			let newValue = activeSessions > 0
-			if newValue != preventNotchClose {
-				preventNotchClose = newValue
-				if !newValue {
-					NotificationCenter.default.post(name: .sharingDidFinish, object: nil)
-				}
-			}
-		}
+		didSet { update() }
 	}
 
-	@Published var preventNotchClose: Bool = false
+	/// Parts of the notch that keep it open while they are in use (keyboard, popovers). Each one holds and lets go of its own key,
+	/// so one of them letting go never unlocks another, and the notch closes as soon as the last one lets go.
+	private var holds: Set<String> = [] {
+		didSet { update() }
+	}
+
+	@Published private(set) var preventNotchClose: Bool = false
+
+	func hold(_ key: String, _ on: Bool) {
+		if on { holds.insert(key) } else { holds.remove(key) }
+	}
+
+	private func update() {
+		let newValue = activeSessions > 0 || !holds.isEmpty
+		guard newValue != preventNotchClose else { return }
+		preventNotchClose = newValue
+		if !newValue {
+			NotificationCenter.default.post(name: .sharingDidFinish, object: nil)
+		}
+	}
 
 	private var activeDelegates: [UUID: SharingLifecycleDelegate] = [:]
 

@@ -164,10 +164,14 @@ extension Defaults.Keys {
     static let uiScale = Key<Double>("uiScale", default: 1.0)
     /// Horizontal offset of the island from the screen center, only for Macs without a notch (with a notch it stays over it).
     static let islandOffsetX = Key<Double>("islandOffsetX", default: 0)
+    /// The island is locked to the notch (or the top center) unless the person turns this on in Settings and confirms.
+    static let islandMovable = Key<Bool>("islandMovable", default: false)
     /// Rendimiento stays small and dimmed until the pointer is over it, so people looking at the screen do not read it.
     static let perfDiscreet = Key<Bool>("perfDiscreet", default: true)
     /// Look up the official HD cover when the player only gives a tiny picture (browser videos).
     static let artworkHD = Key<Bool>("artworkHD", default: true)
+    /// Shows a notice with a switch when the browser plays but no sound comes out (the tab or the site is muted).
+    static let watchBrowserSound = Key<Bool>("watchBrowserSound", default: true)
     /// How strong the cover color is around the notch (1 = normal).
     static let glowIntensity = Key<Double>("glowIntensity", default: 2.6)
     /// Where the glow color comes from: the cover of the song, or a color the person picks.
@@ -182,6 +186,10 @@ extension Defaults.Keys {
     static let notchBorder = Key<NotchBorder>("notchBorder", default: .off)
     /// The color glow breathes and drifts slowly while music plays.
     static let glowMotion = Key<Bool>("glowMotion", default: true)
+    /// The colored lights (inside and around the notch) dance to the music. Off: they stay still, whatever else is set.
+    static let lightsDance = Key<Bool>("lightsDance", default: true)
+    /// The cover of the open notch swells with the beat while music plays. Independent of the lights.
+    static let coverDances = Key<Bool>("coverDances", default: true)
     // The light inside the open notch has its own controls (the ones above are for the light around the closed island).
     static let innerIntensity = Key<Double>("innerIntensity", default: 2.6)
     static let innerSpread = Key<GlowSize>("innerSpread", default: .medium)
@@ -219,6 +227,14 @@ extension Defaults.Keys {
     static let notesFolderBookmark = Key<Data?>("notesFolderBookmark", default: nil)
     static let notesShowAge = Key<Bool>("notesShowAge", default: true)
     static let notesHideDoneAfterDays = Key<Int>("notesHideDoneAfterDays", default: 1)
+
+    // Reminders of tasks with a time, and the Agenda tab
+    static let remindNotify = Key<Bool>("remindNotify", default: true)
+    static let remindOpenIsland = Key<Bool>("remindOpenIsland", default: true)
+    static let remindSound = Key<Bool>("remindSound", default: true)
+    static let remindSoundName = Key<String>("remindSoundName", default: "Glass")
+    static let remindLead = Key<Int>("remindLead", default: 10)
+    static let agendaDays = Key<Int>("agendaDays", default: 30)
 
     // AI chat
     static let aiProvider = Key<AIProvider>("aiProvider", default: .claude)

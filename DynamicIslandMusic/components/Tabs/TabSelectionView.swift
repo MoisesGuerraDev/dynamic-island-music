@@ -16,6 +16,7 @@ struct TabModel: Identifiable {
 
 let tabs = [
     TabModel(label: "Inicio", icon: "house.fill", view: .home),
+    TabModel(label: "Agenda", icon: "checklist", view: .agenda),
     TabModel(label: "Bandeja", icon: "tray.fill", view: .shelf),
     TabModel(label: "Juego", icon: "gamecontroller.fill", view: .game),
     TabModel(label: "Portapapeles", icon: "doc.on.clipboard.fill", view: .clipboard),
@@ -23,12 +24,14 @@ let tabs = [
 ]
 
 struct TabSelectionView: View {
+    /// A narrow island draws the tabs a little smaller, so all of them fit at the left of the notch.
+    var dense = false
     @ObservedObject var coordinator = IslandViewCoordinator.shared
     @Namespace var animation
     var body: some View {
-        HStack(spacing: 6) {
+        HStack(spacing: dense ? 2 : 6) {
             ForEach(tabs) { tab in
-                    TabButton(label: tab.label, icon: tab.icon, selected: coordinator.currentView == tab.view) {
+                    TabButton(label: tab.label, icon: tab.icon, selected: coordinator.currentView == tab.view, dense: dense) {
                         withAnimation(.smooth) {
                             coordinator.currentView = tab.view
                         }

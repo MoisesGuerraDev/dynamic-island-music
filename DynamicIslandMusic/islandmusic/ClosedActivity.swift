@@ -123,7 +123,7 @@ struct ClosedActivityView: View {
     private var chinContent: some View {
         VStack(spacing: 0) {
             Rectangle().fill(.clear)
-                .frame(width: vm.closedNotchSize.width - 20, height: vm.effectiveClosedNotchHeight)
+                .frame(width: vm.notchHousingWidth - 2 * cornerRadiusInsets.closed.bottom, height: vm.effectiveClosedNotchHeight)
             HStack(spacing: 6) {
                 if hoverControls {
                     if kinds.contains(.music) {
@@ -147,7 +147,7 @@ struct ClosedActivityView: View {
             .padding(.horizontal, 6)
             // As wide as the camera notch itself (the closed shape adds 14 pt of padding on each side), so nothing
             // but the notch is covered in the menu bar.
-            .frame(width: max(vm.closedNotchSize.width - 28, 150), height: 28)
+            .frame(width: max(vm.notchHousingWidth - 2 * cornerRadiusInsets.closed.bottom, 150), height: 28)
             .onHover { earHover = $0 }
         }
         .animation(.spring(response: 0.35, dampingFraction: 0.8), value: hoverControls)

@@ -115,24 +115,28 @@ final class NowPlayingController: ObservableObject, MediaControllerProtocol {
     }
 
     // MARK: - Protocol Implementation
+    // Recent macOS versions ignore MediaRemote commands from regular apps for some players (Chrome, for one).
+    // The media keys of the keyboard always reach the player that is showing, so they are used when the helper is allowed to press them.
     func play() async {
-        MRMediaRemoteSendCommandFunction(0, nil)
+        if playbackState.isPlaying { return }
+        if !(await MediaKeys.press(.playPause)) { MRMediaRemoteSendCommandFunction(0, nil) }
     }
 
     func pause() async {
-        MRMediaRemoteSendCommandFunction(1, nil)
+        if !playbackState.isPlaying { return }
+        if !(await MediaKeys.press(.playPause)) { MRMediaRemoteSendCommandFunction(1, nil) }
     }
 
     func togglePlay() async {
-        MRMediaRemoteSendCommandFunction(2, nil)
+        if !(await MediaKeys.press(.playPause)) { MRMediaRemoteSendCommandFunction(2, nil) }
     }
 
     func nextTrack() async {
-        MRMediaRemoteSendCommandFunction(4, nil)
+        if !(await MediaKeys.press(.next)) { MRMediaRemoteSendCommandFunction(4, nil) }
     }
 
     func previousTrack() async {
-        MRMediaRemoteSendCommandFunction(5, nil)
+        if !(await MediaKeys.press(.previous)) { MRMediaRemoteSendCommandFunction(5, nil) }
     }
 
     func seek(to time: Double) async {

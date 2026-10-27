@@ -86,8 +86,22 @@ struct MarqueeText: View {
             }
             .frame(width: frameWidth, alignment: .leading)
             .clipped()
+            .mask(edgeFade)
         }
         .frame(height: textSize.height * 1.3)
         
+    }
+
+    /// While the text scrolls, its ends melt away instead of being cut in the middle of a letter.
+    @ViewBuilder
+    private var edgeFade: some View {
+        if needsScrolling {
+            LinearGradient(
+                stops: [.init(color: .clear, location: 0), .init(color: .black, location: 0.07),
+                        .init(color: .black, location: 0.93), .init(color: .clear, location: 1)],
+                startPoint: .leading, endPoint: .trailing)
+        } else {
+            Color.black
+        }
     }
 }

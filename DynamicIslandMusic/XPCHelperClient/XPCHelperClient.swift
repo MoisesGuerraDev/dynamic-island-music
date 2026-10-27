@@ -121,6 +121,20 @@ final class XPCHelperClient {
         }
     }
 
+    /// Presses a media key through the helper; false when the helper has no Accessibility permission.
+    nonisolated func pressMediaKey(_ code: Int) async -> Bool {
+        do {
+            let service = await MainActor.run {
+                ensureRemoteService()
+            }
+            return try await service.withContinuation { service, continuation in
+                service.pressMediaKey(code) { continuation.resume(returning: $0) }
+            }
+        } catch {
+            return false
+        }
+    }
+
     nonisolated func ensureAccessibilityAuthorization(promptIfNeeded: Bool) async -> Bool {
         do {
             let service = await MainActor.run {

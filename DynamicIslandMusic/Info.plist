@@ -4,6 +4,12 @@
 <dict>
 	<key>NSAudioCaptureUsageDescription</key>
 	<string>Para que los colores del notch bailen con el sonido real de tu Mac. Solo mide el volumen; no graba ni guarda audio.</string>
+	<key>NSAppleEventsUsageDescription</key>
+	<string>Para llevarte a la pestaña del navegador que suena cuando pulsas el interruptor de la isla. Solo lee los títulos de las pestañas y elige una; no cambia nada dentro de las páginas.</string>
+	<key>NSCalendarsFullAccessUsageDescription</key>
+	<string>Para mostrar tus eventos en la isla y guardar los que crees desde ella, con su aviso.</string>
+	<key>NSRemindersFullAccessUsageDescription</key>
+	<string>Para mostrar tus recordatorios en el calendario de la isla.</string>
 	<key>NSAppTransportSecurity</key>
 	<dict>
 		<key>NSAllowsLocalNetworking</key>

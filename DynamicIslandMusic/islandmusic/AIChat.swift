@@ -337,7 +337,7 @@ struct ChatTabView: View {
         }
         .padding(.top, 4)
         .onAppear {
-            KeyboardFocus.shared.request()
+            KeyboardFocus.shared.prepare()
             DispatchQueue.main.async { focused = true }
         }
         .onDisappear { KeyboardFocus.shared.release() }

@@ -12,6 +12,7 @@ import Defaults
 import KeyboardShortcuts
 import Sparkle
 import SwiftUI
+import UserNotifications
 
 @main
 struct DynamicNotchApp: App {
@@ -92,9 +93,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         let wantedX = screenNow.map { islandCenterX(on: $0, windowWidth: desired.width) - desired.width / 2 } ?? window.frame.minX
         guard abs(desired.width - window.frame.width) > 0.5 || abs(desired.height - window.frame.height) > 0.5
                 || abs(wantedX - window.frame.minX) > 0.5 else { return }
-        let apply = { [weak window, weak viewModel] in
+        let place = { [weak window, weak viewModel] (size: CGSize?) in
             guard let window, let viewModel else { return }
-            let target = self.windowTarget(for: viewModel.notchSize)
+            let target = size ?? self.windowTarget(for: viewModel.notchSize)
             let screen = viewModel.screenUUID.flatMap { NSScreen.screen(withUUID: $0) } ?? window.screen ?? NSScreen.main
             guard let frame = screen?.frame else { return }
             let centerX = self.islandCenterX(on: screen ?? NSScreen.main!, windowWidth: target.width)
@@ -103,9 +104,13 @@ class AppDelegate: NSObject, NSApplicationDelegate {
                 display: true)
         }
         if delayShrink && (desired.width < window.frame.width || desired.height < window.frame.height) {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.55, execute: apply)
+            // What grows, grows now: an island wider or taller than its window slides off center until the window
+            // catches up. Only the shrinking waits for the close animation.
+            let grown = CGSize(width: max(desired.width, window.frame.width), height: max(desired.height, window.frame.height))
+            if grown != window.frame.size { place(grown) }
+            DispatchQueue.main.asyncAfter(deadline: .now() + 0.55) { place(nil) }
         } else {
-            apply()
+            place(nil)
         }
     }
 
@@ -287,10 +292,14 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             window.disableSkyLight()
         }
 
-        window.contentView = NSHostingView(
+        let host = NSHostingView(
             rootView: ContentView()
                 .environmentObject(viewModel)
         )
+        // Only fitWindow sizes and centers this window. Left to SwiftUI, a wider island grows the window from its left
+        // edge, and the island slides off center until the next fit.
+        host.sizingOptions = []
+        window.contentView = host
 
         window.orderFrontRegardless()
         NotchSpaceManager.shared.notchSpace.windows.insert(window)
@@ -312,7 +321,8 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     /// offset chosen in Settings (kept inside the screen).
     private func islandCenterX(on screen: NSScreen, windowWidth: CGFloat) -> CGFloat {
         let frame = screen.frame
-        guard screen.safeAreaInsets.top == 0 else { return frame.midX }
+        // Locked to the notch, or to the top center without one, unless moving it was turned on in Settings.
+        guard Defaults[.islandMovable] else { return frame.midX }
         let room = max(0, frame.width / 2 - windowWidth / 2)
         let offset = max(-room, min(room, CGFloat(Defaults[.islandOffsetX])))
         return frame.midX + offset
@@ -335,6 +345,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidFinishLaunching(_ notification: Notification) {
         BeatPulse.shared.applyPreference()
+        UNUserNotificationCenter.current().delegate = NotificationPresenter.shared
+        SilentSound.shared.start()
+        _ = NotesManager.shared // reads the notes and schedules their reminders from the start, not on the first open
         Task { @MainActor in
             try? await Task.sleep(for: .seconds(3))
             await AISessionBackup.shared.restoreIfFresh()
@@ -530,8 +543,23 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         hook("dim.debug.tab.clipboard") { self.coordinator.currentView = .clipboard }
         hook("dim.debug.tab.game") { self.coordinator.currentView = .game }
         hook("dim.debug.tab.shelf") { self.coordinator.currentView = .shelf }
+        hook("dim.debug.tab.agenda") { self.coordinator.currentView = .agenda }
         hook("dim.debug.edit.on") { LayoutManager.shared.editing = true }
         hook("dim.debug.edit.off") { LayoutManager.shared.editing = false }
+        hook("dim.debug.reminder.soon") { NotesManager.shared.add(text: "prueba de aviso", task: true, due: Date().addingTimeInterval(25), lead: 0) }
+        hook("dim.debug.reminder.clean") { for item in NotesManager.shared.items where item.text == "prueba de aviso" { NotesManager.shared.delete(item) } }
+        hook("dim.debug.silent") { SilentSound.shared.debugShow(true) }
+        hook("dim.debug.cover.wide") {
+            let image = NSImage(size: NSSize(width: 640, height: 360))
+            image.lockFocus()
+            NSGradient(colors: [.systemPink, .systemOrange, .systemPurple])?.draw(in: NSRect(x: 0, y: 0, width: 640, height: 360), angle: 20)
+            NSColor.white.withAlphaComponent(0.85).setFill()
+            NSBezierPath(ovalIn: NSRect(x: 250, y: 110, width: 140, height: 140)).fill()
+            image.unlockFocus()
+            MusicManager.shared.albumArt = image
+        }
+        hook("dim.debug.layout.player") { for c in IslandComponent.allCases { LayoutManager.shared.setEnabled(c, c == .player) } }
+        hook("dim.debug.toast") { ReminderToast.shared.show(title: "reunión con el equipo", body: "En 10 min, hoy 11:00") }
         hook("dim.debug.pomo.toggle") { PomodoroManager.shared.toggle() }
         hook("dim.debug.pomo.short") { PomodoroManager.shared.setCurrentDuration(5); PomodoroManager.shared.start() }
         hook("dim.debug.settings") { SettingsWindowController.shared.showWindow() }
@@ -550,6 +578,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         hook("dim.debug.ai.chatgpt") { AIChatManager.shared.provider = .openai }
         hook("dim.debug.ai.gemini") { AIChatManager.shared.provider = .gemini }
         hook("dim.debug.ai.deepseek") { AIChatManager.shared.provider = .deepseek }
+        hook("dim.debug.settings.glass") {
+            SettingsRouter.shared.requested = .glass
+            SettingsWindowController.shared.showWindow()
+        }
         hook("dim.debug.settings.performance") {
             SettingsRouter.shared.requested = .performance
             SettingsWindowController.shared.showWindow()

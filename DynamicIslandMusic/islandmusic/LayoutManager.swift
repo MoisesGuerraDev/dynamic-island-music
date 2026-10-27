@@ -24,6 +24,11 @@ final class LayoutManager: ObservableObject {
         didSet { NotificationCenter.default.post(name: .islandLayoutChanged, object: nil) }
     }
 
+    /// Narrowest the open island gets: the header (all the tabs and the buttons) has to fit at both sides of the notch.
+    static let minWidth: CGFloat = 520
+    /// Below this width the tabs are drawn smaller so all of them still fit, and the notch stays centered.
+    static let fullHeaderWidth: CGFloat = 640
+
     /// Horizontal padding that wraps all the components inside the notch (design units).
     static let sidePadding: CGFloat = 14
     /// Height of the row of components in design units, before the scale.
@@ -82,19 +87,25 @@ final class LayoutManager: ObservableObject {
         let cap = capacity(for: screenUUID)
         let page = currentPage(capacity: cap)
         let sum = page.reduce(0) { $0 + $1.width } + 2 * Self.sidePadding
-        return max(520, min(cap, sum * scale))
+        return max(Self.minWidth, min(cap, sum * scale))
     }
 
     /// Size of the open notch for the tab that is showing (the home row sizes itself from its components).
     func openSize(for screenUUID: String?, view: NotchViews) -> CGSize {
         let cap = capacity(for: screenUUID)
         let width = view == .home ? openWidth(for: screenUUID) : min(cap, max(680, openWidth(for: screenUUID)))
-        var height = 46 + Self.designHeight * scale + 7 + (editing && view == .home ? 34 : 0)
+        // Header strip, the row, and below it either the edit bar or the page dots (when there is more than one page).
+        let dots: CGFloat = view == .home && !editing && pages(capacity: cap).count > 1 ? 16 : 0
+        var height = 46 + Self.designHeight * scale + 7 + (editing && view == .home ? 34 : 0) + dots
         var finalWidth = width
         if view == .chat {
             // The web chat needs room to read and write; the key-based chat is a bit shorter.
             let web = AIChatManager.shared.usesWeb(AIChatManager.shared.provider)
             height = web ? 440 : 300
+            finalWidth = min(cap, 720)
+        } else if view == .agenda {
+            // Room for a few rows of each list; the rest scrolls.
+            height = max(height, 340)
             finalWidth = min(cap, 720)
         }
         return CGSize(width: finalWidth, height: height)
@@ -157,20 +168,47 @@ final class KeyboardFocus: ObservableObject {
     static let shared = KeyboardFocus()
     private(set) var wantsKey = false
 
+    private init() {
+        // Clicking another app lets the notch close again; clicking back on the text field takes the keyboard again.
+        NotificationCenter.default.addObserver(forName: NSApplication.didResignActiveNotification, object: nil, queue: .main) { _ in
+            MainActor.assumeIsolated { SharingStateManager.shared.hold("keyboard", false) }
+        }
+    }
+
+    /// For a field that shows up by itself (a tab that opens on hover): the keyboard is taken on the first click inside
+    /// the notch, never just because the pointer passed over it. Taking it here would activate the app (bringing the
+    /// Settings window to the front) and hold the notch open after the pointer leaves.
+    func prepare() {
+        wantsKey = true
+    }
+
     func request() {
         wantsKey = true
-        SharingStateManager.shared.preventNotchClose = true
+        SharingStateManager.shared.hold("keyboard", true)
         // The notch floats over whatever app is in front. For typing to reach it, the app has to be the active one:
         // without this the panel never becomes the key window and text fields (and web pages) ignore the keyboard.
-        if !NSApp.isActive { NSApp.activate(ignoringOtherApps: true) }
+        if !NSApp.isActive { activateKeepingWindowsBehind() }
         for w in NSApp.windows where w is DynamicIslandMusicSkyLightWindow {
             w.makeKeyAndOrderFront(nil)
         }
     }
 
+    /// Activating an app brings all its windows to the front. A Settings window left open behind the app you were using
+    /// stays there: only the notch takes the keyboard.
+    private func activateKeepingWindowsBehind() {
+        let behind = NSApp.windows.filter { $0.isVisible && $0.level == .normal && $0.styleMask.contains(.titled) }
+        behind.forEach { $0.orderOut(nil) }
+        NSApp.activate(ignoringOtherApps: true)
+        guard !behind.isEmpty else { return }
+        Task { @MainActor in
+            try? await Task.sleep(for: .milliseconds(250))
+            behind.forEach { $0.orderBack(nil) }
+        }
+    }
+
     func release() {
         wantsKey = false
-        SharingStateManager.shared.preventNotchClose = false
+        SharingStateManager.shared.hold("keyboard", false)
         for w in NSApp.windows where w is DynamicIslandMusicSkyLightWindow {
             if w.isKeyWindow { w.resignKey() }
         }

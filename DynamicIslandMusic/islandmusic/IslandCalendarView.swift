@@ -23,15 +23,9 @@ struct IslandCalendarView: View {
                     .foregroundStyle(.white.opacity(0.6))
                     .frame(maxWidth: .infinity)
             } else {
-                VStack(alignment: .leading, spacing: 5) {
-                    ForEach(events.prefix(2)) { event in eventRow(event) }
-                    if events.count > 2 {
-                        Text("+\(events.count - 2) más")
-                            .font(.system(size: 11))
-                            .foregroundStyle(.white.opacity(0.5))
-                    }
+                ScrollList {
+                    ForEach(events) { event in eventRow(event) }
                 }
-                .frame(maxWidth: .infinity, alignment: .leading)
             }
             Spacer(minLength: 4)
 

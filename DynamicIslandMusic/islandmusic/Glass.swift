@@ -188,9 +188,10 @@ struct AmbientLight: View {
     @Default(.innerSpread) var spreadSize
     @Default(.innerDance) var danceSize
     @Default(.glowColorMode) var colorMode
+    @Default(.lightsDance) var lightsDance
 
     var body: some View {
-        TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: !((motion && music.isPlaying) || colorMode == .rainbow))) { tl in
+        TimelineView(.animation(minimumInterval: 1.0 / 30.0, paused: !((motion && lightsDance && music.isPlaying) || colorMode == .rainbow))) { tl in
             light(date: tl.date)
         }
         .allowsHitTesting(false)
@@ -199,14 +200,14 @@ struct AmbientLight: View {
     private func light(date: Date) -> some View {
         let t = date.timeIntervalSinceReferenceDate
         let playing = music.isPlaying
-        let dancing = motion && playing
+        let dancing = motion && lightsDance && playing
         let amp = danceSize.danceFactor
         let beat = dancing ? BeatPulse.shared.sample(at: date) * amp : 0
         return GeometryReader { g in
             let c = Color(nsColor: music.glowColor)
             let c2 = Color(nsColor: music.glowColor2)
             let spread = spreadSize.innerFactor
-            let strength: Double = min(1, (style == .strong ? 1.0 : 0.9) * intensity * (0.78 + 0.4 * beat)) * (playing ? 1 : 0.6)
+            let strength: Double = min(1, (style == .strong ? 1.0 : 0.9) * intensity * (0.78 + 0.4 * beat)) * (playing ? 1 : 0.6) * (colorMode == .cover ? music.glowColor.glowDampening : 1)
             let p = pointer.point
             let px = ((p?.x ?? g.size.width / 2) - g.size.width / 2) * 0.07
             let py = ((p?.y ?? g.size.height / 2) - g.size.height / 2) * 0.07
@@ -272,6 +273,28 @@ struct AmbientLight: View {
     }
 }
 
+/// Fades everything out toward the edges of the window, so a glow that reaches them melts away instead of ending in a hard line.
+struct WindowEdgeFade: View {
+    var side: CGFloat = 40
+    var bottom: CGFloat = 44
+
+    var body: some View {
+        GeometryReader { g in
+            let fx = min(0.5, side / max(1, g.size.width))
+            let fy = min(0.5, bottom / max(1, g.size.height))
+            Rectangle()
+                .fill(.black)
+                .mask(LinearGradient(
+                    stops: [.init(color: .clear, location: 0), .init(color: .black, location: fx),
+                            .init(color: .black, location: 1 - fx), .init(color: .clear, location: 1)],
+                    startPoint: .leading, endPoint: .trailing))
+                .mask(LinearGradient(
+                    stops: [.init(color: .black, location: 0), .init(color: .black, location: 1 - fy), .init(color: .clear, location: 1)],
+                    startPoint: .top, endPoint: .bottom))
+        }
+    }
+}
+
 /// Color glow around the notch. It swells with the beat while music plays, always right around the notch.
 struct NotchGlow: View {
     let shape: IslandShape
@@ -312,12 +335,12 @@ struct NotchGlow: View {
                         .blendMode(.plusLighter)
                         .offset(y: 8)
                 }
-                // Tight bright edge right under the notch.
+                // Warm core right under the notch. It is blurred enough to melt into the halo: a thin sharp strip reads as a line.
                 shape
                     .fill(paint)
-                    .opacity(min(1, opacity * 0.9 * swell))
-                    .blur(radius: max(3, radius * 0.3))
-                    .offset(y: 3)
+                    .opacity(min(1, opacity * 0.6 * swell))
+                    .blur(radius: max(8, radius * 0.55))
+                    .offset(y: 4)
             }
         }
         .allowsHitTesting(false)
@@ -325,6 +348,12 @@ struct NotchGlow: View {
 }
 
 extension NSColor {
+    /// How much light a cover color deserves: a gray, white or black cover only makes a foggy haze, a colored one glows fully.
+    var glowDampening: Double {
+        let c = usingColorSpace(.sRGB) ?? self
+        return 0.4 + 0.6 * min(1, Double(c.saturationComponent) * 1.5)
+    }
+
     /// The same color with its hue turned by this fraction of the color wheel.
     func shiftedHue(by delta: CGFloat) -> NSColor {
         let c = usingColorSpace(.sRGB) ?? self

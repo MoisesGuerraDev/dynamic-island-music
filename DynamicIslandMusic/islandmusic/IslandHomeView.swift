@@ -24,10 +24,15 @@ struct IslandHomeView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 let s = layout.scale
-                let designW = page.reduce(0) { $0 + $1.width } + 2 * LayoutManager.sidePadding
+                let sum = page.reduce(0) { $0 + $1.width }
+                // The island has a minimum width (room for the tabs around the notch). When the components are narrower than
+                // that, they share the extra room, so there is no empty space at the sides.
+                let room = layout.openWidth(for: vm.screenUUID) / s - 2 * LayoutManager.sidePadding
+                let grow: CGFloat = sum > 0 ? min(1.7, max(1, room / sum)) : 1
+                let designW = sum * grow + 2 * LayoutManager.sidePadding
                 HStack(spacing: 0) {
                     ForEach(Array(page.enumerated()), id: \.element.id) { index, cfg in
-                        cell(cfg, showSeparator: index > 0)
+                        cell(cfg, showSeparator: index > 0, grow: grow)
                     }
                 }
                 .padding(.horizontal, LayoutManager.sidePadding)
@@ -54,13 +59,13 @@ struct IslandHomeView: View {
     // MARK: Cell
 
     @ViewBuilder
-    private func cell(_ cfg: ComponentConfig, showSeparator: Bool) -> some View {
+    private func cell(_ cfg: ComponentConfig, showSeparator: Bool, grow: CGFloat = 1) -> some View {
         let editing = layout.editing
         ZStack(alignment: .topLeading) {
             content(for: cfg.id)
                 .padding(.leading, cfg.id == .player ? 0 : 10)
                 .padding(.trailing, 10)
-                .frame(width: cfg.width, alignment: .topLeading)
+                .frame(width: cfg.width * grow, alignment: .topLeading)
                 .allowsHitTesting(!editing)
 
             if editing {
@@ -81,7 +86,7 @@ struct IslandHomeView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .bottomTrailing)
             }
         }
-        .frame(width: cfg.width)
+        .frame(width: cfg.width * grow)
         .background {
             if editing {
                 RoundedRectangle(cornerRadius: 18, style: .continuous).fill(Color.white.opacity(0.05))
@@ -118,6 +123,7 @@ struct IslandHomeView: View {
             }
         case .notes:
             NotesView()
+                .onHover { vm.isHoveringCalendar = $0 }
         case .pomodoro:
             PomodoroView().padding(.top, 8)
         case .camera:

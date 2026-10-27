@@ -10,8 +10,8 @@ struct GlowQuickButton: View {
             .help("Brillo y baile")
             .popover(isPresented: $open, arrowEdge: .bottom) {
                 GlowQuickControls()
-                    .onAppear { SharingStateManager.shared.preventNotchClose = true }
-                    .onDisappear { SharingStateManager.shared.preventNotchClose = false }
+                    .onAppear { SharingStateManager.shared.hold("glow", true) }
+                    .onDisappear { SharingStateManager.shared.hold("glow", false) }
             }
     }
 }
@@ -25,10 +25,17 @@ struct GlowQuickControls: View {
     @Default(.glowSpread) var glowSpread
     @Default(.danceSize) var danceSize
     @Default(.glowMotion) var glowMotion
+    @Default(.lightsDance) var lightsDance
+    @Default(.coverDances) var coverDances
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
             GlowColorControls()
+            Divider()
+            Toggle("Las luces bailan con la música", isOn: $lightsDance)
+                .toggleStyle(.switch)
+            Toggle("La carátula baila con la música", isOn: $coverDances)
+                .toggleStyle(.switch)
             Divider()
             group("Luz de adentro", intensity: $innerIntensity, spread: $innerSpread, motion: $innerMotion, dance: $innerDance)
             Divider()

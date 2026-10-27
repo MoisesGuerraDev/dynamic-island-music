@@ -10,6 +10,8 @@ struct NoteItem: Identifiable, Equatable {
     var isTask: Bool
     var done: Bool
     var created: Date
+    var due: Date? = nil
+    var lead: Int = 0
 }
 
 /// Notes and tasks stored as plain Markdown files, one file per note.
@@ -145,6 +147,7 @@ final class NotesManager: ObservableObject {
         }
         found.sort { $0.created > $1.created }
         if found != items { items = found }
+        Reminders.sync(found)
         pendingUploads = pending
         lastReload = Date()
     }
@@ -153,9 +156,11 @@ final class NotesManager: ObservableObject {
         let lines = text.split(whereSeparator: \.isNewline).map { String($0).trimmingCharacters(in: .whitespaces) }
         let first = lines.first(where: { !$0.isEmpty }) ?? ""
         let lower = first.lowercased()
+        let reminder = lines.lazy.compactMap(Reminders.parse).first
         for (prefix, done) in [("- [ ]", false), ("* [ ]", false), ("- [x]", true), ("* [x]", true)] where lower.hasPrefix(prefix) {
             let body = String(first.dropFirst(prefix.count)).trimmingCharacters(in: .whitespaces)
-            return NoteItem(id: url.lastPathComponent, url: url, text: body, isTask: true, done: done, created: created)
+            return NoteItem(id: url.lastPathComponent, url: url, text: body, isTask: true, done: done, created: created,
+                            due: reminder?.due, lead: reminder?.lead ?? 0)
         }
         let title = first.drop(while: { $0 == "#" || $0 == " " })
         return NoteItem(id: url.lastPathComponent, url: url, text: String(title), isTask: false, done: false, created: created)
@@ -163,7 +168,7 @@ final class NotesManager: ObservableObject {
 
     // MARK: Write
 
-    func add(text: String, task: Bool) {
+    func add(text: String, task: Bool, due: Date? = nil, lead: Int = 10) {
         let clean = text.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !clean.isEmpty else { return }
         let f = DateFormatter()
@@ -175,20 +180,33 @@ final class NotesManager: ObservableObject {
             .trimmingCharacters(in: CharacterSet(charactersIn: "-"))
         let name = "\(f.string(from: Date()))-\(String(slug.prefix(24))).md"
         let url = folder.appendingPathComponent(name)
-        let body = task ? "- [ ] \(clean)\n" : "\(clean)\n"
+        var body = task ? "- [ ] \(clean)\n" : "\(clean)\n"
+        if task, let due {
+            body += Reminders.line(due: due, lead: lead) + "\n"
+            Reminders.requestPermission()
+        }
         try? body.write(to: url, atomically: true, encoding: .utf8)
         reload()
     }
 
+    /// Flips the checkbox of the first line and keeps the rest of the file (the reminder line, for one).
     func toggle(_ item: NoteItem) {
-        guard item.isTask else { return }
-        let body = "- [\(item.done ? " " : "x")] \(item.text)\n"
-        try? body.write(to: item.url, atomically: true, encoding: .utf8)
+        guard item.isTask, let text = try? String(contentsOf: item.url, encoding: .utf8) else { return }
+        var lines = text.components(separatedBy: "\n")
+        guard let i = lines.firstIndex(where: { !$0.trimmingCharacters(in: .whitespaces).isEmpty }) else { return }
+        lines[i] = "- [\(item.done ? " " : "x")] \(item.text)"
+        try? lines.joined(separator: "\n").write(to: item.url, atomically: true, encoding: .utf8)
         reload()
     }
 
     func delete(_ item: NoteItem) {
         try? FileManager.default.trashItem(at: item.url, resultingItemURL: nil)
+        reload()
+    }
+
+    /// Sends every finished task to the Trash.
+    func deleteDone() {
+        for i in items where i.isTask && i.done { try? FileManager.default.trashItem(at: i.url, resultingItemURL: nil) }
         reload()
     }
 

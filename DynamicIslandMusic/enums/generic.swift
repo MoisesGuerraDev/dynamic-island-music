@@ -30,6 +30,7 @@ public enum NotchViews {
     case chat
     case clipboard
     case game
+    case agenda
 }
 
 enum SettingsEnum {

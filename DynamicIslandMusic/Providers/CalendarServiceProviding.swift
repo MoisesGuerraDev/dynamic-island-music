@@ -107,6 +107,26 @@ class CalendarService: CalendarServiceProviding {
         }
     }
     
+    /// Deletes one event (only the occurrence that starts at `start` when it repeats) or one reminder.
+    /// Returns an error message, or nil when it worked.
+    func delete(id: String, start: Date, end: Date, isReminder: Bool) async -> String? {
+        do {
+            if isReminder {
+                guard let reminder = store.calendarItem(withIdentifier: id) as? EKReminder else { return "No se encontró el recordatorio." }
+                try store.remove(reminder, commit: true)
+            } else {
+                let predicate = store.predicateForEvents(withStart: start.addingTimeInterval(-1), end: end.addingTimeInterval(1), calendars: nil)
+                guard let event = store.events(matching: predicate).first(where: { $0.calendarItemIdentifier == id && $0.startDate == start })
+                else { return "No se encontró el evento." }
+                guard event.calendar.allowsContentModifications else { return "Ese calendario no se puede modificar." }
+                try store.remove(event, span: .thisEvent, commit: true)
+            }
+            return nil
+        } catch {
+            return "No se pudo borrar."
+        }
+    }
+
     func setReminderCompleted(reminderID: String, completed: Bool) async {
         guard let reminder = store.calendarItem(withIdentifier: reminderID) as? EKReminder else { return }
         reminder.isCompleted = completed

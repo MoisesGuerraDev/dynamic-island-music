@@ -15,8 +15,6 @@ import Foundation
     /// Free room in the menu bar around the camera notch: reply(left, right) in points, nil when it cannot be measured.
     func menuBarGaps(notchLeft: Double, notchRight: Double, screenLeft: Double, screenRight: Double, y: Double,
                      with reply: @escaping (NSNumber?, NSNumber?) -> Void)
-    /// Presses a media key (play/pause 16, next 17, previous 18) like the keyboard does; false without the Accessibility permission.
-    func pressMediaKey(_ code: Int, with reply: @escaping (Bool) -> Void)
     // Keyboard backlight / CoreBrightness access (performed by the helper)
     func isKeyboardBrightnessAvailable(with reply: @escaping (Bool) -> Void)
     func currentKeyboardBrightness(with reply: @escaping (NSNumber?) -> Void)

@@ -144,7 +144,11 @@ class AppleMusicController: MediaControllerProtocol {
         updatedState.repeatMode = RepeatMode(rawValue: Int(repeatModeValue)) ?? .off
         let volumePercentage = descriptor.atIndex(9)?.int32Value ?? 50
         updatedState.volume = Double(volumePercentage) / 100.0
-        updatedState.artwork = descriptor.atIndex(10)?.data as Data?
+        if let scripted = descriptor.atIndex(10)?.data, scripted.count > 1000 {
+            updatedState.artwork = scripted
+        } else {
+            updatedState.artwork = streamedArtwork(title: updatedState.title, artist: updatedState.artist)
+        }
         let lovedState = descriptor.atIndex(11)?.booleanValue ?? false
         updatedState.isFavorite = lovedState
         updatedState.lastUpdated = Date()
@@ -152,7 +156,39 @@ class AppleMusicController: MediaControllerProtocol {
     }
     
     // MARK: - Private Methods
-    
+
+    /// Songs streamed from Apple Music have no picture for AppleScript: the cover comes from the system's Now Playing.
+    private var streamedCover: (key: String, data: Data?)?
+    private var coverTask: Task<Void, Never>?
+
+    private func streamedArtwork(title: String, artist: String) -> Data? {
+        guard !title.isEmpty, title != "Not Playing" else { return nil }
+        let key = "\(artist)|\(title)"
+        if let cached = streamedCover, cached.key == key { return cached.data }
+        streamedCover = (key, nil)
+        coverTask?.cancel()
+        // Now Playing can lag a moment behind the song change, so ask again a few times.
+        coverTask = Task { [weak self] in
+            for delay in [0.0, 1.0, 2.0, 4.0, 8.0] {
+                try? await Task.sleep(for: .seconds(delay))
+                if Task.isCancelled { return }
+                if let data = await NowPlayingCover.data(bundleID: "com.apple.Music", title: title) {
+                    self?.setStreamedCover(data, key: key)
+                    return
+                }
+            }
+        }
+        return nil
+    }
+
+    private func setStreamedCover(_ data: Data, key: String) {
+        guard streamedCover?.key == key else { return }
+        streamedCover = (key, data)
+        var updated = playbackState
+        updated.artwork = data
+        playbackState = updated
+    }
+
     private func executeCommand(_ command: String) async {
         let script = "tell application \"Music\" to \(command)"
         try? await AppleScriptHelper.executeVoid(script)

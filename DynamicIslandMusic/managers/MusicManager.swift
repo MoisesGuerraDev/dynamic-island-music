@@ -201,7 +201,8 @@ class MusicManager: ObservableObject {
         if let original {
             let rep = NSBitmapImageRep(data: original)
             let side = max(rep?.pixelsWide ?? 0, rep?.pixelsHigh ?? 0)
-            guard side > 0, side < 500 else { return }
+            // A picture that cannot be read counts as none; a big one needs no replacement.
+            if side > 0 { guard side < 500 else { return } }
         }
 
         let key = "\(artist)|\(title)".lowercased()
@@ -294,7 +295,10 @@ class MusicManager: ObservableObject {
 
     // MARK: - Update Methods
     @MainActor
-    private func updateFromPlaybackState(_ state: PlaybackState) {
+    private func updateFromPlaybackState(_ incoming: PlaybackState) {
+        // A player that has no picture sometimes sends an empty one: that is the same as none.
+        var state = incoming
+        if state.artwork?.isEmpty == true { state.artwork = nil }
         // Check for playback state changes (playing/paused)
         if state.isPlaying != self.isPlaying {
             NSLog("Playback state changed: \(state.isPlaying ? "Playing" : "Paused")")

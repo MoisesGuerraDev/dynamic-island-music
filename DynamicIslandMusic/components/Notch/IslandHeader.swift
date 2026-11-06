@@ -18,6 +18,10 @@ struct IslandHeader: View {
     @StateObject var tvm = ShelfStateViewModel.shared
     @ObservedObject var layout = LayoutManager.shared
 
+    /// First tap on the X asks "¿Salir?"; the check quits the app, the second X cancels.
+    @State private var quitConfirm = false
+    @State private var quitResetTask: Task<Void, Never>?
+
     /// A narrow island (only a few small components) draws the tabs smaller so all six and the buttons fit around the notch.
     private var compact: Bool {
         layout.openSize(for: vm.screenUUID, view: coordinator.currentView).width < LayoutManager.fullHeaderWidth
@@ -51,31 +55,59 @@ struct IslandHeader: View {
 
             HStack(spacing: 4) {
                 if vm.notchState == .open {
-                    if Defaults[.settingsIconInNotch] {
-                        GlowQuickButton()
-                        GlassCircleButton(symbol: layout.editing ? "checkmark" : "pencil", size: 25) {
-                            withAnimation(.smooth) {
-                                if !layout.editing { IslandViewCoordinator.shared.currentView = .home }
-                                layout.editing.toggle()
+                    if quitConfirm {
+                        Text("¿Salir?")
+                            .font(.system(size: 12, weight: .semibold))
+                            .foregroundStyle(.white)
+                            .fixedSize()
+                        GlassCircleButton(symbol: "checkmark", size: 25) {
+                            NSApplication.shared.terminate(nil)
+                        }
+                        .help("Sí, salir")
+                        GlassCircleButton(symbol: "xmark", size: 25) {
+                            quitResetTask?.cancel()
+                            withAnimation(.smooth) { quitConfirm = false }
+                        }
+                        .help("Cancelar")
+                    } else {
+                        if Defaults[.settingsIconInNotch] {
+                            GlowQuickButton()
+                            GlassCircleButton(symbol: layout.editing ? "checkmark" : "pencil", size: 25) {
+                                withAnimation(.smooth) {
+                                    if !layout.editing { IslandViewCoordinator.shared.currentView = .home }
+                                    layout.editing.toggle()
+                                }
                             }
+                            .help(layout.editing ? "Listo" : "Editar componentes")
+                            GlassCircleButton(symbol: "gearshape", size: 25) {
+                                SettingsWindowController.shared.showWindow()
+                            }
+                            .help("Ajustes")
+                            GlassCircleButton(symbol: "xmark", size: 25) {
+                                withAnimation(.smooth) { quitConfirm = true }
+                                quitResetTask?.cancel()
+                                quitResetTask = Task {
+                                    try? await Task.sleep(for: .seconds(5))
+                                    guard !Task.isCancelled else { return }
+                                    await MainActor.run {
+                                        withAnimation(.smooth) { quitConfirm = false }
+                                    }
+                                }
+                            }
+                            .help("Salir de Dynamic Island Music")
                         }
-                        .help(layout.editing ? "Listo" : "Editar componentes")
-                        GlassCircleButton(symbol: "gearshape", size: 25) {
-                            SettingsWindowController.shared.showWindow()
+                        if Defaults[.showBatteryIndicator] {
+                            IslandBatteryView(
+                                batteryWidth: 30,
+                                isCharging: batteryModel.isCharging,
+                                isInLowPowerMode: batteryModel.isInLowPowerMode,
+                                isPluggedIn: batteryModel.isPluggedIn,
+                                levelBattery: batteryModel.levelBattery,
+                                maxCapacity: batteryModel.maxCapacity,
+                                timeToFullCharge: batteryModel.timeToFullCharge,
+                                isForNotification: false
+                            )
                         }
-                        .help("Ajustes")
-                    }
-                    if Defaults[.showBatteryIndicator] {
-                        IslandBatteryView(
-                            batteryWidth: 30,
-                            isCharging: batteryModel.isCharging,
-                            isInLowPowerMode: batteryModel.isInLowPowerMode,
-                            isPluggedIn: batteryModel.isPluggedIn,
-                            levelBattery: batteryModel.levelBattery,
-                            maxCapacity: batteryModel.maxCapacity,
-                            timeToFullCharge: batteryModel.timeToFullCharge,
-                            isForNotification: false
-                        )
                     }
                 }
             }
@@ -88,6 +120,12 @@ struct IslandHeader: View {
         }
         .foregroundColor(.gray)
         .environmentObject(vm)
+        .onChange(of: vm.notchState) { _, state in
+            if state == .closed {
+                quitResetTask?.cancel()
+                quitConfirm = false
+            }
+        }
     }
 }
 

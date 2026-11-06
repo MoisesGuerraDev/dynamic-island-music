@@ -112,6 +112,7 @@ button { font: inherit; }
 .bat { width: 20px; height: 10px; border: 1.5px solid #fff; border-radius: 3px; position: relative; }
 .bat::after { content: ""; position: absolute; left: 1px; top: 1px; bottom: 1px; width: var(--lvl, 70%); background: #fff; border-radius: 1px; }
 .bat.chg::after { background: var(--ok); }
+.qask { font-size: 12px; font-weight: 600; color: #fff; white-space: nowrap; padding: 0 2px; }
 .round { width: 30px; height: 30px; border-radius: 50%; background: #000; border: 1px solid rgba(255, 255, 255, .14); display: grid; place-items: center; color: #d6d9e0; padding: 0; cursor: pointer; }
 .round svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 1.9; stroke-linecap: round; }
 

@@ -178,7 +178,9 @@ function renderTabs() {
   const b = S.battery;
   const pct = b ? Math.round(b.level * 100) : 0;
   const bat = S.set.batteryPill && S.hasBattery !== false && b ? `<span class="pill"><span class="bat${b.charging ? ' chg' : ''}" style="--lvl:${Math.max(8, pct)}%"></span>${pct}%</span>` : '';
-  $('#ntabs-r').innerHTML = `${bat}<button class="round" data-act="lights-toggle" aria-label="Luces y colores" title="Luces y colores">${ic('sun')}</button><button class="round" data-act="edit-toggle" aria-label="${S.editing ? 'Terminar de editar' : 'Editar componentes'}" title="${S.editing ? 'Listo' : 'Editar componentes'}">${ic(S.editing ? 'check' : 'edit')}</button><button class="round" data-act="open-settings" aria-label="Ajustes" title="Ajustes">${ic('gear')}</button><button class="round" data-act="close-island" aria-label="Cerrar la isla" title="Cerrar la isla">${ic('x')}</button>`;
+  $('#ntabs-r').innerHTML = S.ui.quitAsk
+    ? `<span class="qask">¿Salir?</span><button class="round" data-act="quit-yes" aria-label="Sí, salir" title="Sí, salir">${ic('check')}</button><button class="round" data-act="quit-no" aria-label="No" title="No">${ic('x')}</button>`
+    : `${bat}<button class="round" data-act="lights-toggle" aria-label="Luces y colores" title="Luces y colores">${ic('sun')}</button><button class="round" data-act="edit-toggle" aria-label="${S.editing ? 'Terminar de editar' : 'Editar componentes'}" title="${S.editing ? 'Listo' : 'Editar componentes'}">${ic(S.editing ? 'check' : 'edit')}</button><button class="round" data-act="open-settings" aria-label="Ajustes" title="Ajustes">${ic('gear')}</button><button class="round" data-act="close-island" aria-label="Salir" title="Salir">${ic('x')}</button>`;
 }
 
 function renderDots(n) {
@@ -799,7 +801,22 @@ const actions = {
   },
   'open-settings': () => dim.island.openSettings(''),
   'open-ai-settings': () => dim.island.openSettings('ia'),
-  'close-island': () => dim.island.setOpen(false),
+  // The X quits the whole app, but asks first; it disarms itself after a few seconds.
+  'close-island': () => {
+    S.ui.quitAsk = true;
+    clearTimeout(S.ui.quitAskT);
+    S.ui.quitAskT = setTimeout(() => {
+      S.ui.quitAsk = false;
+      renderTabs();
+    }, 5000);
+    renderTabs();
+  },
+  'quit-yes': () => dim.app.quit(),
+  'quit-no': () => {
+    S.ui.quitAsk = false;
+    clearTimeout(S.ui.quitAskT);
+    renderTabs();
+  },
   dot: (t) => {
     S.page = +t.dataset.p;
     renderRow();

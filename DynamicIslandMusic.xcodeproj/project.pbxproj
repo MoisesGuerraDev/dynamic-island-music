@@ -56,6 +56,7 @@
 		1194E8872EA6DDA7009C82D6 /* DynamicIslandMusicSkyLightWindow.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1194E8862EA6DDA7009C82D6 /* DynamicIslandMusicSkyLightWindow.swift */; };
 		1194E9402EACC652009C82D6 /* Color+AccentColor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1194E93F2EACC652009C82D6 /* Color+AccentColor.swift */; };
 		11A45C792E34E63100CEB175 /* MediaChecker.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11A45C782E34E63100CEB175 /* MediaChecker.swift */; };
+		12D1A0B22F1000000000000A /* HelperProcessGuard.swift in Sources */ = {isa = PBXBuildFile; fileRef = 12D1A0B12F1000000000000A /* HelperProcessGuard.swift */; };
 		11C5E3132DFE85970065821E /* SettingsWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11C5E3112DFE85970065821E /* SettingsWindowController.swift */; };
 		11C5E3162DFE88510065821E /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11C5E3152DFE88510065821E /* SettingsView.swift */; };
 		11CC44A22CEE614100C7244B /* IslandViewCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 11CC44A12CEE614100C7244B /* IslandViewCoordinator.swift */; };
@@ -224,6 +225,7 @@
 		1194E8862EA6DDA7009C82D6 /* DynamicIslandMusicSkyLightWindow.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DynamicIslandMusicSkyLightWindow.swift; sourceTree = "<group>"; };
 		1194E93F2EACC652009C82D6 /* Color+AccentColor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "Color+AccentColor.swift"; sourceTree = "<group>"; };
 		11A45C782E34E63100CEB175 /* MediaChecker.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MediaChecker.swift; sourceTree = "<group>"; };
+		12D1A0B12F1000000000000A /* HelperProcessGuard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HelperProcessGuard.swift; sourceTree = "<group>"; };
 		11C5E3112DFE85970065821E /* SettingsWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsWindowController.swift; sourceTree = "<group>"; };
 		11C5E3152DFE88510065821E /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		11CC44A12CEE614100C7244B /* IslandViewCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = IslandViewCoordinator.swift; sourceTree = "<group>"; };
@@ -458,6 +460,7 @@
 			children = (
 				118EBE242E92DCCB00D54B5A /* AssociatedObject.swift */,
 				11A45C782E34E63100CEB175 /* MediaChecker.swift */,
+				12D1A0B12F1000000000000A /* HelperProcessGuard.swift */,
 				1153BD972D9881F900979FB0 /* AppleScriptHelper.swift */,
 				14288DD62C6E015000B9F80C /* AudioPlayer.swift */,
 				5955950C2E900ED800C66711 /* ApplicationRelauncher.swift */,
@@ -923,6 +926,7 @@
 				11CC44A22CEE614100C7244B /* IslandViewCoordinator.swift in Sources */,
 				B186543C2C6F49AE000B926A /* ShortcutConstants.swift in Sources */,
 				11A45C792E34E63100CEB175 /* MediaChecker.swift in Sources */,
+				12D1A0B22F1000000000000A /* HelperProcessGuard.swift in Sources */,
 				B1D365CE2C6A979C0047BDBC /* LiveActivityModifier.swift in Sources */,
 				1113ABD02E80E6BB00EC13B2 /* ThumbnailService.swift in Sources */,
 				11CFC65B2E097E9D00748C80 /* WelcomeView.swift in Sources */,
@@ -1060,7 +1064,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = DynamicIslandMusicXPCHelper;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				MACOSX_DEPLOYMENT_TARGET = 15.5;
-				MARKETING_VERSION = 1.1.4;
+				MARKETING_VERSION = 1.1.5;
 				PRODUCT_BUNDLE_IDENTIFIER = app.dynamicislandmusic.mac.XPCHelper;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -1085,7 +1089,7 @@
 				INFOPLIST_KEY_CFBundleDisplayName = DynamicIslandMusicXPCHelper;
 				INFOPLIST_KEY_NSHumanReadableCopyright = "";
 				MACOSX_DEPLOYMENT_TARGET = 15.5;
-				MARKETING_VERSION = 1.1.4;
+				MARKETING_VERSION = 1.1.5;
 				PRODUCT_BUNDLE_IDENTIFIER = app.dynamicislandmusic.mac.XPCHelper;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				REGISTER_APP_GROUPS = YES;
@@ -1259,7 +1263,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.1.4;
+				MARKETING_VERSION = 1.1.5;
 				PRODUCT_BUNDLE_IDENTIFIER = app.dynamicislandmusic.mac;
 				PRODUCT_NAME = "Dynamic Island Music";
 				PROVISIONING_PROFILE_SPECIFIER = "";
@@ -1312,7 +1316,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 1.1.4;
+				MARKETING_VERSION = 1.1.5;
 				PRODUCT_BUNDLE_IDENTIFIER = app.dynamicislandmusic.mac;
 				PRODUCT_NAME = "Dynamic Island Music";
 				PROVISIONING_PROFILE_SPECIFIER = "";

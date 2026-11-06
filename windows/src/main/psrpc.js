@@ -8,6 +8,30 @@ export function powershellPath() {
 }
 
 /**
+ * Every helper that is alive right now. If the main process dies without a clean quit (crash, taskkill)
+ * the 'exit' event is the last chance to kill them, so no orphan PowerShell keeps running forever.
+ */
+const liveChildren = new Set();
+let exitHookInstalled = false;
+
+function trackChild(child) {
+  liveChildren.add(child);
+  if (!exitHookInstalled) {
+    exitHookInstalled = true;
+    process.once('exit', () => {
+      for (const c of liveChildren) {
+        try {
+          c.kill();
+        } catch {
+          /* exiting anyway */
+        }
+      }
+    });
+  }
+  child.once('exit', () => liveChildren.delete(child));
+}
+
+/**
  * A long-lived PowerShell helper that answers one JSON request per line with one JSON line.
  * Starting PowerShell costs about a second, so it stays open and is asked again and again.
  * If it crashes it is restarted a few times, then it is reported as dead and the feature is skipped.
@@ -45,6 +69,7 @@ export class PsRpc extends EventEmitter {
       return;
     }
     this.child = child;
+    trackChild(child);
     this.ready = false;
     this.buffer = '';
     child.stdout.setEncoding('utf8');
@@ -84,6 +109,41 @@ export class PsRpc extends EventEmitter {
           /* ignore */
         }
       }, 500).unref?.();
+    }
+  }
+
+  /**
+   * Kills PowerShell helpers of this same script that were left behind by a run that died without
+   * cleanup (their parent no longer exists). Best effort, fire and forget: a living parent means the
+   * helper still belongs to somebody else and is never touched.
+   */
+  static killOrphans(script, { timeoutMs = 12000 } = {}) {
+    if (process.platform !== 'win32' || !script) return;
+    const cmd = [
+      '$s = $env:DIM_SCRIPT;',
+      "Get-CimInstance Win32_Process -Filter \"Name='powershell.exe'\" |",
+      'Where-Object { $_.ProcessId -ne $PID -and $_.CommandLine -and $_.CommandLine.IndexOf($s, [StringComparison]::OrdinalIgnoreCase) -ge 0 } |',
+      'ForEach-Object { $alive = $false; try { Get-Process -Id $_.ParentProcessId -ErrorAction Stop | Out-Null; $alive = $true } catch {}; if (-not $alive) { Stop-Process -Id $_.ProcessId -Force -ErrorAction SilentlyContinue } }',
+    ].join(' ');
+    try {
+      const p = spawn(powershellPath(), ['-NoLogo', '-NoProfile', '-NonInteractive', '-ExecutionPolicy', 'Bypass', '-Command', cmd], {
+        windowsHide: true,
+        env: { ...process.env, DIM_SCRIPT: script },
+        stdio: 'ignore',
+      });
+      p.unref();
+      const t = setTimeout(() => {
+        try {
+          p.kill();
+        } catch {
+          /* ignore */
+        }
+      }, timeoutMs);
+      t.unref?.();
+      p.once('exit', () => clearTimeout(t));
+      p.once('error', () => clearTimeout(t));
+    } catch {
+      /* best effort */
     }
   }
 

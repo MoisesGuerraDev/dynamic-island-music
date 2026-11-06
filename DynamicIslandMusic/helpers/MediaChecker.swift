@@ -28,11 +28,14 @@ final class MediaChecker: Sendable {
         process.executableURL = URL(fileURLWithPath: "/usr/bin/perl")
         process.arguments = [scriptURL.path, frameworkPath, nowPlayingTestClientPath, "test"]
 
+        HelperProcessGuard.install()
         do {
             try process.run()
         } catch {
             throw MediaCheckerError.processExecutionFailed
         }
+        HelperProcessGuard.register(process)
+        defer { HelperProcessGuard.unregister(process) }
 
         // Timeout after 10 seconds
         let didExit: Bool = try await withThrowingTaskGroup(of: Bool.self) { group in

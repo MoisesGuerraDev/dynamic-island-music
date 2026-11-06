@@ -328,6 +328,10 @@ struct ContentView: View {
                             SettingsWindowController.shared.showWindow()
                         }
                         .keyboardShortcut(KeyEquivalent(","), modifiers: .command)
+                        Divider()
+                        Button("Salir de Dynamic Island Music", role: .destructive) {
+                            NSApplication.shared.terminate(nil)
+                        }
                         //                    Button("Edit") { // Doesnt work....
                         //                        let dn = DynamicNotch(content: EditPanelView())
                         //                        dn.toggle()

@@ -92,21 +92,28 @@ final class NowPlayingController: ObservableObject, MediaControllerProtocol {
         MRMediaRemoteSetRepeatModeFunction = unsafeBitCast(
             MRMediaRemoteSetRepeatModePointer, to: (@convention(c) (Int) -> Void).self)
 
+        HelperProcessGuard.install()
+        if let scriptURL = Bundle.main.url(forResource: "mediaremote-adapter", withExtension: "pl") {
+            HelperProcessGuard.killOrphanedAdapterProcesses(scriptPath: scriptURL.path)
+        }
+
         Task { await setupNowPlayingObserver() }
     }
 
     deinit {
         streamTask?.cancel()
-        
+
         if let pipeHandler = self.pipeHandler {
             Task { await pipeHandler.close()
             }
         }
-        
+
         if let process = self.process {
+            HelperProcessGuard.unregister(process)
             if process.isRunning {
+                // Never wait for the exit here: deinit can run on the main thread and a stuck
+                // adapter would freeze the whole interface.
                 process.terminate()
-                process.waitUntilExit()
             }
         }
 
@@ -178,6 +185,13 @@ final class NowPlayingController: ObservableObject, MediaControllerProtocol {
     
     // MARK: - Setup Methods
     private func setupNowPlayingObserver() async {
+        // A controller that is replaced or retried must never leave a second stream running.
+        if let old = self.process {
+            HelperProcessGuard.unregister(old)
+            if old.isRunning { old.terminate() }
+            self.process = nil
+        }
+
         let process = Process()
         guard
             let scriptURL = Bundle.main.url(forResource: "mediaremote-adapter", withExtension: "pl"),
@@ -186,22 +200,27 @@ final class NowPlayingController: ObservableObject, MediaControllerProtocol {
             assertionFailure("Could not find mediaremote-adapter.pl script or framework path")
             return
         }
-        
+
         process.executableURL = URL(fileURLWithPath: "/usr/bin/perl")
         process.arguments = [scriptURL.path, frameworkPath, "stream"]
-        
+        process.terminationHandler = { dead in
+            HelperProcessGuard.unregister(dead)
+        }
+
         let pipeHandler = JSONLinesPipeHandler()
         process.standardOutput = await pipeHandler.getPipe()
-        
+
         self.process = process
         self.pipeHandler = pipeHandler
 
         do {
+            HelperProcessGuard.register(process)
             try process.run()
             streamTask = Task { [weak self] in
                 await self?.processJSONStream()
             }
         } catch {
+            HelperProcessGuard.unregister(process)
             assertionFailure("Failed to launch mediaremote-adapter.pl: \(error)")
         }
     }
@@ -216,9 +235,18 @@ final class NowPlayingController: ObservableObject, MediaControllerProtocol {
     }
 
     // MARK: - Update Methods
+    /// Published state only changes on the main actor. The heavy part (the cover's base64) is decoded off it.
+    @MainActor
     private func handleAdapterUpdate(_ update: NowPlayingUpdate) async {
         let payload = update.payload
         let diff = update.diff ?? false
+
+        var decodedArtwork: Data?
+        if let artworkDataString = payload.artworkData {
+            decodedArtwork = await Task.detached(priority: .utility) {
+                Data(base64Encoded: artworkDataString.trimmingCharacters(in: .whitespacesAndNewlines))
+            }.value
+        }
 
         var newPlaybackState = PlaybackState(bundleIdentifier: playbackState.bundleIdentifier)
         
@@ -256,10 +284,8 @@ final class NowPlayingController: ObservableObject, MediaControllerProtocol {
             newPlaybackState.repeatMode = self.playbackState.repeatMode
         }
 
-        if let artworkDataString = payload.artworkData {
-            newPlaybackState.artwork = Data(
-                base64Encoded: artworkDataString.trimmingCharacters(in: .whitespacesAndNewlines)
-            )
+        if payload.artworkData != nil {
+            newPlaybackState.artwork = decodedArtwork
         } else if !diff {
             newPlaybackState.artwork = nil
         }
@@ -289,6 +315,7 @@ final class NowPlayingController: ObservableObject, MediaControllerProtocol {
         await fetchFavoriteStateIfSupported()
     }
     
+    @MainActor
     private func fetchFavoriteStateIfSupported() async {
         let bundleID = playbackState.bundleIdentifier
         
@@ -338,7 +365,29 @@ actor JSONLinesPipeHandler {
     private let pipe: Pipe
     private let fileHandle: FileHandle
     private var buffer = ""
-    
+    private var pendingBox: PendingRead?
+
+    /// One in-flight read. The readability handler runs on a system queue, so resuming the continuation
+    /// cannot go through the actor: the box does it directly, under a lock, exactly once.
+    private final class PendingRead: @unchecked Sendable {
+        private let lock = NSLock()
+        private var continuation: CheckedContinuation<Data, Error>?
+
+        func set(_ continuation: CheckedContinuation<Data, Error>) {
+            lock.lock()
+            self.continuation = continuation
+            lock.unlock()
+        }
+
+        func resume(with data: Data) {
+            lock.lock()
+            let pending = continuation
+            continuation = nil
+            lock.unlock()
+            pending?.resume(returning: data)
+        }
+    }
+
     init() {
         self.pipe = Pipe()
         self.fileHandle = pipe.fileHandleForReading
@@ -359,7 +408,7 @@ actor JSONLinesPipeHandler {
     }
     
     private func processLines<T: Decodable>(as type: T.Type, onLine: @escaping (T) async -> Void) async throws {
-        while true {
+        while !Task.isCancelled {
             let data = try await readData()
             guard !data.isEmpty else { break }
             
@@ -391,19 +440,24 @@ actor JSONLinesPipeHandler {
     }
     
     private func readData() async throws -> Data {
+        let box = PendingRead()
         return try await withCheckedThrowingContinuation { continuation in
-            
+            box.set(continuation)
+            pendingBox = box
             fileHandle.readabilityHandler = { handle in
                 let data = handle.availableData
                 handle.readabilityHandler = nil
-                continuation.resume(returning: data)
+                box.resume(with: data)
             }
         }
     }
-    
+
     func close() async {
         do {
             fileHandle.readabilityHandler = nil
+            // Wakes up a read still waiting: without it a suspended task hangs forever.
+            pendingBox?.resume(with: Data())
+            pendingBox = nil
             try fileHandle.close()
             try pipe.fileHandleForWriting.close()
         } catch {

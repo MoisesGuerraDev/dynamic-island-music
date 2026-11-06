@@ -96,7 +96,13 @@ async function boot(ctx) {
   if (isTest) setExternalOpener((url) => (globalThis.__opened ||= []).push(url)); // tests never open a browser
   const store = new Store(path.join(userData, 'settings.json'));
   const secrets = new Secrets(path.join(userData, 'secrets.json'), { testMode: isTest });
-  const helper = process.platform === 'win32' ? new PsRpc(resourcePath(app.isPackaged ? 'ps' : 'src/main/ps', 'helper.ps1'), { name: 'El asistente de Windows', timeoutMs: 8000 }) : null;
+  const psDir = resourcePath(app.isPackaged ? 'ps' : 'src/main/ps');
+  // PowerShell helpers orphaned by a crashed run only waste RAM and ports: drop them before spawning new ones.
+  if (process.platform === 'win32' && !isTest) {
+    PsRpc.killOrphans(path.join(psDir, 'helper.ps1'));
+    PsRpc.killOrphans(path.join(psDir, 'media.ps1'));
+  }
+  const helper = process.platform === 'win32' ? new PsRpc(path.join(psDir, 'helper.ps1'), { name: 'El asistente de Windows', timeoutMs: 8000 }) : null;
 
   const islands = new IslandManager({
     store,
@@ -114,7 +120,7 @@ async function boot(ctx) {
   });
 
   const system = new SystemInfo({ screen, helper });
-  const media = new MediaService({ store, script: resourcePath(app.isPackaged ? 'ps' : 'src/main/ps', 'media.ps1'), mock: mockMedia });
+  const media = new MediaService({ store, script: path.join(psDir, 'media.ps1'), mock: mockMedia });
   const silent = new SilentSound({ media, store });
   const pomodoro = new Pomodoro(store);
   const notes = new Notes({ store, defaultFolder: path.join(userData, 'Notas'), trash: isTest ? async (p) => fs.rmSync(p, { force: true }) : (p) => shell.trashItem(p) }); // tests never fill the person's Recycle Bin
